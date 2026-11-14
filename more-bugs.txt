@@ -1,0 +1,6 @@
+STATUS: WORKING
+HEAD: more-bugs 04065186446251157309247ec9ee00c421c0f9d2
+QUESTION: none
+NOTE: Branch cut from upstream main 0406518; building and writing failing tests for item 1 first.
+
+CHANGED OWNER DECISIONS: none yet
