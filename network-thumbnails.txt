@@ -1,0 +1,4 @@
+STATUS: WORKING
+HEAD: network-thumbnails de5d7d2c76cffc4b8410ae8407a24b5cc6e70029
+QUESTION: none
+NOTE: Branch cut from upstream main 0406518 (#327). Tests committed first; implementation being checked. Local Samba fixture confirms GVfs SMB reports only standard::fast-content-type for .png (ambiguous extension), so PNGs on shares never qualified.
