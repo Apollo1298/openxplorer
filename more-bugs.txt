@@ -1,10 +1,13 @@
 STATUS: WORKING
-HEAD: more-bugs 6c50f75651d5b555d68e6f671e69dcbbbc05579d
+HEAD: more-bugs ba627dbd29a9136afc0aa8f5ccfef072794efa1f
 QUESTION: none
-NOTE: Items 1-2 fixed test-first (tests fail on main 0406518, pass on the branch); working on item 3 (Home spacing).
+NOTE: Items 1-4 fixed test-first (each test fails on main 0406518, passes on the branch); working on item 5 (TAR links).
 
 PASS item1 test-first: an_offline_share_says_so_plainly_and_names_it fails on main ("the message names the share": got the raw "Failed to mount Windows share: Connection refused"), passes on the branch
 PASS item2 test-first: recent_and_favorites_follow_the_file_name_extensions_setting fails on main (timed out waiting for "plan"), passes on the branch
+PASS item3 test-first: home_has_no_band_under_the_titles_and_its_tiles_do_not_touch fails on main ("normal: the first row is 50 px under the titles, want one row (36)"), passes on the branch 5 of 5 runs
+PASS item4 test-first: move_by_copying_asks_in_front_of_the_progress_window fails on main ("the progress window shows with it"), passes on the branch; worker_questions 9/9
 PASS app suites on the branch: network 32/32, empty_folder 30/30, disconnected 5/5, file_name_extensions 5/5, listing 18/18; home_page 20/21, the 1 failure (a_real_click_on_the_home_row..., "a real pointer moves only on check.py's private display") fails the same on unchanged main here
 
-CHANGED OWNER DECISIONS: none yet
+CHANGED OWNER DECISIONS:
+- HOME-015 spacing (home_is_spaced_as_windows_11_home): "headers to the first row" was 50 px (a 14 px gap under a 36 px title row); now one row, 36 px, as asked (item 3). Compact tiles (compact_view_draws_quick_access_tiles_closer) were 48 px tall, now 54, so the pin no longer touches the next tile's name.
