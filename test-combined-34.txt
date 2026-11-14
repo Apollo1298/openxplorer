@@ -1,0 +1,54 @@
+STATUS: DONE
+HEAD: test-combined-34 24b9e3e3 (the deb was built from exactly this tree; cargo clean before the release build; guard on HEAD and a clean tree before and after)
+DEB: claude/test-combined-34-deb d771cc38
+  openxplorer_2.0.17+test34_all.deb (io.winspace.Development)
+  SHA256: 757d45e51bd7e8c0f5f94e52fc54dae5d2f25fe8bc8ea9752efc1e0ab212b72e
+BASE: upstream main dd39e3ba (2.0.17)
+
+MERGED HEADS, in order (each descends from upstream main; all branch off 04065186):
+  top-bugs              2bf0edc16ae0cc92bada4d6a18c8afb30578a61d -> 977d801e (clean)
+  more-bugs             07d2eba2965dc22806b12e87374fab132fed053b -> ba277dfb (includes its zh_CN commit unchanged)
+  windows-differences-2 94dbdb3523d4b527169196c87f49e1d060edab3b -> bfed8b6a
+  network-thumbnails    6b5883af62e52d28f1a7183782aaf328891ebe83 -> 5afa2e19
+  supere-uninstall      edb5e849171365be4d8ff1a771b3e7f3c1d64f2b -> 4b319c06
+  glue                  c91bf771, 24b9e3e3
+
+CONFLICTS AND RESOLUTIONS (both sides kept):
+- more-bugs / parity/features.toml: the HOME fold entry's native_note got both added sentences (top-bugs' focus return after a tile or row menu, more-bugs' 54-pixel Compact tiles); top-bugs' new HOME-017 (Search from Home) entry kept.
+- windows-differences-2:
+  - apps/web/lib/docs.json, "Choose your context menu": a word-level 3-way merge against the merge base keeps both edits (top-bugs' "which open it at the selected item the keyboard is on" and windows-differences-2's sentence changes). docs/interface.md, apps/web/public/docs-markdown/interface.md and markdown.json regenerated with tools/sync-docs.py.
+  - native/BACKLOG.md: both Archives sentences kept (top-bugs' TAR links, windows-differences-2's Compress to › 7z File).
+  - window/location_view.rs imports: windows-differences-2's KnownFolder and Storage imports kept. The shown_name import it also carried came back unused, because more-bugs (1e10df4e) stopped renaming the archive crumb, so glue c91bf771 removes it.
+- network-thumbnails / native/BACKLOG.md: both entries kept (windows-differences-2's Windows 11 differences, network-thumbnails' Show thumbnails in network folders). markdown.json regenerated.
+- supere-uninstall / markdown.json: regenerated.
+- The .pot merged without conflict; native/tools/i18n.py check passes on the result, so it is current.
+- Focus, tooltips and Home menus (top-bugs + windows-differences-2): no code conflict. Both sides kept: top-bugs' tooltip suppression (hide_tooltip, VIEW-073) and focus return after Home menus (give_focus_back), plus windows-differences-2's focus rings only after keyboard navigation (ACC-009) and Windows 11's Quick access tile menu (HOME-013). top-bugs' and more-bugs' Home changes are both in, and the Home tests of all three pass.
+- Cargo.lock / sevenz-rust2: no conflict. The lock has sevenz-rust2 0.20.2 and every package of main and every branch, at main's newer versions where a branch's older base had older ones (crc32fast, flate2, kamadak-exif, libsqlite3-sys, rusqlite). packaging/flatpak/cargo-sources.json matches a fresh run of native/tools/flatpak_cargo_sources.py and holds every entry of main and the branches except those superseded versions. No branch changed LICENSE, NOTICE, THIRD_PARTY_NOTICES.md or licenses/. The deb's /usr/share/doc/openxplorer/rust-crates has sevenz-rust2-0.20.2.
+GLUE:
+- c91bf771: the unused shown_name import above. Also rustfmt on top-bugs' tests/home_page.rs, which is not rustfmt-clean on top-bugs alone either (cargo fmt --check fails on 2bf0edc1).
+- 24b9e3e3: top-bugs' two new tests updated for the other branches (merge-only failures, see below).
+  - the_keyboard_comes_back_to_the_item_whose_menu_closed: more-bugs (6c50f756) hides known extensions in Home's Recent and Favorites, so the favorite is found as "Notes 2".
+  - no_tooltip_stays_over_a_menu_the_rename_box_or_the_next_folder: windows-differences-2 takes the tooltip off column titles (VIEW-029), so the Name title is found by its label and right-clicked without waiting for a tooltip of its own; still no tooltip may show over the column menu.
+
+CHECKS:
+- native/tools/check.py: inventories, parity, i18n and tool tests pass; it then stops at clippy on duration_suboptimal_units in ox-core files no branch touches (same on main). I ran its remaining steps with that lint (and map_unwrap_or, decimal_bitwise_operands) allowed: no drawn icons, rustfmt clean, clippy clean, every test binary plus doctests with OX_PYTHON_APP set.
+- native/parity/check.py, i18n check, sync-docs --check: pass.
+- Full suite on c91bf771: 4613 passed, 25 failed. After glue 24b9e3e3 (test files only; clippy and rustfmt rerun clean) the two merge-only failures pass.
+FAILURES, compared by test name against main dd39e3ba and the branch alone:
+  Also fail on main (environment: root permissions, sandbox, Python fixtures, display scale), 23:
+    a_gtk_environment_file_that_cannot_be_written_leaves_dialogs_off, a_kde_script_that_cannot_be_written_leaves_dialogs_off, admin_copy::an_fstab_that_cannot_be_read_refuses, an_item_gio_reports_without_a_trash_is_planned_for_permanent_delete, compact_view_rows_keep_their_spacing_at_twice_the_scale, twice_the_scale_draws_the_bars_on_whole_device_pixels, fuse_export_paths_match_native_opening_py, launches_share_one_instance_that_quits_and_restarts_on_request, mount_assistant::the_assistant_prepares_a_command_and_hands_over_the_linux_folder, python_fixture_matches_desktop_core_py, thumbnailers::a_sandboxed_thumbnailer_runs_within_its_limits, thumbnailers::a_sandboxed_thumbnailer_sees_only_its_item, file_drop::the_drop_menu_reads_what_the_items_and_the_folder_allow, clipboard::cancel_in_the_failed_item_dialog_just_stops_and_undo_takes_back_what_was_copied, clipboard::the_panels_cancel_stops_a_copy_without_a_report, context_menus::a_folder_without_write_permission_keeps_new_and_paste_and_shows_the_error, empty_folder::ctrl_v_pastes_nothing_into_a_folder_that_could_not_be_read, empty_folder::new_and_paste_stay_off_while_an_unavailable_folder_is_listed_again, file_operations::delete_reads_delete_and_asks_only_for_items_without_a_trash, new_folder::a_folder_that_cannot_take_a_new_folder_says_why, views::listed_links_and_read_only_files_carry_their_emblems, worker_questions::an_item_in_a_folder_only_an_administrator_may_change_offers_continue, worker_questions::destination_folder_access_denied_offers_continue_with_the_shield
+  Branch-only: none.
+  MERGE-ONLY (absent on main, pass on top-bugs 2bf0edc1 alone, failed merged; fixed by glue 24b9e3e3 and rerun green):
+    window::tests::home_page::the_keyboard_comes_back_to_the_item_whose_menu_closed (top-bugs x more-bugs)
+    window::tests::tooltips::no_tooltip_stays_over_a_menu_the_rename_box_or_the_next_folder (top-bugs x windows-differences-2)
+
+ONE UNIQUE STRING PER BRANCH IN THE BUILT BINARY (/opt/openxplorer/bin/openxplorer in the .deb, strings | grep -cF; none is in main's sources):
+  network-thumbnails:    "Show thumbnails in network folders" = 1
+  windows-differences-2: "Rename File" = 1, "7z File" = 2
+  more-bugs:             "Couldn't check for updates (HTTP" = 1, "unsafe name or link is hidden" = 1
+  top-bugs:              "GtkTooltipWindow" = 1 (its tooltip suppression looks the tooltip window up by this name; it adds no translatable string)
+  supere-uninstall:      "forget_removed_launch_shortcut_apps" = 6 (its new function's symbol; every runtime string it adds is already in main, and it adds no translatable string)
+POLKIT: record /var/lib/openxplorer/install-updates-without-password = "off" before install -> /etc/polkit-1/rules.d empty after install, record still "off". Purge left neither.
+IDENTITY: all 60 new commits (branches and merges) and the deb commit are addition-official <239187859+addition-official@users.noreply.github.com> with no trailers; none of the owner's commits is new here (they are already in main). The only address in the added lines is network-thumbnails' fictional test URI sftp://demo@server.example (docs/PRIVACY.md style). In the deb, AKolenda appears only in the upstream repository and update-check URLs, as in earlier debs, and the other addresses are the same third-party set as before.
+NOTE: Old branches: after pushing, the fork has no other test-combined-N or claude/test-combined-N-deb branch (deb 33's were already deleted), so there was nothing for me to delete.
+NOTE: The first comparison run filled the disk (two extra builds), which broke a checkout. I force-checked out test-combined-34 at its committed 24b9e3e3 (nothing uncommitted was lost), freed space and redid the comparison one revision at a time. The results above are from that second run.
