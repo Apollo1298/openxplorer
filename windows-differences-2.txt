@@ -1,7 +1,7 @@
-STATUS: DONE
-HEAD: windows-differences-2 de89fee049bc1230da4d759966eace686dd49c76
+STATUS: WORKING
+HEAD: windows-differences-2 547149a87b088fdfae0b672cf70193e34270cb59
 QUESTION: none
-NOTE: Items 1-8 and 10 done test-first on top of upstream main 04065186; item 9 is a PR note only. Full test run on the branch matches unchanged main by name (see TESTS). A direct reply to the manager session was refused by the session service, so this file is the acknowledgement of item 10 and of the 7z answer.
+NOTE: Review fix: the tile menu no longer draws a ring around its list of rows (41f5eb47 test, 547149a8 fix); full test run at 547149a8 in progress. Items 1-8 and 10 done test-first on top of upstream main 04065186; item 9 is a PR note only. Full test run on the branch matches unchanged main by name (see TESTS). A direct reply to the manager session was refused by the session service, so this file is the acknowledgement of item 10 and of the 7z answer.
 
 ITEMS
 PASS 1 Quick access tile menu: Windows 11's menu (Copy in the strip; Open Enter, Open in new tab, Open in new window, Unpin from Quick access, Compress to >, Copy as path Ctrl+Shift+C, Properties Alt+Enter, Open in Terminal, Show more options). No Pin to Start. The classic menu behind Show more options keeps Open folder with..., Cache this folder for search, Sign out of server..., Edit..., Previous versions, plus Copy. Ctrl+Shift+C on a tile copies its path. Test fails on main: home_page.rs a_quick_access_tiles_menu_is_windows_11s
@@ -17,6 +17,7 @@ PASS 10 Focus rings only after keyboard navigation: a click or touch hides them,
 
 CHECKLIST (real input with xdotool; X11 = Xvfb, Wayland = weston 13 in Xvfb; private D-Bus, disposable home, fictional files)
 PASS tile menu by right-click, Menu key and Shift+F10 on a pinned folder tile and a standard folder tile (X11 1x light normal)
+PASS review fix, no ring around the tile menu's rows: a menu made for one opening (Home tiles, places) was mapped before GTK gave its popup the keyboard, which went to the scroller around the rows, ringing the whole list once keyboard focus showed. The scroller no longer takes the keyboard and the first row takes it once GTK is done, as in the file list's menu; the keyboard shows only as the row's highlight. Test home_page.rs a_quick_access_tiles_menu_draws_no_ring_around_its_rows (real XTEST right-click, Shift+F10, and Tab then Menu): at de89fee0 it fails, the scroller has the keyboard in all three cases (under gdb; without gdb the process then crashes with SIGSEGV while the test unwinds); passes at 547149a8. Tile menus recaptured (1x/2x, light/dark). Menu-related modules (menu_popover, context_menus, landing_pages, home_page, sidebar, command_bar, focus, accessibility, shift_f10, tabs, history_menu, address, crumb, picker, search_options, group_by, new_text_document, send_to, tab_strip): 543 passed, 1 failed only for want of check.py's Python app sources (settings::reset_returns_every_windows_sidebar_to_its_default_width)
 PASS tile menu items: Compress to > 7z File (Projects.7z, p7zip lists and tests it), Copy (clipboard holds the folder URI), Copy as path via Ctrl+Shift+C ("/.../Projects" quoted), Open in new tab, Open in new window, Properties (Escape closes it), Unpin, Show more options (classic menu with the app's items) (X11 1x)
 PASS Esc closes the tile menu and the tile has the keyboard again (X11 1x; also covered by the unit test); after Escape the tile shows its keyboard ring (Escape is a key), see NOT CONFIRMED
 PASS tile menu by right-click and Menu key on weston 2x dark Compact

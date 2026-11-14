@@ -12,7 +12,7 @@ This brings nine behaviors in line with Windows 11 File Explorer. Five were chec
 
 | Change | Before | After | Windows |
 |---|---|---|---|
-| Quick access tile menu on Home | A plain list (Open, Open in new tab, Open in new window, Open in Terminal, Open folder with…, Cache this folder for search, Unpin from Quick access, Previous versions, Properties) | Windows 11's menu: Copy in the icon strip, then Open (Enter), Open in new tab, Open in new window, Unpin from Quick access, Compress to ›, Copy as path (Ctrl+Shift+C), Properties (Alt+Enter), Open in Terminal, Show more options. Show more options opens the full classic menu, which keeps the app's own items. Right-click, Menu and Shift+F10 all open it, and the tile gets the keyboard back when it closes. Ctrl+Shift+C on a tile copies its path. | Same list on Windows 11, plus Pin to Start, which is Windows-only and left out |
+| Quick access tile menu on Home | A plain list (Open, Open in new tab, Open in new window, Open in Terminal, Open folder with…, Cache this folder for search, Unpin from Quick access, Previous versions, Properties) | Windows 11's menu: Copy in the icon strip, then Open (Enter), Open in new tab, Open in new window, Unpin from Quick access, Compress to ›, Copy as path (Ctrl+Shift+C), Properties (Alt+Enter), Open in Terminal, Show more options. Show more options opens the full classic menu, which keeps the app's own items. Right-click, Menu and Shift+F10 all open it. The keyboard shows only as the first row's highlight, never as a ring around the whole list, and the tile gets the keyboard back when the menu closes. Ctrl+Shift+C on a tile copies its path. | Same list on Windows 11, plus Pin to Start, which is Windows-only and left out |
 | Wildcard search words | `a?b` had to match the whole name, so it found nothing in a folder with a1b.txt and acb.txt | A wildcard word is found within the name, as a plain word is: `a?b`, `?cb` and `a*b` find a1b.txt and acb.txt. `a?b.txt` and `*` work as before. As with plain words, a match must start before the extension or be the whole extension. Indexed and live searches use the same rule. | `a?b` finds a1b.txt and acb.txt |
 | Tab icons | Downloads, Documents and the other standard folders showed a yellow folder, as did the home folder (when "Open Quick access on Home" is off) | Desktop, Downloads, Documents, Pictures, Music and Videos show their navigation pane glyphs (on the network bar when the folder is on the network), and the home folder shows Home's glyph | The Downloads tab shows the green Downloads glyph |
 | Column title tooltip | "Drag to resize · double-click to fit loaded items (up to 2,000)" | No tooltip. Resizing, double-click to fit and the keys are unchanged, and screen readers still get the description. | No tooltip |
@@ -63,7 +63,7 @@ These are guesses or open points that still need a check on Windows 11:
 
 Each change was written test-first. Each new test failed on unchanged main (or, for 7z, before the writer existed) and passes now:
 
-- Quick access tile menu: `a_quick_access_tiles_menu_is_windows_11s`
+- Quick access tile menu: `a_quick_access_tiles_menu_is_windows_11s`, `a_quick_access_tiles_menu_draws_no_ring_around_its_rows`
 - Wildcards: `a_wildcard_word_matches_within_the_name_as_a_plain_word_does`, `a_wildcard_word_matches_within_the_cached_name`, `a_wildcard_word_finds_names_that_hold_it`
 - Tab icons: `a_standard_folders_tab_shows_its_navigation_pane_glyph`
 - Column titles: `column_titles_show_no_tooltip`
