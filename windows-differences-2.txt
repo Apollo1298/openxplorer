@@ -1,4 +1,4 @@
 STATUS: WORKING
-HEAD: windows-differences-2 04065186d
-QUESTION: none
-NOTE: Branch cut from upstream main 04065186; reading the code for all nine items, tests first.
+HEAD: windows-differences-2 9ebadcd7
+QUESTION: May I add the sevenz-rust2 crate (Apache-2.0, pure Rust, maintained, built on lzma-rust2 which is already in the tree) as a new dependency for "Compress to > 7z File"? No 7z writer is in the dependency tree today. Until answered, item 8 stays NOT DONE.
+NOTE: Failing tests for items 1-7 committed (9ebadcd7); all 10 new tests fail on unchanged main 04065186. Implementing now.
