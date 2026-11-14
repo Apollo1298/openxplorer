@@ -1,4 +1,4 @@
 STATUS: WORKING
-HEAD: windows-differences-2 7f542c958bc254bccf49d62b2e4fdb408adebf8e
-QUESTION: May I add the sevenz-rust2 crate (Apache-2.0, pure Rust, maintained, built on lzma-rust2 which is already in the tree) as a new dependency for "Compress to > 7z File"? No 7z writer is in the dependency tree today. Until answered, item 8 stays NOT DONE.
-NOTE: Item 10 (focus rings) received and accepted; a direct reply to the manager session was refused by the session service, so this file is the acknowledgement. Cause found: GTK 4.14 turns focus-visible on for any Ctrl/Alt shortcut (e.g. Ctrl+C) and never off on a click. Full test run of items 1-7 in progress.
+HEAD: windows-differences-2 de89fee049bc1230da4d759966eace686dd49c76
+QUESTION: none
+NOTE: Item 10 (focus rings) and the 7z answer received; both implemented test-first (fb15d406 -> 105f7df4, ab899a4d -> 10d92431). sevenz-rust2 pinned at =0.20.2 (0.21+ needs Rust 1.93 > workspace rust-version 1.92), default-features off, "compress" only. Now: full test runs on the branch and unchanged main, real-input checks, captures.
