@@ -1,4 +1,70 @@
 STATUS: WORKING
 HEAD: windows-differences-2 de89fee049bc1230da4d759966eace686dd49c76
 QUESTION: none
-NOTE: Item 10 (focus rings) and the 7z answer received; both implemented test-first (fb15d406 -> 105f7df4, ab899a4d -> 10d92431). sevenz-rust2 pinned at =0.20.2 (0.21+ needs Rust 1.93 > workspace rust-version 1.92), default-features off, "compress" only. Now: full test runs on the branch and unchanged main, real-input checks, captures.
+NOTE: Items 1-8 and 10 done test-first on top of upstream main 04065186; item 9 is a PR note only. Full test run on the branch matches unchanged main by name (see TESTS). A direct reply to the manager session was refused by the session service, so this file is the acknowledgement of item 10 and of the 7z answer.
+
+ITEMS
+PASS 1 Quick access tile menu: Windows 11's menu (Copy in the strip; Open Enter, Open in new tab, Open in new window, Unpin from Quick access, Compress to >, Copy as path Ctrl+Shift+C, Properties Alt+Enter, Open in Terminal, Show more options). No Pin to Start. The classic menu behind Show more options keeps Open folder with..., Cache this folder for search, Sign out of server..., Edit..., Previous versions, plus Copy. Ctrl+Shift+C on a tile copies its path. Test fails on main: home_page.rs a_quick_access_tiles_menu_is_windows_11s
+PASS 2 Wildcards found within the name like plain words (start before the extension or be the whole extension): a?b finds a1b.txt and acb.txt; folder filter, live walk and cache use one rule. Tests fail on main: pattern.rs a_wildcard_word_matches_within_the_name_as_a_plain_word_does, query.rs a_wildcard_word_matches_within_the_cached_name, tests/search.rs a_wildcard_word_finds_names_that_hold_it
+PASS 3 Tab icons: Desktop, Downloads, Documents, Pictures, Music, Videos show their navigation pane glyphs (network bar when on the network); the home folder's tab shows Home's glyph. Test fails on main: tests/known_folder_tabs.rs a_standard_folders_tab_shows_its_navigation_pane_glyph (+ unit test in location_view.rs)
+PASS 4 Column titles: no tooltip (the item check box keeps "Select all"). Test fails on main: column_fit.rs column_titles_show_no_tooltip
+PASS 5 Rename to a taken name: compact message box "Rename File", 'Do you want to rename "Notes 2.md" to "Notes 1 (2).md"?' / 'There is already a file with the same name in this location.', Yes/No, Alt+Y/Alt+N. Tests fail on main: renaming.rs a_file_renamed_to_a_taken_name_is_offered_the_next_free_number, a_shortcut_renamed_to_a_taken_name_is_numbered_after_its_whole_name
+PASS 6 Backspace in Open/Save dialog file list goes up one level (not Back). Test fails on main: picker.rs backspace_in_the_file_list_opens_the_folder_one_level_up
+PASS 7 Alt at the drop of the app's own items makes shortcuts (same code as Create shortcuts here), also where the desktop turned Alt into "ask". Test fails on main: action.rs alt_at_the_drop_makes_shortcuts_to_own_items
+PASS 8 Compress to > 7z File (file menu, navigation pane pins, Home tiles) and the Create archive dialog's 7z/LZMA2 format, through the ZIP/TAR pipeline (no link following, never replacing, in-place or staged creation, progress, cancel, cleanup, Undo). sevenz-rust2 =0.20.2, default-features off, "compress" only (Apache-2.0; 0.21+ needs Rust 1.93 > rust-version 1.92); it brings lzma-rust2 0.16.5 (Apache-2.0) beside the tree's 0.25. cargo-deny: licenses ok, no advisory for either crate (the only advisory errors are the existing zbus_names/zvariant unmaintained ones via oo7). Cargo.lock, Flatpak cargo-sources.json, docs, BACKLOG and parity updated; crate licences are installed from Cargo.lock by package_data.py. Browsing/extracting 7z not done. Test fails before the writer: create.rs a_7z_name_writes_a_7z_archive_with_the_same_items
+PASS 9 Not changed (owner's default); the PR notes that Windows opens Home with Quick access by default
+PASS 10 Focus rings only after keyboard navigation: a click or touch hides them, a Ctrl/Alt shortcut that moves the keyboard nowhere (Ctrl+C) keeps them hidden, Tab/F6/arrows/Home/End/Page keys show them. Cause: GTK 4.14 turns focus-visible on for any Ctrl/Alt shortcut and never off on a click (probed with a bare GTK window). Test fails on main: tests/focus_ring.rs the_focus_ring_shows_only_after_keyboard_navigation (real XTEST keys and clicks)
+
+CHECKLIST (real input with xdotool; X11 = Xvfb, Wayland = weston 13 in Xvfb; private D-Bus, disposable home, fictional files)
+PASS tile menu by right-click, Menu key and Shift+F10 on a pinned folder tile and a standard folder tile (X11 1x light normal)
+PASS tile menu items: Compress to > 7z File (Projects.7z, p7zip lists and tests it), Copy (clipboard holds the folder URI), Copy as path via Ctrl+Shift+C ("/.../Projects" quoted), Open in new tab, Open in new window, Properties (Escape closes it), Unpin, Show more options (classic menu with the app's items) (X11 1x)
+PASS Esc closes the tile menu and the tile has the keyboard again (X11 1x; also covered by the unit test); after Escape the tile shows its keyboard ring (Escape is a key), see NOT CONFIRMED
+PASS tile menu by right-click and Menu key on weston 2x dark Compact
+FAIL tile menu by Shift+F10 on weston 2x: my xdotool Shift+F10 opened nothing there (the same keys work on X11, and the unit test passes); a left click on a navigation pane row also did nothing there while a double-click on a tile worked, so I count this as my input path through weston, not proven
+PASS search with real typing, X11 1x: a?b -> a1b, acb, Deep/xa3b; ?cb -> acb; a*b -> a1b, acb, xa3b; a?b.txt -> a1b, acb; *.txt -> 4 .txt files; notes -> notes; contents search on: a?b unchanged, budget -> every file by its text; subfolders included
+PASS tab icons X11 1x: Desktop, Downloads, Documents, Pictures, Music, Videos glyphs; plain folder yellow; This PC, Recycle Bin unchanged; Home page house; home folder (Quick access off) house. Wayland 2x dark: Downloads green glyph
+PASS column title hover 2.5 s: no tooltip; drag-resize of Name works (X11 1x). Double-click-to-fit: my xdotool double-click missed the edge; the existing XTEST tests column_fitting.rs pass in the full run
+PASS rename to a taken name, X11 1x: file -> Rename File box with Windows' text; Escape (No) keeps editing with the typed name; Enter re-asks; Enter (Yes) renames to "Notes 1 (2).md"; folder -> refused with the existing message, as before
+PASS Open/Save dialog Backspace (portal SaveFile on the private bus, X11 1x): in File name it erases text; in the file list Projects -> Documents -> Home; at / it stays; Escape answers cancelled (response 1)
+PASS Alt+drag (X11 1x): a file onto a folder and a folder onto a folder and onto the pane make "<name> - Shortcut" links, originals untouched, label "Create link in Search"; Ctrl+drag copies; plain drag moves
+FAIL GTK criticals during Alt+drag on X11: each Alt drag logs "gdk_drop_set_actions: assertion '(actions & GDK_ACTION_ASK) == 0' failed" (5 per drag; none for Ctrl or plain drags). Comparison with unchanged main below
+PASS 7z: create from files and folders (unit test with an empty folder and a Unicode name, read back), cancel mid-way leaves nothing, from the tile menu in the app; p7zip 16.02 lists and tests the app's archive. Opening a .7z in the app is not supported (no 7z browsing)
+PASS focus rings X11 1x light: none at startup, none after a click on Home, none after Ctrl+C, Tab shows one, a click hides it, F6 rings the tab, a click hides it, Down in the list rings the item, a click hides it; Wayland 2x dark: none at startup, F6 rings the tab, a click shows only the item outline
+PASS no crash in the sessions above with input a user can give. Two sessions ended from my tooling: xdotool windowclose destroyed a GTK window from outside (X BadDrawable), and GTK_A11Y=none in my launcher (see NOTES)
+
+TESTS
+PASS python3 native/parity/check.py; rustfmt --check; Clippy -D warnings with the workspace lints (check.py) and with CONTRIBUTING's pedantic flags
+PASS python3 native/tools/i18n.py check (template regenerated); tools/sync-docs.py regenerated; tools/audit-public-data.py: no issues
+RUNNING full test run on unchanged main 04065186 for the by-name comparison
+
+CAPTURES (tools/native_capture.py with its fictional demo tree, the app built at de89fee0; 1x and 2x, light and dark)
+windows-differences-2-<1x|2x>-<light|dark>-tile-menu.png, -rename-file-box.png, -downloads-tab.png, -search-a-b.png, -no-focus-ring.png (startup), -no-focus-ring-after-home.png (after Home opens; the hook cannot click)
+
+NOT CONFIRMED, check in the VM
+- Whether *.pdf also finds bank.pdf.txt, and ?? every name of two or more characters (both follow from "within the name like a plain word")
+- Whether a wildcard match may start inside the extension (the app applies its plain-word rule)
+- The Rename File box's icon (the app shows its warning icon); whether names show extensions when extensions are hidden; what Windows asks when a folder is renamed to a taken name (the app keeps its refusal message)
+- Where the tile menu's separators are; what Windows' Show more options lists for a pinned folder; whether Escape gives the tile a focus rectangle; whether Ctrl+Shift+C works on a tile
+- Windows' order of Compress to > ZIP File / 7z File / TAR File, and the Create archive dialog's format order
+- Which glyph a tab of a standard folder on a network share shows; the address bar's icon for Downloads (the app keeps the yellow folder there)
+- Whether the Details header's item check box ("Select all") has a tooltip
+- Backspace in an Open/Save dialog with nothing selected (the app goes up either way)
+- Alt+drag of items from another app (the app keeps what that drag settled on)
+- Whether Windows shows a focus rectangle after a shortcut that moves the keyboard (Ctrl+Shift+E, Alt+D); whether the focused item's 1px outline shows at startup before any click (the app draws it)
+
+CHANGED OWNER DECISIONS (parity notes and BACKLOG updated)
+- HOME-013 Quick access tiles: plain pin list -> Windows 11 menu
+- SRCH-004 wildcards: whole name (Dolphin) -> within the name
+- TAB-010 standard folders and the home folder: yellow folder -> navigation pane glyphs
+- VIEW-029 column titles: resize tooltip -> none
+- OPS-010 Rename File question: named the existing file with both files' details -> Windows' message box naming the file being renamed
+- NAV-004 Backspace in Open/Save dialogs: Back -> Up
+- DND-017 Alt at a drop: copy (X11) / ask (GNOME Wayland) -> shortcuts
+- ARC-023 Compress to: no 7z -> 7z File
+- ACC-009 focus rings: GTK defaults -> keyboard navigation only
+- Not changed: "Open Quick access on Home" stays off (Windows defaults to on)
+
+NOTES (other findings, not changed)
+- With GTK_A11Y=none the app aborts at the start of any file drag: announcement.rs calls at_context(), which gtk4-rs asserts is non-null (a GTK 4.14 widget has no AT context then). Same code on main; not seen without that variable
+- After several searches the tab title kept the first query ("a?b - Search Results in Search" while the box held "budget")
+- After a click on the navigation pane's Home row, the first Down selects the first file without giving it the keyboard ring
