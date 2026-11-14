@@ -1,4 +1,4 @@
 STATUS: WORKING
-HEAD: top-bugs 04065186
+HEAD: top-bugs b63bcce3
 QUESTION: none
-NOTE: Branch cut from upstream main 04065186. Writing failing tests for the six items.
+NOTE: All six fixes are in, each with a test that failed on main (04065186) and passes now. Full check.py run and the real-input checklist are next.
