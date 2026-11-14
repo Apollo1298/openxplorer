@@ -1,4 +1,24 @@
-STATUS: WORKING
-HEAD: network-thumbnails de5d7d2c76cffc4b8410ae8407a24b5cc6e70029
+STATUS: DONE
+HEAD: network-thumbnails 6b5883af62e52d28f1a7183782aaf328891ebe83
 QUESTION: none
-NOTE: Branch cut from upstream main 0406518 (#327). Tests committed first; implementation being checked. Local Samba fixture confirms GVfs SMB reports only standard::fast-content-type for .png (ambiguous extension), so PNGs on shares never qualified.
+NOTE: Cut from upstream main 0406518 (#327); tests first (de5d7d2: ox-core tests fail on main, ox-app tests do not compile on main and, with only the new-API parts stripped, the Settings row and policy tests fail), then 6b5883a. #327 only flipped viewOptions.remotePreviews; it is off again, and the Preview pane already followed that flag, so it is icons/"No preview available." again too. Row renamed "Also in network folders" -> "Show thumbnails in network folders" (zh_CN loses that translation). GVfs SMB and SFTP report only fast-content-type for .png (ambiguous glob: image/png vs image/apng); network files without a content type are now typed by fast type or name. Network thumbnails get 2 slots of their own (NETWORK_MAKING) beside the 2 local ones.
+
+PASS default, smb:// share (local Samba, fictional PNG/JPG/PDF/MP4): type icons in Large icons, Tiles and Details (1x light, xdotool); Large icons and Details also at 2x dark
+PASS default Preview pane on a share file: "No preview available." (JPG 1x light, PDF 2x dark). Chosen: the Preview pane follows the same setting, as it did before #327, so the default reads no network file contents anywhere, matching Windows' icons-only network default; turning the setting on enables both
+PASS default, local Pictures and a never-viewed local folder keep thumbnails
+PASS setting on, smb://: thumbnails for PNG (the fast-content-type fix), JPG, PDF and MP4 (PDF/MP4 after installing bubblewrap, evince and ffmpegthumbnailer in the test machine); 1x light and 2x dark
+PASS setting on, sftp:// (local sshd): PNG, JPG, PDF, MP4 thumbnails at 2x dark; with the setting off the same folder shows icons
+FAIL (not run) kernel CIFS mount: this container's kernel has no cifs file system (mount error 19). The GVfs FUSE path is mapped back to smb:// by the app, so it could not stand in. Covered only by existing network_fs unit tests
+FAIL (not run) fake MTP/PTP mount: no way to fake one here; mtp:// items are covered by unit tests (previews_follow_the_settings, a_network_file_without_a_content_type_is_typed_by_its_name)
+PASS setting on, Preview pane: JPG picture (1x light) and PDF page (2x dark) on smb://
+PASS toggled while the share is open: on -> thumbnails and preview at once, off -> icons and "No preview available." at once, no restart (1x light and 2x dark, real clicks in Settings tab)
+PASS hung share with the setting on: Samba share backed by a FUSE folder whose reads stall while listing answers; share stayed on icons, a never-viewed local folder in another tab got thumbnails; after release the share caught up. Unit test a_share_that_does_not_answer_leaves_local_thumbnails_their_slots holds every network slot and makes a local thumbnail
+PASS settings row: "Show thumbnails in network folders", info text "Off by default, as in Windows: files on shares, servers, phones and cameras show their type icons. Turn on to show their thumbnails and previews too.", off by default, settings.json has no remotePreviews until turned on, "remotePreviews": true when on, viewOptions gone again when turned off (real UI and the_network_thumbnails_switch_is_off_by_default_and_saved_only_when_changed)
+PASS no crash, no GTK criticals in the app logs of both sessions
+PASS captures: network-thumbnails-{1x,2x}-{light,dark}-share-{icons,thumbnails}.png via the app's snapshot hook (OPENXPLORER_SNAPSHOT, what tools/native_capture.py drives) in the isolated Xvfb/D-Bus session, because native_capture.py's bwrap sandbox has no network and cannot reach a share; network-thumbnails-{1x,2x}-{light,dark}-settings-row.png through tools/native_capture.py itself (bwrap, demo home); 2x share pictures use a 1200x800 window and 2x settings 780x600 to fit the screen; audit-public-data.py: no issues
+PASS checks: rustfmt, clippy -D warnings, parity/check.py, parity and tools unit tests, i18n check, sync-docs --check
+PASS tests: all 81 test executables and doctests, isolated as check.py runs them (check.py itself stops at its first failing executable, location_fixture_drift, on main too). Failures by name identical to unchanged main: python_fixture_matches_desktop_core_py, fuse_export_paths_match_native_opening_py (Python 3.13 here), 9 admin_copy tests. One extra failure in the branch run, window::tests::renaming::the_name_fields_own_menu_keeps_the_rename_going, came while interactive sessions loaded the machine; it passed 3/3 alone and its module 34/34
+
+CHANGED OWNER DECISIONS:
+- #327 (thumbnails in network folders on by default) reversed: off by default, as Windows 11; the setting turns #327's behavior back on
+- Settings row title "Also in network folders" (2026-10 redesign) renamed "Show thumbnails in network folders", with new info text
