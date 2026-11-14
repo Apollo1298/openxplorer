@@ -1,7 +1,7 @@
 STATUS: WORKING
-HEAD: more-bugs ba627dbd29a9136afc0aa8f5ccfef072794efa1f
+HEAD: more-bugs efc0560d2a5684b053f9852063337dc6029bfaac
 QUESTION: none
-NOTE: Items 1-4 fixed test-first (each test fails on main 0406518, passes on the branch); working on item 5 (TAR links).
+NOTE: Items 1-5, 7, 8, 10-13, 16 fixed test-first; 17 translated (separate commit). Items 6 and 14 left unchanged (owner decisions, see below). Working on item 9 (split view), then 15, the checklist and captures.
 
 PASS item1 test-first: an_offline_share_says_so_plainly_and_names_it fails on main ("the message names the share": got the raw "Failed to mount Windows share: Connection refused"), passes on the branch
 PASS item2 test-first: recent_and_favorites_follow_the_file_name_extensions_setting fails on main (timed out waiting for "plan"), passes on the branch
