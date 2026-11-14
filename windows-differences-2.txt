@@ -1,0 +1,4 @@
+STATUS: WORKING
+HEAD: windows-differences-2 04065186d
+QUESTION: none
+NOTE: Branch cut from upstream main 04065186; reading the code for all nine items, tests first.
