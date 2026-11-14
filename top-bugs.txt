@@ -1,4 +1,4 @@
 STATUS: WORKING
-HEAD: top-bugs b63bcce3
+HEAD: top-bugs a1c730cb
 QUESTION: none
-NOTE: All six fixes are in, each with a test that failed on main (04065186) and passes now. Full check.py run and the real-input checklist are next.
+NOTE: Six fixes pushed with tests that fail on main 04065186. Real-input tooltips work showed a tooltip coming back over the next folder, now fixed too. Full test run and the remaining real-input combinations (2x, dark, Compact, Wayland) are next.
