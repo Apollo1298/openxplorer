@@ -1,9 +1,9 @@
 STATUS: DONE
-HEAD: top-bugs 534a8dee
+HEAD: top-bugs 2bf0edc1
 QUESTION: none
-NOTE: All six fixed on top-bugs (cut from upstream main 04065186), each with a test that failed on main; PR text in top-bugs-pr.md. Found outside this list, not fixed: Ctrl+A on the Home page selects the hidden items of the folder shown before (main too), and Cut/Copy/Delete then act on them.
+NOTE: All six fixed on top-bugs (cut from upstream main 04065186), plus the hidden-selection bug on Home the manager asked for, each with a test that failed before its fix; PR text in top-bugs-pr.md.
 
-Commits on upstream main 04065186: b63bcce3 tests and the six fixes, a1c730cb tooltips stay hidden until the pointer moves (real-input follow-up), 534a8dee status bar counts Home search results.
+Commits on upstream main 04065186: b63bcce3 tests and the six fixes, a1c730cb tooltips stay hidden until the pointer moves (real-input follow-up), 534a8dee status bar counts Home search results, 2bf0edc1 no hidden rows behind Home and This PC (Ctrl+A and the file commands never act on the folder shown before).
 
 TESTS FIRST (each failed on main 04065186, passes now)
 PASS searching_from_home_searches_the_home_folder_and_its_subfolders (main: "the search box works on Home" failed)
@@ -13,6 +13,8 @@ PASS every_new_search_names_its_own_words_in_the_tab_and_title (main: tab kept "
 PASS the_keyboard_comes_back_to_the_item_whose_menu_closed (main: timed out waiting for focus on the tile after Shift+F10)
 PASS a_saved_size_larger_than_the_screen_opens_fitted_to_it under Weston 825x525 (200 % of 1650x1050) and 1366x768 (main under Weston: the window was the whole monitor and the fitted size overwrote the saved one). It passes on Xvfb on main too: GTK already fits windows on X11.
 PASS a_window_fits_small_and_scaled_screens (new unit test of the fitting rule)
+PASS ctrl_a_on_a_page_never_selects_the_hidden_folder (before 2bf0edc1: "Home, after Ctrl+A selects nothing hidden" failed with Documents, Notes 2.txt, Notes 10.txt, Résumé.txt selected; that code is unchanged from main, where real input showed the same)
+PASS settings_and_closed_search_results_keep_no_hidden_selection (Settings and results after Close search; these already kept no hidden selection)
 
 CHECKS
 PASS rustfmt (cargo fmt --all --check, Rust 1.92.0)
@@ -20,7 +22,7 @@ PASS clippy (cargo clippy --workspace --all-targets --locked -- -D warnings, wor
 PASS python3 native/parity/check.py (exit 0) and its unit tests; new HOME-017 and VIEW-073; notes of SRCH-046, HOME-016, TAB-054, OPS-010, SEL-004 updated; BACKLOG unchanged (both new items are done)
 FAIL python3 native/tools/check.py: inventory, driver self-test, icons, rustfmt and Clippy stages passed; it stopped at location_fixture_drift (Python cannot import gi here: "cannot import name '_gi'"), so every executable was then run with check.py's own run_isolated
 PASS 78 of 82 test executables plus the doctests, isolated as check.py does
-FAIL ox_app at 534a8dee: 2349 passed, 2 failed: thumbnails::thumbnailers::tests::a_sandboxed_thumbnailer_runs_within_its_limits and a_sandboxed_thumbnailer_sees_only_its_item; both fail on main 04065186 too (run by name on a main build)
+FAIL ox_app at 2bf0edc1: 2351 passed, 2 failed: thumbnails::thumbnailers::tests::a_sandboxed_thumbnailer_runs_within_its_limits and a_sandboxed_thumbnailer_sees_only_its_item; both fail on main 04065186 too (run by name on a main build)
 FAIL location_fixture_drift, network_python: the same gi import error (environment, as in the overnight review)
 FAIL ox_core: 9 admin_copy::tests (environment, as in the overnight review); ox-core is not changed by this work
 PASS public-data audit (tools/audit-public-data.py: no issues)
@@ -53,6 +55,14 @@ SEARCH TITLE (real input)
 PASS three searches typed in a row (notes, notes 1, report): the window title follows each (main kept "notes"), X11 2x light Compact
 PASS Back, Back, Forward, Forward: Documents, Home, Documents, "report - Search Results in Documents"
 PASS split view (beginInSplitView): the active pane's searches retitle (X11 1x dark)
+
+HIDDEN SELECTION (real input, X11 1x light)
+PASS Quick access on: Documents, Ctrl+A, Alt+Home, Ctrl+A: "7 items", nothing selected, Cut/Copy/Delete disabled; Delete recycled nothing (15 files left in Documents); main: "15 items selected" with Cut/Copy/Delete active
+PASS This PC after a folder: Ctrl+A selects only the visible drive tile
+PASS Quick access off: Home is the home folder; Ctrl+A selects its 6 visible folders ("6 items selected"), as in any folder
+PASS Settings, search results after Close search: no hidden selection (unit test)
+PASS Recycle Bin: a listed folder, Ctrl+A selects what it shows (no change); no Gallery page on this main
+PASS navigation to a page clears the rows and selection of the folder left (unit test, "on arrival")
 
 HOME FOCUS (real input on tiles; rows by unit test)
 PASS tile, Right, Shift+F10, Esc, Left, Enter opens Desktop (the reported steps)
