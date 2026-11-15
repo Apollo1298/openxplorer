@@ -1,4 +1,4 @@
 STATUS: WORKING
-HEAD: settings-pass dd39e3ba2d56e5a51a2e45ef10cb4d6c5e45e5e6
+HEAD: settings-pass a5e5501459175f13aede822e97af51aa5190ee7f
 QUESTION: none
-NOTE: Branch cut from upstream main; auditing every Settings row and Folder Options option.
+NOTE: Fixed so far: Settings wording/rows for folder options, search typing focus, Folder Options sync, access keys, Enter=OK. Next: full suites, captures, merges.
