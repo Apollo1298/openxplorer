@@ -2,6 +2,7 @@ STATUS: DONE
 HEAD: gallery-match 08685f8c35e293eaef3165504996710b30741b11
 QUESTION: none
 NOTE: Gallery matches the build 26200 facts (justified rows, date-range heading, scrubber, Windows' command bar, View, Collection, Gallery Locations, photo menu, tooltip, lossless Rotate); month groups removed; tests first at ef5489ed. Merged network-deep, big-folders and open-save-dialogs (overlapping tests.rs, features.toml, .pot, docs, availability.rs, loading.rs); Clippy -D warnings fails only on big-folders' own code (ox-core entry/enumerate.rs:123 single_match, also on big-folders alone; ox-app folder_view/model.rs:303/304/929 doc_markdown and large_types_passed_by_value under pedantic), left to that branch.
+NOTE: Raw-colour fix (theme::stylesheets the_rules_name_colours_only_by_token) is already in the tip 08685f8c: the month bubble uses the existing @ox_shadow_ambient/@ox_shadow_key/@ox_flyout_stroke tokens. archives-pass merged an older gallery-match commit (its folder-views.css:697 still has alpha(black, .14)); merging gallery-match 08685f8c again fixes it. Reran on 08685f8c: theme::stylesheets + gallery + photo_rotate + justified tests, 43 passed, 0 failed.
 
 CHECKLIST (real input with xdotool; X11 = Xvfb, Wayland = weston 13 kiosk-shell inside Xvfb; private D-Bus, disposable home, generated gradient photos only)
 PASS nav row: a real click on "Gallery" right under Home opens Gallery; typing "Gallery" in the address bar opens the same page (8/8 configurations)
