@@ -19,7 +19,7 @@ The search box now understands Windows Search's Advanced Query Syntax as Microso
 
 The folder's own items, the walk of its subfolders, a search of file contents and the search cache all read a search the same way, so an indexed folder and one nobody indexed give the same results. The yellow marks in result names cover the words and phrases searched for, and no longer the operators or the words after `NOT`.
 
-Speed is unchanged: the parser adds no measurable time to a walk of 100,000 files.
+The parser adds no measurable time: a walk of 100,000 files takes as long as before. In a folder of 10,000 files the first key typed still holds the window for about a quarter of a second while GTK builds the result rows and shows the Folder path column; that is unchanged and not addressed here.
 
 ## Before, after and Windows
 
@@ -35,8 +35,9 @@ Speed is unchanged: the parser adds no measurable time to a walk of 100,000 file
 | `size:>1MB`, `size:5kb..10kb` | 0 results | files in that range | `System.Size:5kb..10kb` |
 | 100,000 files, word found nowhere (full walk) | 1,361 ms | 1,376 ms | not measured |
 | 100,000 files, `report` (first 500 shown) | 360 ms | 330 ms | not measured |
-| 100,000 files, `ext:pdf` | 0 results | 500 results in 442 ms | not measured |
-| 10,000 files, `report`, results complete after the last key | 633 ms | 654 ms | not measured |
+| 100,000 files, `ext:pdf` | 0 results after a full walk of 1,435 to 1,491 ms | 500 results in 452 to 494 ms | not measured |
+| 10,000 files, `report`, results complete after the last key | 598 to 646 ms | 667 to 821 ms (681 to 720 ms with the listing changes this branch includes and none of the search changes) | not measured |
+| 10,000 files, first key typed into the search box: the box redraws after | 260 ms | 246 to 272 ms | not measured |
 
 Timings are from a release build driven with xdotool under Xvfb at 1x, from the last key to the last change of the status bar.
 
@@ -59,7 +60,7 @@ Sources: <https://learn.microsoft.com/en-us/windows/win32/search/-search-3x-adva
 ## How it was tested
 
 - New tests that fail on the previous main: `native/crates/ox-app/src/window/tests/search_options.rs` (`advanced_query_syntax_finds_files_in_a_folder_nobody_indexed`, `advanced_query_syntax_finds_files_in_an_indexed_folder`, `the_marks_leave_out_operators_and_excluded_words`), plus unit tests in `native/crates/ox-core/src/search/` (`expression.rs`, `pattern.rs`, `query.rs`, `syntax.rs`, `facets.rs`).
-- `python3 native/tools/check.py` (rustfmt, Clippy and every test executable, each on its own Xvfb display) and `python3 native/parity/check.py`.
+- `python3 native/parity/check.py`, rustfmt and Clippy with the workspace lints pass. Every test executable and the doctests ran as `native/tools/check.py` runs them (own Xvfb display, private D-Bus, disposable home, the Python app's sources extracted): 4,670 passed and 12 failed. Eleven fail the same way on the previous main in this environment (nine `admin_copy` tests and two sandboxed-thumbnailer tests); the twelfth, `window::tests::tooltips::no_tooltip_stays_over_a_menu_the_rename_box_or_the_next_folder`, fails about one run in eight and is not about search. `location_fixture_drift` needs Python 3.12; Python 3.13.18 parses `smb://[V1.x]/` differently.
 - Real keyboard input with xdotool on fictional files under Xvfb at 1x and 2x, light and dark, normal and Compact view, and under weston 13 (headless, through Xwayland): each search above, opening a folder result and going Back, Close search, Escape, and leaving the folder in the middle of a 100,000-file walk (the address bar answered in 36 ms and no stale results appeared). No GTK critical warnings.
 - Pictures taken with `tools/native_capture.py` on its fictional demo tree.
 

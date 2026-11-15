@@ -1,27 +1,45 @@
-STATUS: WORKING
-HEAD: search-pass 31791da2
+STATUS: DONE
+HEAD: search-pass 0b4526c0
 QUESTION: none
-NOTE: AQS done. Merged windows-differences-2, big-folders, network-deep, open-save-dialogs, gallery-match, top-bugs. Fixed merge fallout: top-bugs' Search from Home renumbered HOME-033 (gallery-match also took HOME-017); gallery-match raw 'black' shadow -> token; top-bugs tooltip test no longer needs a column-title tooltip (removed by windows-differences-2); Clippy lints in open-save-dialogs' picker tests. open-save-dialogs fails its own a_save_dialog_keeps_save_as_type_under_file_name and an_open_dialog_has_its_type_list_beside_file_name_and_no_caption (pass on main) - left to that branch.
+NOTE: Advanced Query Syntax in the search box (phrases, AND/OR/NOT, name:, ext:, date: with dates/ranges, sizes with kb/mb/gb), same rules for filter, live walk, contents and cache. Merged windows-differences-2, big-folders (twice), network-deep, open-save-dialogs (twice), gallery-match, top-bugs; never archives-pass or dnd-pass.
+Merge fallout fixed here: top-bugs' Search from Home renumbered HOME-033 (gallery-match also used HOME-017); top-bugs' tooltip test no longer needs a column-title tooltip (windows-differences-2 removed it); gallery-match raw 'black' shadow -> @ox_shadow_key; Clippy lints in big-folders' newest commits (model.rs regroup, selection.rs, enumerate.rs). For other branches: open-save-dialogs' a_save_dialog_keeps_save_as_type_under_file_name and an_open_dialog_has_its_type_list_beside_file_name_and_no_caption failed on that branch at its earlier head (pass in the merged result now); big-folders alone makes 10k-folder "report" ~60 ms slower (681-720 ms vs main 598-646 ms).
 
-TIMINGS (release build, xdotool under Xvfb, 1x; main -> branch)
-100k-file tree, "report" (first 500 shown): 360 ms -> 330 ms
-100k-file tree, word found nowhere (full walk): 1361 ms -> 1376 ms
-100k-file tree, ext:pdf: found nothing (0 results) -> 500 results in 442 ms
-10k-file folder, "report": results complete 633 ms -> 654 ms after the last key
-10k-file folder, first keystroke: box redraws after 260 ms -> 246 ms (unchanged; GTK rebuilds rows and shows Folder path)
-Navigate away during a 100k walk: address bar answers in 36 ms, no stray results
+TIMINGS (release, xdotool under Xvfb, 1x; main -> branch)
+100k-file tree, "report" (first 500): 360 ms -> 330 ms
+100k-file tree, word found nowhere (full walk): 1361 ms -> 1376/1439 ms
+100k-file tree, ext:pdf: 0 results after 1435-1491 ms -> 500 results in 452-494 ms
+10k-file folder, "report" complete after last key: 598/600/646 ms -> 667/675/821 ms (big-folders alone: 696/681/720 ms)
+10k-file folder, first keystroke, box redraw: 260 ms -> 246-272 ms (unchanged; GTK row rebuild + Folder path column; not fixed)
+Navigate away mid-walk (100k): address bar answers in 36 ms, no stray results
 
 PASS/FAIL
-FAIL main / PASS branch: "annual report" (quoted phrase)
+FAIL main / PASS branch: "annual report" quoted phrase
 FAIL main / PASS branch: report NOT draft
-FAIL main / PASS branch: budget OR invoice
-FAIL main / PASS branch: report AND annual
+FAIL main / PASS branch: budget OR invoice; report AND annual
 FAIL main / PASS branch: ext:pdf, ext:(pdf OR docx), name:draft, filename:~<report
-FAIL main / PASS branch: date:today, date:>=/</<= ISO and m/d/y dates, date:a..b
+FAIL main / PASS branch: date:today, date:>=/</<= ISO and m/d/y, date:a..b
 FAIL main / PASS branch: size:>1MB, size:5kb..10kb, size:1.5mb
 FAIL main / PASS branch: marks leave out NOT words and operators
 PASS: indexed folder (cache) and unindexed folder (live walk) give the same results
-PASS: 1x light, 1x dark, 2x light, 2x dark, Compact light and dark (xdotool, Xvfb)
-PASS: weston 13 headless with Xwayland (xdotool), report NOT draft
+PASS: xdotool under Xvfb at 1x light, 1x dark, 2x light, 2x dark, Compact light, Compact dark
+PASS: weston 13 headless via Xwayland (xdotool): report NOT draft
 PASS: open folder result, Back to results, Close search, Escape, navigate away mid-walk
-PASS: no GTK criticals in app logs (only a11y bus / UDisks environment warnings)
+PASS: no GTK criticals (only a11y-bus/UDisks environment warnings)
+PASS: parity/check.py, rustfmt, clippy -D warnings (pedantic), i18n check, sync-docs check
+TESTS (as check.py runs them, all executables + doctests): 4670 passed, 12 failed
+  same on main (environment): 9 ox-core admin_copy::tests::*, 2 thumbnails::thumbnailers::tests::a_sandboxed_thumbnailer_*
+  flaky after merges (1 in 8 alone; 0 of 8 on top-bugs and top-bugs+big-folders): window::tests::tooltips::no_tooltip_stays_over_a_menu_the_rename_box_or_the_next_folder
+  location_fixture_drift passes with Python 3.12; fails with Python 3.13.18 (urlsplit change), environment
+check.py itself stops at the first failing executable, so the run above used its own isolation code per executable.
+
+NOT CONFIRMED (check in the VM)
+- "-word" as NOT (docs only show "-" as a property's not-equal)
+- MB/GB units and 1 KB = 1024 or 1000 bytes (docs only show kb)
+- day-first dates / locale date formats; day and month names; future dates
+- Search options > Other properties, Advanced options (System files, Zipped folders) and a recent-searches dropdown: no Microsoft page found documents them; not built
+- Alt+Up from the search box; Windows' time to first result in big folders
+- kind: values beyond those already read (text, spreadsheets, presentations, programs, email)
+
+CHANGED OWNER DECISIONS
+- SRCH-044: name:/filename:/file:/ext:/fileext:/date: are now properties, not words to search for (other name:value pairs still are)
+- kind:/date:/size: after NOT, next to OR or in quotes stay words (options narrow every result)
