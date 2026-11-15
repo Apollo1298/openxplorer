@@ -61,7 +61,7 @@ Five things went wrong for someone working with network shares (SMB through GVfs
   - `undoing_a_copy_without_a_recycle_bin_asks_to_delete_it_permanently`
   - `saving_where_the_server_went_away_says_the_folder_is_unavailable`
   - Capture tests in `window/tests/network_captures.rs`.
-- **Checks.** rustfmt, Clippy with the workspace lints (no finding in changed code), `native/parity/check.py` and `native/tools/i18n.py check`. The full test suites were compared with unchanged main by test name; see the results below.
+- **Checks.** rustfmt, Clippy with the workspace lints (no finding in changed code), `native/parity/check.py` and `native/tools/i18n.py check`. The full test suites, compared with unchanged main by test name: 4,564 passed on this branch and 4,555 on main. The same 29 tests fail on both, for reasons in the test machine (its mounts and its Python version). The app's own 2,380 tests all pass.
 - **Not tested.** Kernel CIFS mounts (this machine's kernel has no cifs). Dialogs under Weston (its X11 backend showed no dialog windows, Delete's unchanged question included).
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)

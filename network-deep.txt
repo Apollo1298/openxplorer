@@ -1,7 +1,7 @@
-STATUS: WORKING
+STATUS: DONE
 HEAD: network-deep 1f2bd3aa64ca0f30cf1ecfc4ad104f7031993849
 QUESTION: none
-NOTE: Five fixes, each test-first (test commit before its fix): one large pasted file stayed at 0% with no time remaining; the progress window spelled a share as smb://host/share/; a refused sign-in lost the typed user name; Undo of a copy onto a share always failed ("Trash is not supported"); a Save into a share whose server went away said "The folder /run/user/.../gvfs/smb-share:... does not exist". Full suites (branch vs unchanged main, by test name) are running. PR text in network-deep-pr.md. No new dependency.
+NOTE: Five fixes, each test-first (test commit before its fix): one large pasted file stayed at 0% with no time remaining; the progress window spelled a share as smb://host/share/; a refused sign-in lost the typed user name; Undo of a copy onto a share always failed ("Trash is not supported"); a Save into a share whose server went away said "The folder /run/user/.../gvfs/smb-share:... does not exist". Full suites compared by test name: same 29 failures on branch and unchanged main (environmental), 9 new tests pass. No lower-numbered branch to merge (this is #1). PR text in network-deep-pr.md. No new dependency.
 
 Setup: local Samba 4.19 on 127.0.0.2 (guest Studio, read-only Handbook, password Private and Team for the fictional user alex), a throttling/latency/drop TCP proxy on 127.0.0.3 (tc has no qdisc support in this kernel), OpenSSH SFTP on 127.0.0.4 (fictional user robin), GVfs with gvfsd-fuse (installed gvfs-fuse for the test machine only, as Ubuntu and Zorin ship it), app run as tester on Xvfb with a private D-Bus session and throwaway HOME; Chrome's SaveFile simulated by a script that owns org.freedesktop.portal.Desktop on that bus and calls the app's FileChooser backend.
 
@@ -34,6 +34,8 @@ PASS captures (test harness capture hook OX_NATIVE_CAPTURE_DIR, fictional names,
 PASS rustfmt; clippy -D warnings with the workspace lints: no finding in changed code. This machine's toolchain is 1.97 (not 1.92), whose new lints flag 3 untouched places (duration_suboptimal_units, map_unwrap_or in group_day.rs, decimal_bitwise_operands in picture_guard.rs), the same on main
 PASS native/parity/check.py; tools/i18n.py check after extract
 PASS tools/audit-public-data.py: no issues
+PASS full suites as tester through check.py's own isolation (each binary on its own Xvfb, private D-Bus, throwaway HOME; driver kept going past failures; no debug info to fit the disk): branch 4564 passed, 29 failed; unchanged main dd39e3b 4555 passed, 29 failed; the failing names are identical: 27 ox-core lib admin_copy/admin_delete tests (this container's mounts and fstab), location_fixture_drift python_fixture_matches_desktop_core_py and network_python fuse_export_paths_match_native_opening_py (container Python 3.13, as earlier reports). ox-app: 2380 passed, 0 failed (main 2374/0)
+FAIL check.py as a whole: stops at its Clippy stage on this machine's Rust 1.97 (3 new-lint findings in untouched code, same on main); every stage before it passes, and the test stage was run as above
 PASS 2x dark real input (X11, GDK_SCALE=2, xdotool): refused sign-in keeps "alex"; Undo of a copy on the share asks, Enter (Yes, focused) deletes the copy, source kept; no GTK criticals in any run
 FAIL (not run) Wayland: weston 13 with its X11 backend logged "Detected an unmapped surface or view in the layer list" and showed no dialog window at all, Delete's unchanged question included, so the dialog flows could not be checked there; copy to a share and its listing worked under Wayland at 2x dark
 N/A Compact view: the changed surfaces (progress window, sign-in dialog, Delete question, Save dialog message) do not depend on it
