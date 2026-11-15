@@ -1,4 +1,113 @@
-STATUS: WORKING
-HEAD: settings-pass 71e46b47bb69dfe0e71d4ce5df7496a985d28bf3
+STATUS: DONE
+HEAD: settings-pass 356b73d63197004b9a19426ad8865e2fc07b8612
 QUESTION: none
-NOTE: Also fixed "Use the desktop font" springing back off (found by a new every-switch test). Full check.py rerunning; captures next.
+NOTE: Merged (merge commits, no rebase): network-thumbnails, more-bugs, windows-differences-2, supere-uninstall, top-bugs, then jobs 1-10 network-deep, big-folders, open-save-dialogs, gallery-match, dnd-pass, archives-pass, search-pass, recycle-pass, properties-pass (as fetched at the end). "Search from Home" takes search-pass's HOME-033 (Gallery uses HOME-017+); two top-bugs tests fitted to windows-differences-2/more-bugs behavior (no column-title tooltip; Home hides known extensions).
+NOTE: Merged-branch issues left to their owners: rustfmt (search/query.rs) and clippy (search/expression.rs, search/facets.rs from search-pass; entry/enumerate.rs from big-folders) fail, so check.py stops at clippy; group_by::a_long_folder_opened_grouped_turns_its_groups_off fails after merging (passes on main; big-folders/search-pass change it); theme::stylesheets::the_rules_name_colours_only_by_token fails on alpha(black, .14) in folder-views.css, which gallery-match/dnd-pass/search-pass/properties-pass/archives-pass carry.
+
+FIXES (test first; each new test failed on unchanged main, see "How it was tested")
+- Settings rows renamed to Folder Options' wording: Display the full path in the title bar; Remember each folder's view settings; Open OpenXplorer to (was New windows open at).
+- Settings > Files & folders > Folder views: new Show hidden files, folders, and drives; Hide extensions for known file types; Folder Options row + Open Folder Options button; search finds Folder Options' choices by Windows words.
+- Settings search: typing on the category list moves the keyboard into the search box (the space in "hidden files" used to pick a category and end the search).
+- Folder Options follows preferences saved elsewhere while open (unchanged choices only).
+- Folder Options access keys: Alt+A/W (Browse folders), Alt+T (Open OpenXplorer to), Alt+L (Clear), Alt+O (Apply to Folders), Alt+R (Reset Folders), Alt+D (Restore Defaults).
+- Folder Options: Enter presses OK wherever focus is except a push button (tab, check box, start list used to swallow it).
+- Use the desktop font: sprang back off and was never saved; now stays on and saves (found by the new every-switch test).
+
+CHECKLIST (works / persists / wording). "switch-test" = every_preference_switch_saves_persists_and_turns_back_exactly: flips the switch, sees settings.json change, re-reads the file and sees it shown, turns it back and the file is byte-identical.
+SETTINGS > GENERAL
+PASS Open OpenXplorer to / works (only_a_folder_that_exists_becomes_the_startup_folder, open_file_explorer_to_chooses_where_new_windows_open) / persists (same) / wording FIXED (Microsoft: "Open File Explorer to:", named for the app)
+PASS Open Quick access on Home / switch-test / switch-test / app-only, plain
+PASS Reopen my tabs when OpenXplorer starts / switch-test + a_saved_window_reopens_its_tabs_and_split_panes / switch-test / app wording kept; found by "restore previous folder windows"
+PASS New tabs open / existing drop-down tests / persists (saved key) / app-only
+PASS Folders from other apps open in a new window / switch-test / switch-test / app-only
+PASS Open new windows in split view / switch-test / switch-test / app-only
+PASS Tab key switches between split panes / switch-test / switch-test / app-only
+PASS Open windows, New window / every_row_can_be_used / n-a / app-only
+PASS Show the full path (address bar) / switch-test / switch-test / app-only
+PASS Display the full path in the title bar / switch-test + the_title_shows_the_full_path_when_the_settings_ask / switch-test / FIXED wording
+PASS Type addresses instead of breadcrumbs in new windows / switch-test / switch-test / app-only
+PASS Move tabs / Drag files / Drop files (info rows) / n-a / n-a / app-only
+SETTINGS > APPEARANCE
+PASS Theme (cards) / a_theme_card_applies_the_theme_and_saves_it_for_both_apps / same / app-only
+PASS Text size / the_text_size_row_draws_and_saves_the_chosen_size / same / app-only
+PASS Use the desktop font / FIXED: the_desktop_font_switch_stays_on_and_saves_the_choice + real click (xdotool) / switch-test / app-only
+PASS Compact view / switch-test + the_compact_view_switch_saves_the_choice / switch-test / Windows View > Show > Compact view
+PASS Hide expand arrows in the sidebar / switch-test / switch-test / app wording
+PASS Show more items in the navigation pane / switch-test / switch-test / app-only
+PASS Show more items in the tab menu / switch-test / switch-test / app-only
+PASS Right-click menu, Buttons in the right-click menu / appearance_offers_the_python_choices / same / app-only
+PASS Shift+F10 opens the classic menu / switch-test + the_shift_f10_switch_is_off_and_saves_the_choice / switch-test / app-only
+PASS Sidebar and column widths (Reset) / reset-layout tests (VIEW-046) / n-a / app-only
+SETTINGS > FILES & FOLDERS
+PASS Remember each folder's view settings / switch-test + each_folder_remembers_its_view_by_default_until_folder_options_turns_it_off / switch-test / FIXED wording
+PASS Show hidden files, folders, and drives (new row) / folder_views_rows_follow_hidden_files_and_extensions_and_open_folder_options + xdotool / switch-test + restart (xdotool) / Microsoft wording (support.microsoft.com File Explorer in Windows)
+PASS Hide extensions for known file types (new row) / same + xdotool / switch-test + restart / Microsoft wording (same page)
+PASS Folder Options row / opens Folder Options (test + xdotool Enter) / n-a / Windows name
+PASS Relative dates / switch-test + dates_read_in_full_until_settings_turn_relative_dates_on / switch-test / app-only
+PASS Show the number of items in folders / switch-test / switch-test / app-only
+PASS Expandable folders in Details / switch-test / switch-test / app-only
+PASS Item check boxes / switch-test + item check box tests / switch-test / Windows View > Show "Item check boxes" (Microsoft page)
+PASS Show check boxes only while Ctrl is held / switch-test / switch-test / app-only
+PASS Calculate folder sizes, How sizes are counted / how_sizes_are_counted_opens_the_folder_sizes_help / n-a / app-only
+PASS When replacing a file, move the old one to the Recycle Bin / switch-test + the_replaced_files_switch_is_on_by_default... / switch-test / app-only
+PASS Paste pictures as new files, Also copy paths as text / switch-test + the_clipboard_switches_are_on_by_default... / switch-test / app-only
+PASS Show previews, Pictures, Videos, Documents and other files, Show thumbnails in network folders, Skip very large files / switch-test / switch-test / app-only
+SETTINGS > ZIP & ARCHIVES
+PASS Open archives as folders / switch-test / switch-test / app-only
+PASS Double-clicking a ZIP / open_zip_files_waits_for_open_archives_as_folders / persists (saved key) / app-only
+SETTINGS > CONFIRMATIONS
+PASS Moving items to the Recycle Bin, Deleting permanently, Emptying the Recycle Bin, Closing a window with several tabs, Running programs and scripts / switch-test / switch-test / app-only
+SETTINGS > SEARCH
+PASS Show the search filter bar, Watch folders for changes / switch-test / switch-test / app-only
+PASS Check network and unwatched folders every / the_menu_watch_and_interval_rows_save_the_python_keys / same / app-only
+PASS Cache this folder for search, Indexed folders, Index pinned folders automatically, Index frequently opened folders / tests/indexing.rs (kept in the search cache, not settings.json) / same / app-only
+SETTINGS > DEFAULT APPS (opt-in desktop actions; not flipped by hand)
+PASS Folders, Network (SMB) links, Open ZIP files..., Show in folder, Other apps' Open and Save dialogs, Super+E, Also handle..., Restore/Give back/Turn off rows / default_apps tests (simulated desktop) / same / app-only
+PASS Brave saves to my Linux Downloads folder / existing Brave tests / same / app-only (browser profile write stays opt-in)
+SETTINGS > ABOUT
+PASS Check for updates, Check for updates automatically, Show the Update button in the command bar, License & source, Keyboard shortcuts, Help / existing tests / same / app-only
+NOT TOUCHED Install updates without asking for a password / privileged option, left off as instructed
+SETTINGS SEARCH
+PASS Windows words find each folder option (windows_folder_option_words_find_their_settings: hidden files, file extensions, display the full path in the title bar, open file explorer to, restore previous folder windows, status bar, single-click, preview pane, clear file explorer history, ...)
+PASS Typing a phrase from the category list (FIXED; typing_on_the_category_list_moves_the_keyboard_into_the_search + xdotool "hidden files")
+FOLDER OPTIONS > GENERAL
+PASS Open OpenXplorer to / open_file_explorer_to_chooses_where_new_windows_open, Restore Defaults -> Home / persists / Microsoft "Open File Explorer to:" named for the app
+PASS Browse folders (same / own window) / the_general_tab_opens_folders_in_their_own_window_and_clears_history + xdotool Alt+W, Enter / restart (xdotool) / NOT CONFIRMED wording
+PASS Click items as follows (Double-click only) / folder_options_has_the_general_view_and_search_tabs_of_windows / n-a / NOT CONFIRMED
+PASS Show recently used files, Show frequently used folders / privacy_* tests / persists / given wording
+PASS Clear OpenXplorer history / the_general_tab_... / n-a / named for the app
+PASS Restore Defaults (General) / xdotool Alt+D + test / n-a / NOT CONFIRMED
+FOLDER OPTIONS > VIEW
+PASS Apply to Folders / Reset Folders / apply_to_folders_gives_every_folder..., reset_folders_returns_every_folder... / persists / NOT CONFIRMED
+PASS Always show icons, never thumbnails / always_show_icons_turns_thumbnails_off_everywhere / persists / NOT CONFIRMED
+PASS Display the full path in the title bar / folder_options_advanced_settings_apply_with_ok_or_apply / persists / given wording
+PASS Hidden files and folders (two choices) / hidden_files_are_one_setting_for_every_folder_and_window / persists / Microsoft "Show hidden files, folders, and drives"
+PASS Hide extensions for known file types / folder_options_hides_extensions_for_known_file_types / persists / Microsoft wording
+PASS Remember each folder's view settings / each_folder_remembers_its_view_by_default_until_folder_options_turns_it_off / persists / NOT CONFIRMED
+PASS Restore previous folder windows at logon, Show pop-up description, Show preview handlers, Show status bar, Use check boxes to select items, When typing into list view / folder_options_advanced_settings_apply_with_ok_or_apply, the_view_tab_hides_the_status_bar_and_infotips_and_types_into_the_search_box / persists / "Use check boxes to select items" Microsoft; rest NOT CONFIRMED
+PASS Restore Defaults (View) / the_view_tab_... / n-a
+FOLDER OPTIONS > SEARCH
+PASS Always search file names and contents / the_search_tab_searches_names_and_contents, Restore Defaults / persists / NOT CONFIRMED
+FOLDER OPTIONS (whole dialog)
+PASS Sync both ways while open (FIXED; folder_options_follows_preferences_changed_while_it_is_open)
+PASS Alt+letters (FIXED; folder_options_choices_and_buttons_have_access_keys, real_keys_choose_options_and_enter_presses_ok)
+PASS Enter = OK, Esc = Cancel (FIXED Enter; real keys + xdotool at 1x and 2x)
+FAIL-NOT-MINE Ctrl+Tab / Ctrl+PageDown between tabs: the shared Properties window has none (properties area)
+LAYOUT
+PASS 1x and 2x, light and dark, narrow window (760 px) captures; zh_CN Settings pages: no clipping. Weston: not run (xdotool cannot drive Wayland; ran Xvfb only).
+
+NOT CONFIRMED, check in the VM
+- Folder Options labels not found on a Microsoft page: Display the full path in the title bar; Remember each folder's view settings; Restore previous folder windows at logon; Show status bar; Show pop-up description for folder and desktop items; Show preview handlers in preview pane; Always show icons, never thumbnails; When typing into list view; Always search file names and contents (this might take several minutes); Browse folders; Apply to Folders; Reset Folders; Restore Defaults; Show recently used files; Show frequently used folders; Clear File Explorer history.
+- Windows' access-key letters in Folder Options; Enter on a focused tab or check box pressing OK; Ctrl+Tab between Folder Options tabs.
+
+CHANGED OWNER DECISIONS
+- None. All defaults unchanged.
+
+TRANSLATION GAPS (need a human translator, zh_CN): "Hide extensions for known file types", "Open Folder Options", and the descriptions of the new rows; "Open each folder in the s_ame window/its own _window" were already untranslated.
+
+TESTS RUN (as tester, Xvfb, disposable home)
+- New tests on unchanged main: all 6 settings/folder-options tests failed there; typing, real-keys Enter and desktop-font tests failed before their fixes.
+- Full workspace (cargo test, serial, isolated) after all merges: 4755 passed, 14 failed. Same failures on unchanged main: admin_copy x9, thumbnailers sandbox x2 (environment). From merged branches: group_by long folder, stylesheet raw colour. One flake (my every-switch timing) fixed and re-run 3x clean.
+- check.py before the jobs-1-10 merges: parity/unit/lint passed; all GTK tests ran with --test-timeout 6000: 5 failures (thumbnailers x2 also on main; focus scrolled list passes alone and on main; two merged top-bugs tests, fixed). check.py after the final merges stops at clippy (merged search-pass/big-folders code).
+- parity/check.py, i18n check, sync-docs check: pass. rustfmt/clippy on my files: clean.
+- Python 3.13.18 here accepts smb://[V1.x], so location_fixture_drift fails under it; runs used Python 3.12.
