@@ -1,9 +1,27 @@
 STATUS: WORKING
-HEAD: search-pass 42712b90
+HEAD: search-pass 3e618acd
 QUESTION: none
-NOTE: Advanced Query Syntax (phrases, AND/OR/NOT, name:, ext:, date ranges, size units) implemented with tests; merged windows-differences-2 for wildcard matching. Next: speed in big trees, captures, docs.
+NOTE: Advanced Query Syntax done and captured; merged windows-differences-2, big-folders, network-deep, open-save-dialogs, gallery-match and top-bugs (renumbered top-bugs' Search from Home to HOME-033, since gallery-match also took HOME-017). Full check.py running.
 
-PASS/FAIL (so far)
-FAIL on main, PASS on branch: "annual report" quoted phrase (ox-core + window tests)
-FAIL on main, PASS on branch: report NOT draft / budget OR invoice / report AND annual
-FAIL on main, PASS on branch: ext:pdf, name:draft, date:today, date ranges, size:>1MB, size:1kb..10kb
+TIMINGS (release build, xdotool under Xvfb, 1x; main -> branch)
+100k-file tree, "report" (first 500 shown): 360 ms -> 330 ms
+100k-file tree, word found nowhere (full walk): 1361 ms -> 1376 ms
+100k-file tree, ext:pdf: found nothing (0 results) -> 500 results in 442 ms
+10k-file folder, "report": results complete 633 ms -> 654 ms after the last key
+10k-file folder, first keystroke: box redraws after 260 ms -> 246 ms (unchanged; GTK rebuilds rows and shows Folder path)
+Navigate away during a 100k walk: address bar answers in 36 ms, no stray results
+
+PASS/FAIL
+FAIL main / PASS branch: "annual report" (quoted phrase)
+FAIL main / PASS branch: report NOT draft
+FAIL main / PASS branch: budget OR invoice
+FAIL main / PASS branch: report AND annual
+FAIL main / PASS branch: ext:pdf, ext:(pdf OR docx), name:draft, filename:~<report
+FAIL main / PASS branch: date:today, date:>=/</<= ISO and m/d/y dates, date:a..b
+FAIL main / PASS branch: size:>1MB, size:5kb..10kb, size:1.5mb
+FAIL main / PASS branch: marks leave out NOT words and operators
+PASS: indexed folder (cache) and unindexed folder (live walk) give the same results
+PASS: 1x light, 1x dark, 2x light, 2x dark, Compact light and dark (xdotool, Xvfb)
+PASS: weston 13 headless with Xwayland (xdotool), report NOT draft
+PASS: open folder result, Back to results, Close search, Escape, navigate away mid-walk
+PASS: no GTK criticals in app logs (only a11y bus / UDisks environment warnings)
