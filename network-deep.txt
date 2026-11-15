@@ -1,18 +1,45 @@
 STATUS: WORKING
-HEAD: network-deep ee51a52525fa749ebc886338f4b658bcc57b169c
+HEAD: network-deep 1f2bd3aa64ca0f30cf1ecfc4ad104f7031993849
 QUESTION: none
-NOTE: Four fixes in so far, each test-first: progress of a single large paste (0% until done), raw smb:// name in the progress header, user name lost after a refused sign-in, Undo of a copy onto a share dead-ending. Still to test: Save dialog to a share, thumbnails, startup with offline saved shares, SFTP, moves.
+NOTE: Five fixes, each test-first (test commit before its fix): one large pasted file stayed at 0% with no time remaining; the progress window spelled a share as smb://host/share/; a refused sign-in lost the typed user name; Undo of a copy onto a share always failed ("Trash is not supported"); a Save into a share whose server went away said "The folder /run/user/.../gvfs/smb-share:... does not exist". Full suites (branch vs unchanged main, by test name) are running. No new dependency.
 
-PASS share offline then F5: unavailable page, no hang (wording handled elsewhere, not changed here)
+Setup: local Samba 4.19 on 127.0.0.2 (guest Studio, read-only Handbook, password Private and Team for the fictional user alex), a throttling/latency/drop TCP proxy on 127.0.0.3 (tc has no qdisc support in this kernel), OpenSSH SFTP on 127.0.0.4 (fictional user robin), GVfs with gvfsd-fuse (installed gvfs-fuse for the test machine only, as Ubuntu and Zorin ship it), app run as tester on Xvfb with a private D-Bus session and throwaway HOME; Chrome's SaveFile simulated by a script that owns org.freedesktop.portal.Desktop on that bus and calls the app's FileChooser backend.
+
+PASS share offline then F5: unavailable page, no hang (its wording is fixed on another branch, not changed here)
 PASS Try again after the server came back: listing returns
-FAIL->FIXED one 300 MB file from a slow share stayed at "0% complete" with no time remaining (test a_paste_of_one_large_file_reports_how_much_it_writes fails on main); now "8% complete", "Time remaining: About 1 minute and 56 seconds", "Items remaining: 1 (274 MB)" (X11 1x, xdotool)
-FAIL->FIXED progress header "Copying 1 item from smb://127.0.0.3/studio/ to Documents"; now "from studio to Documents" (test a_share_or_server_top_folder_is_named_not_spelled_out)
+FAIL->FIXED one 300 MB file from a slow share stayed at "0% complete" with no time remaining until done; any paste without name conflicts, local too (test a_paste_of_one_large_file_reports_how_much_it_writes fails on main with [None, None]); now "8% complete", "Time remaining: About 1 minute and 56 seconds", "Items remaining: 1 (274 MB)" (X11 1x light, xdotool)
+FAIL->FIXED progress header "Copying 1 item from smb://127.0.0.3/studio/ to Documents"; now "from studio to Documents" (test a_share_or_server_top_folder_is_named_not_spelled_out fails on main)
 PASS connection dropped mid-copy (proxy cut): Interrupted Action with Try Again / Skip / Cancel; partial data only in the hidden staging folder
-PASS Try Again after the server came back: copy finished, byte-identical, staging gone
-PASS Undo of that local copy: copy to the Recycle Bin
-PASS 200 small files to the share at 40 ms latency: progress, items remaining, time remaining; Cancel removed the staging folder from the share (about 15 s)
+PASS Try Again after the server came back: copy finished, byte-identical (cmp), staging folder gone
+PASS Undo of that copy into Documents: copy to the Recycle Bin
+PASS 200 small files to the share at 40 ms latency: percentage, time and items remaining; Cancel removed the staging folder from the share (about 15 s), nothing partial left
+PASS slow share (20 KB/s, 100 ms): "Working on it..." while 500 files list (about 15 s); Ctrl+T opened and listed a new tab in 0.65 s meanwhile
 PASS read-only share: File Access Denied with Try Again / Skip / Cancel; Cancel leaves nothing
-FAIL->FIXED wrong password: the retry dialog put back the local account name instead of the typed one (test a_rejected_sign_in_asks_again_with_the_typed_user_name); now keeps "alex" (and DOMAIN\user)
-PASS correct password after a retry; second share on the same server opens with no prompt; saved keyring password reused after an unmount and app restart
-PASS name conflict on a share: Replace or Skip in the progress window; Replace overwrote the share's file
-FAIL->FIXED Undo of a copy onto a share: "Trash is not supported at this location ... OK" and nothing undone (every time). Now asks Delete's own question "Are you sure you want to permanently delete this file?" with the file's details; No keeps the copy and the Undo step, Yes deletes it; source untouched (tests undoing_a_copy_deletes_the_agreed_copies_that_have_no_recycle_bin, undoing_a_copy_without_a_recycle_bin_asks_to_delete_it_permanently)
+PASS permission error inside a share (a folder the server lets us create but not write into): File Access Denied; Cancel removed the staging folder
+FAIL->FIXED wrong password: the retry dialog put back the local account name instead of the typed "alex" (test a_rejected_sign_in_asks_again_with_the_typed_user_name fails on main: "user" vs "sam"); now keeps "alex", and DOMAIN\user when a domain was typed
+PASS correct password after a retry; second share on the same server opens with no prompt; after an app restart and unmount, another share on that server signs in from the keyring with no prompt (credentials are per server)
+PASS SFTP: password prompt with the user from the address, wrong then right password, folder lists, large icons
+PASS name conflict on a share: Replace or Skip in the progress window; Replace overwrote the file on the share
+FAIL->FIXED Undo of a copy onto a share: "Interrupted Action ... Trash is not supported at this location ... OK", nothing undone, every time. Now asks Delete's own question "Are you sure you want to permanently delete this file?" with the file's details; No keeps the copy and the Undo step, Yes deletes it; source untouched (tests undoing_a_copy_deletes_the_agreed_copies_that_have_no_recycle_bin, undoing_a_copy_without_a_recycle_bin_asks_to_delete_it_permanently; the second fails on main: no question)
+PASS Move to a share, then Undo: the file is back in Documents (the "Move by copying?" question placement is fixed on another branch)
+PASS Save dialog (portal SaveFile) into smb://127.0.0.2/Studio/Docs: answers file:///run/user/.../gvfs/smb-share:server=127.0.0.2,share=studio/Docs/Garden%20plan.pdf; writing there lands on the share
+PASS Save over an existing file on the share: "Confirm Save As / Garden plan.pdf already exists. Do you want to replace it?"; Yes answers the same file
+FAIL->FIXED Save with the server gone: toast "The folder “/run/user/.../gvfs/smb-share:server=127.0.0.2,share=studio/Docs” does not exist." (4 s, easy to miss). Now "\\127.0.0.2\studio\Docs is unavailable. Make sure you are connected to the network and the server is turned on, and then try again."; nothing answered; Save works again once the server is back (test saving_where_the_server_went_away_says_the_folder_is_unavailable fails on main with the "does not exist" text)
+NOTE-ONLY without gvfsd-fuse (gvfs-fuse not installed) Save is greyed on a share with the tooltip "Choose a folder on this computer or a connected drive."; Ubuntu and Zorin install gvfs-fuse by default, so left as is
+PASS startup with a pinned share folder while the server is off: window and Home at once; the pin opens the unavailable page; Try again after the server is back asks for guest sign-in and lists
+PASS thumbnails, main (on by default): JPG thumbnail, PNGs only icons (GVfs gives no standard::content-type for PNG); network-thumbnails branch (6b5883a, not merged): off by default all icons, on: all four thumbnails. Not changed here
+NOT FIXED navigation pane tooltip of a mounted share still says "Connected" after its server stopped, also after the 1-minute network check (low impact)
+FAIL (not run) kernel CIFS: this kernel has no cifs file system
+PASS captures (test harness capture hook OX_NATIVE_CAPTURE_DIR, fictional names, 1x and 2x, light and dark): network-deep-<scale>-<theme>-progress-share, -sign-in-retry, -undo-share-copy, -save-unavailable (the Save one shows the test's local temporary path: unit tests have no GVfs)
+PASS rustfmt; clippy -D warnings with the workspace lints: no finding in changed code. This machine's toolchain is 1.97 (not 1.92), whose new lints flag 3 untouched places (duration_suboptimal_units, map_unwrap_or in group_day.rs, decimal_bitwise_operands in picture_guard.rs), the same on main
+PASS native/parity/check.py; tools/i18n.py check after extract
+
+NOT CONFIRMED, check in the VM:
+- Windows' Undo of a copy into a network folder: does it ask "Are you sure you want to permanently delete this file?" and delete it (what this branch does), or something else?
+- Windows' progress window for a copy from a share's top folder: "from Studio" (the share name) as here?
+- Windows' credential prompt after a wrong password: does it keep the typed user name (as here) and where is the focus?
+- Windows' Save dialog when the share's server has gone away: exact wording ("\\server\share is not accessible..."?)
+- Cancel during a multi-file copy: Windows keeps the files already copied; this app removes everything it copied in that run (existing design, unchanged)
+
+CHANGED OWNER DECISIONS:
+- XFER-014 / OPS-029: Undo never deleted permanently; now items with no Recycle Bin (a share) are deleted permanently after Delete's own confirmation, only when the user answers Yes. The engine still never falls back on its own.
