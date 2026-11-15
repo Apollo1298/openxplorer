@@ -1,7 +1,7 @@
-STATUS: WORKING
+STATUS: DONE
 HEAD: keyboard-pass f5d8ecdd
 QUESTION: none
-NOTE: Cut from upstream main dd39e3ba; merged windows-differences-2 and top-bugs at the start. Ten keyboard/focus fixes, each test-first. Overlap: every lower-numbered branch shares files with this one (at least parity/features.toml and the .pot), so merged settings-pass (holds network-deep, gallery-match, dnd-pass, archives-pass, properties-pass, recycle-pass), search-pass (holds big-folders), open-save-dialogs, then the newer heads of properties-pass and recycle-pass; all ten contained at f5d8ecdd. Final suite run in progress.
+NOTE: Cut from upstream main dd39e3ba; merged windows-differences-2 and top-bugs at the start. Ten keyboard/focus fixes, each test-first. Overlap: every lower-numbered branch shares files with this one (at least parity/features.toml and the .pot), so merged settings-pass (holds network-deep, gallery-match, dnd-pass, archives-pass, properties-pass, recycle-pass), search-pass (holds big-folders), open-save-dialogs, then the newer heads of properties-pass and recycle-pass; all ten contained at f5d8ecdd; merge fixes only: combined dialog_closed (File name rule from the other branch first, then my opener rule), kept both new picker tests, BACKLOG text joined, generated files regenerated.
 
 Microsoft source: https://support.microsoft.com/en-us/accessibility/windows/keyboard-shortcuts-in-windows (Windows 11 tab: "File Explorer keyboard shortcuts", "Dialog box keyboard shortcuts", general keys). The URL given for the job (…/keyboard-shortcuts-in-windows-dfc9ea72-…) answers 404 today; the repo's older citation (…-dcc61a57-…) now redirects to the page above.
 
@@ -80,10 +80,17 @@ PASS Settings page: no trap; each category is a Tab stop and the caption buttons
 PASS Menus: Tab leaves a command bar menu and closes it; context menu strip reachable with Tab/Shift+Tab; Escape returns to the opener
 PASS Focus rings only after keyboard use (windows-differences-2 rule kept): a dialog body is ringed only while it holds the keyboard itself
 
-CHECKS (results after the overlap merges are added at the end)
-PASS rustfmt; Clippy -D warnings (workspace lints, all targets)
-PASS python3 native/parity/check.py
-PASS native/tools/i18n.py check; tools/sync-docs.py --check
+CHECKS (on f5d8ecdd, after the overlap merges; check.py's stages and isolation, Python 3.12 on PATH)
+PASS parity unit tests, python3 native/parity/check.py, i18n.py check, check.py driver tests, drawn-icon guard
+PASS rustfmt --check; Clippy -D warnings, workspace lints, all targets
+PASS tools/sync-docs.py --check; tools/audit-public-data.py (no issues)
+PASS 84 test executables run; all pass except below (ox_app 2503 passed / 5 failed, ox_core lib 1272 passed / 9 failed); doctests pass
+FAIL ox_core admin_copy::tests (9 tests): same 9 fail on unchanged upstream main dd39e3ba in this container (permission semantics of /tmp); code unchanged by this branch
+FAIL thumbnails::thumbnailers::tests::a_sandboxed_thumbnailer_runs_within_its_limits / _sees_only_its_item: same 2 fail on unchanged main once bubblewrap is installed (installed here for the capture tool)
+FAIL window::tests::tooltips::no_tooltip_stays_over_a_menu_the_rename_box_or_the_next_folder: not on main (comes from top-bugs, rewritten by search-pass); failed identically before any of my commits; times out waiting for a tooltip under XTEST here
+PASS (in isolation) window::tests::empty_folder_look::a_long_note_wraps_inside_the_pane and window::tests::search_history::a_tab_on_results_keeps_its_selection_and_scroll_position: failed only in the full run (order-dependent), pass alone
+PASS (in isolation, 154 s) shift_f10_keys::the_keyboards_menu_opens_at_the_focused_item_of_a_selection: skipped in the full run because it outlasts check.py's per-executable timeout here; same 153 s on unchanged main (the unchanged baseline check.py run timed out at this test too)
+PASS real-key smoke on the merged build: 43/43 at 1x light normal and 2x dark Compact, 0 criticals
 
 CAPTURES (tools/native_capture.py, fictional demo tree, 1x/2x, light/dark)
 keyboard-pass-<1x|2x>-<light|dark>-shortcuts-window.png
