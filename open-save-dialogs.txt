@@ -1,4 +1,4 @@
 STATUS: WORKING
-HEAD: open-save-dialogs 6891b71ea4908cef58f3ff6bc17d33680050869a
+HEAD: open-save-dialogs e10a45bc0115c41567f074c4e658994400d68cb4
 QUESTION: none
-NOTE: Six fixes in (focus after Confirm Save As, Enter as default button, visible ring on Save/Open, Ctrl+Shift+N from File name, check boxes on one row, Alt+N/Alt+T). Next: full suites, before/after captures, PR text.
+NOTE: Seven fixes in, test-first; network-deep merged in (same files: picker.rs, features.toml). Full check.py run in progress; captures and PR text next.
