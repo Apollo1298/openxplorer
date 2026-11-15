@@ -1,0 +1,9 @@
+STATUS: WORKING
+HEAD: search-pass 42712b90
+QUESTION: none
+NOTE: Advanced Query Syntax (phrases, AND/OR/NOT, name:, ext:, date ranges, size units) implemented with tests; merged windows-differences-2 for wildcard matching. Next: speed in big trees, captures, docs.
+
+PASS/FAIL (so far)
+FAIL on main, PASS on branch: "annual report" quoted phrase (ox-core + window tests)
+FAIL on main, PASS on branch: report NOT draft / budget OR invoice / report AND annual
+FAIL on main, PASS on branch: ext:pdf, name:draft, date:today, date ranges, size:>1MB, size:1kb..10kb
