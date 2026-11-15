@@ -1,12 +1,12 @@
 STATUS: DONE
-HEAD: archives-pass f075fe767ad647d4e88c5ae3edb0351fcba302ec
-QUESTION: (1) May I add the RustCrypto crates aes, hmac, sha1 and pbkdf2 to decrypt AES-encrypted ZIPs (WinZip AE-1/AE-2)? Today AES ZIPs list but say "Use an archive manager". (2) May I merge windows-differences-2 (it brings sevenz-rust2 plus unrelated UI changes) to add 7z browse and extract? Not merged; 7z still opens in its default app.
-NOTE: Password ZIPs (traditional encryption) ask "Password needed" with retry/Cancel for open, Extract all, Extract here, copy out; backslash ZIP names read as folders; Compress to ZIP writes ZIP64; "Show extracted files when complete". Merged network-deep, open-save-dialogs and gallery-match (shared files: tests.rs, window.rs, imp.rs, features.toml, .pot, docs); big-folders shares nothing; dnd-pass did not exist. After the merge, theme::stylesheets::tests::the_rules_name_colours_only_by_token fails because gallery-match adds alpha(black, .14) to the CSS - for that job, not changed here.
+HEAD: archives-pass c0bf75234caf2cec9c2132359dc62f4f6cd01850
+QUESTION: none
+NOTE: Password ZIPs (traditional encryption) ask "Password needed" with retry/Cancel; backslash ZIP names read as folders; Compress to ZIP writes ZIP64; AES ZIPs listed with a plain "encryption method that isn't supported" message (no new crates, as answered); 7z left to its default app and listed as a follow-up. Merged network-deep, open-save-dialogs and gallery-match; the stylesheet test failure comes from gallery-match and is left to that job.
 
 PASS password ZIP, real input 1x light (Xvfb, xdotool): double-click file inside -> "Password needed"; wrong password -> asked again with "The password is incorrect. Try again."; right password -> read-only copy opened in its app; second file opened without asking
 PASS password ZIP, real input 2x dark (Xvfb, xdotool): Extract all -> Extract -> prompt; Escape cancels, nothing written
 PASS Extract here on the password ZIP (real input): extracted beside it (password remembered in that window)
-PASS AES ZIP (real input): Extract dialog says "This ZIP uses an encryption method OpenXplorer cannot open. Use an archive manager." with Open in archive manager
+PASS AES ZIP (real input, earlier wording): refused in the Extract dialog with Open in archive manager; new wording "This ZIP uses an encryption method that isn't supported. To open it, use a different archive app." checked by tests and the new captures
 PASS backslash ZIP (real input): Docs > Notes > a shown in the tab
 PASS 10,000-entry ZIP (real input): browses, Extract all extracts 10,000 files and shows the folder
 PASS damaged (truncated) ZIP (real input): tab says "File is not a zip file", no hang
