@@ -1,0 +1,9 @@
+STATUS: WORKING
+HEAD: big-folders 93eb6963
+QUESTION: none
+NOTE: Measuring 10k/50k/100k folders under Xvfb with real xdotool input; first two fixes pushed (no tree list model unless folders expand; selection looked up once per change). Baselines and after-numbers follow.
+
+Work in progress. Profile of opening 100,000 files on main (perf, release build):
+- 4.9 s of interface-thread CPU; 2.1 s of it in GTK's TreeListModel rebuilding every node per listing batch
+  (expandable folders are off by default, so the tree did nothing visible).
+- Selection: every change looked all selected items up 5+ times (status bar, details pane, commands).
