@@ -1,3 +1,16 @@
 codex-fixes (Codex findings on AKolenda/openxplorer #335-#338, fixed on fork branches)
 STATUS: WORKING
-NOTE: merging newest upstream main into each branch, then fixing findings test-first.
+NOTE: upstream main dd39e3ba merged into all 4 branches (not pushed yet). Fixes 1-5 committed
+locally with tests; fixes 6-8 written, tests pending. Full checks run one branch at a time
+(disk is tight), compared with unchanged upstream main by test name.
+
+more-bugs: merge 271ccf50 (no conflicts; .pot and docs regenerated)
+  1 network.rs saved/mapped label respelled: fixed in 7183ff48 (test a_saved_or_mapped_label_keeps_its_spelling_when_the_share_is_browsed)
+  2 browse.rs TAR link "link/": fixed in 9fc13864 (test a_link_named_like_a_folder_is_hidden_as_extracting_refuses_it)
+windows-differences-2: merge c99a9cd9 (docs.json/interface.md conflict: kept both edits; md + markdown.json regenerated)
+  3 pattern.rs quadratic wildcard scan: fixed in ceec2d92 (test a_wildcard_word_that_finds_nothing_is_cheap_for_every_cached_name)
+  4 location_view.rs home vs standard folder: fixed in aac7d977 (test the_home_folders_tab_shows_home_when_a_standard_folder_is_home)
+network-thumbnails: merge 47bc4284 (markdown.json conflict: regenerated)
+  5 entry.rs fast content type: fixed in 5eef2b3c (test the_listing_query_asks_for_the_fast_content_type)
+supere-uninstall: merge 6bd93315 (markdown.json conflict: regenerated)
+  6-8: in progress
