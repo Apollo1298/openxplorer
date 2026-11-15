@@ -1,0 +1,20 @@
+codex-loop (Codex review loop on AKolenda/openxplorer #335-#338)
+STATUS: DONE (blocked, no work done)
+
+NOTE: This session could not read or post on the upstream PRs. It only has
+GitHub API access to addition-official/openxplorer; attaching
+AKolenda/openxplorer was refused because a repository with the same name
+("openxplorer") is already attached, and starting a helper session for the
+upstream API was not permitted. No findings were read, no code was changed,
+nothing was pushed to the 4 PR branches, and no "@codex review" comments
+were posted. To run this loop, start a session with AKolenda/openxplorer
+as a source (for reads and comments) that can also push to the fork, or
+run the fixes from a fork session and post comments from an upstream one.
+
+Branch checks done (read-only, git only, 2026-11-14 22:30 CST):
+#335 more-bugs             fork head 07d2eba = PR head; 8 commits behind upstream main; merges cleanly
+#336 windows-differences-2 fork head 94dbdb3 = PR head; 8 behind upstream main; MERGE CONFLICT with main
+#337 network-thumbnails    fork head 6b5883a = PR head; 8 behind upstream main; MERGE CONFLICT with main
+#338 supere-uninstall      fork head edb5e84 = PR head; 8 behind upstream main; MERGE CONFLICT with main
+
+Codex state per PR: unknown (not readable from this session).
