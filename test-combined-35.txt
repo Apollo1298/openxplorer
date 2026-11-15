@@ -1,0 +1,79 @@
+STATUS: DONE
+HEAD: test-combined-35 ccd67a63 (the deb was built from exactly this tree; cargo clean before the release build; guard on HEAD and a clean tree before and after)
+DEB: claude/test-combined-35-deb 0e051f63
+  openxplorer_2.0.17+test35_all.deb (io.winspace.Development)
+  SHA256: eb457243d79f87554c94fdfbf28d993a179a5450905a0521555ad06b4cbf8231
+BASE: upstream main dd39e3ba (2.0.17)
+
+MERGED HEADS, in this order (all descend from upstream main; merge commit after each):
+   1 more-bugs              9fc13864c5848b514286adcbbf014c4c088d0afa -> e1c77226 (clean)
+   2 windows-differences-2  aac7d97754ee9a64ebea0d0b805f4009987e414c -> 537467a9
+   3 network-thumbnails     5eef2b3c1dae766dcf669abe704906e720a27049 -> 33cc54c4
+   4 supere-uninstall       511015dfb93907e464f1aa57b1d6f4bb60c0fc65 -> 4bfbedb9
+   5 top-bugs               de6686f57fc21441ddc86559cbd1ef6054e8ba4a -> 6b27c934
+   6 network-deep           1f2bd3aa64ca0f30cf1ecfc4ad104f7031993849 -> 3c2e014e
+   7 big-folders            190a8d49f42eff564f4834480899e7b9f77c238c -> d38bf112 (clean)
+   8 open-save-dialogs      8a6e37aac0591a131374d8f7f8fc6511e5d7a656 -> c1655447
+   9 gallery-match          08685f8c35e293eaef3165504996710b30741b11 -> 9e5e1908
+  10 dnd-pass               6118de5acf8e36dc1dd4682160951389d4ea3957 -> 83252fcb
+  11 archives-pass          c0bf75234caf2cec9c2132359dc62f4f6cd01850 -> 454d2eee
+  12 search-pass            0b4526c0bab1ac0d7622a671188ac737faf3d893 -> a5e24e84
+  13 recycle-pass           4e6f81cd6271c48b87384b3b2bd59a7db6a7ce73 -> 125f8d3f
+  14 properties-pass        7c4fc5ca56e77e9c2f67df2ca137bf5505fcbae3 -> 4d45524c
+  15 settings-pass          356b73d63197004b9a19426ad8865e2fc07b8612 -> dabd80e0
+  16 keyboard-pass          f5d8ecdd8fcc1dcb4f3d542b8a5ec0e06fc8b69b -> 496f2803
+  glue                      ccd67a63
+Which listed heads each already contains: big-folders, open-save-dialogs, dnd-pass, archives-pass: network-deep; gallery-match: network-deep, open-save-dialogs; search-pass: top-bugs, network-deep, open-save-dialogs; recycle-pass: top-bugs, network-deep, big-folders, open-save-dialogs, gallery-match, dnd-pass, search-pass; properties-pass: top-bugs, network-deep, open-save-dialogs, gallery-match, dnd-pass; settings-pass: top-bugs, network-deep, dnd-pass; keyboard-pass: top-bugs, network-deep, open-save-dialogs, gallery-match, dnd-pass, search-pass, properties-pass, settings-pass. None contains heads 1-4 exactly; settings-pass and keyboard-pass carry 33 of more-bugs' 36 commits, and dnd-pass and later carry 10 of windows-differences-2's 13.
+
+CONFLICTS AND RESOLUTIONS (both sides kept unless said):
+- docs and markdown.json: every conflict regenerated with tools/sync-docs.py; the .pot regenerated with native/tools/i18n.py extract where it conflicted (gallery-match) or went stale after an auto-merge (network-deep). Final i18n check, sync-docs --check and parity/check.py pass.
+- 2 windows-differences-2: BACKLOG Archives, both sentences (TAR links; Compress to › 7z File). location_view.rs imports: its KnownFolder and Storage, but not the shown_name import more-bugs (1e10df4e) removed with its last use (as in deb 34).
+- 3 network-thumbnails: BACKLOG, both entries.
+- 5 top-bugs: parity HOME fold note, both added sentences (more-bugs' 54-pixel Compact tiles; top-bugs' focus return after a tile or row menu); top-bugs' HOME-017 "Search from Home" entry kept.
+- 6 network-deep: window/tests.rs, both new test modules (tooltips, undo_without_recycle_bin).
+- 9 gallery-match: empty_page.rs, network-deep's struct variant EmptyState::Unavailable { .. } (with details) plus gallery-match's new EmptyState::NoPhotos glyph.
+- 10 dnd-pass: no textual conflict, but the auto-merge left two parity entries with id HOME-017 (top-bugs' "Search from Home" and gallery-match's "Gallery in the navigation pane"). search-pass, which merged top-bugs, renumbers "Search from Home" to HOME-033, and its merge (12) carried that rename, so the final tree has one HOME-017 (Gallery) and HOME-033 (Search from Home).
+- 11 archives-pass: BACKLOG Archives combined (archives-pass's traditional-password ZIPs and narrower codec list, then the TAR links and 7z sentences). parity, 3 native_notes: each side's added sentence kept (TAR links and backslashes in ZIP names; the opened archive's real name and password prompts); in the Compress note archives-pass's ZIP64 writing replaces the older "ZIP64 ... are refused" clause, and the 7z paragraph is appended.
+- 12 search-pass: BACKLOG, both entries (network thumbnails; Advanced Query Syntax). folder_view/model.rs and ox-core entry/enumerate.rs: big-folders' own final lint fix (12883f78) kept over search-pass's equivalent rewrite of the same lines (0b4526c0) of an older big-folders; same behavior. folder-views.css Gallery scrubber month: gallery-match's tooltip tokens (08685f8c: flyout stroke, padding, two shadows with skin colours) kept over search-pass's single shadow-colour fix (a832de1e); both replace the raw colour, gallery-match's goes further.
+- 13 recycle-pass: BACKLOG Archives, HEAD's, a superset of recycle-pass's.
+- 14 properties-pass: BACKLOG Archives with properties-pass's "for browsing and extraction"; parity Compress note takes properties-pass's removal of ".7z" from "Missing".
+- 15 settings-pass: tests/tooltips.rs, HEAD's column-title step (31791da2 from the search-pass line: right-click the Name title, no tooltip over its menu) over settings-pass's removal of that step; keyboard-pass, which merged both, keeps the same. BACKLOG: HEAD's (the network thumbnails entry is already there; codec sentence with properties-pass's wording); parity: HEAD's (settings-pass would bring back ".7z" in "Missing").
+- 16 keyboard-pass: BACKLOG, both entries (network thumbnails; Keyboard and focus).
+SAME THING DONE TWO WAYS (as asked, listed):
+- Tooltip test for column titles: settings-pass drops the step, the search-pass line keeps it without a tooltip wait; keyboard-pass (later, merged both) keeps it, so that is the version here.
+- big-folders' grouping and reader lint fixes: big-folders' own over search-pass's older-copy rewrite (neither contains the other); same behavior.
+- Gallery scrubber month style: gallery-match's over search-pass's (neither contains the other); combined intent, gallery-match's goes further.
+- Wildcards: windows-differences-2's in-name wildcard word search (SRCH-004) and search-pass's Advanced Query Syntax both kept; see glue.
+- Backspace in dialogs, focus rings, Home search: no conflicting second implementation came up; the versions are those of the branches that merged the earlier ones (open-save-dialogs line for dialogs, windows-differences-2 / keyboard-pass for focus rings, search-pass's HOME-033 search from Home).
+GLUE ccd67a63 (merge-only build error): windows-differences-2 (ceec2d92) made wildcard_matches test-only after its one-pass in-name search; search-pass's expression.rs (name: and ext: wildcards) still calls it, so it is pub(crate) again. Both behaviors kept.
+
+CHECKS on ccd67a63:
+- native/tools/check.py: inventories, parity, i18n and tool tests pass; it then stops at clippy on duration_suboptimal_units in ox-core files no branch touches (same on main). I ran its remaining steps with that lint (and map_unwrap_or, decimal_bitwise_operands) allowed: no drawn icons, rustfmt clean, clippy clean, every test binary plus doctests with OX_PYTHON_APP set.
+- native/parity/check.py, i18n check, sync-docs --check: pass. cargo-sources.json matches a fresh run from Cargo.lock; the deb has rust-crates/sevenz-rust2-0.20.2.
+- Tests: 4773 passed, 26 failed.
+FAILURES by name, against main and the branch alone:
+  Also fail on main dd39e3ba (environment: root permissions, sandbox, Python fixtures, display scale), 23: the same list as deb 34 (a_gtk_environment_file_..., a_kde_script_..., admin_copy::an_fstab_..., an_item_gio_reports_without_a_trash_..., compact_view_rows_keep_their_spacing_at_twice_the_scale, twice_the_scale_draws_the_bars_..., fuse_export_paths_match_native_opening_py, launches_share_one_instance_..., mount_assistant::the_assistant_prepares_..., python_fixture_matches_desktop_core_py, thumbnailers::a_sandboxed_thumbnailer_runs_within_its_limits, thumbnailers::a_sandboxed_thumbnailer_sees_only_its_item, file_drop::the_drop_menu_reads_..., clipboard::cancel_in_the_failed_item_dialog_..., clipboard::the_panels_cancel_..., context_menus::a_folder_without_write_permission_..., empty_folder::ctrl_v_pastes_nothing_..., empty_folder::new_and_paste_stay_off_..., file_operations::delete_reads_delete_..., new_folder::a_folder_that_cannot_take_a_new_folder_says_why, views::listed_links_and_read_only_files_..., worker_questions::an_item_in_a_folder_only_an_administrator_..., worker_questions::destination_folder_access_denied_...).
+  Fail on the branch alone too (not caused by the merge), 2: undo_without_recycle_bin::undoing_a_copy_without_a_recycle_bin_asks_to_delete_it_permanently and network_captures::undoing_a_copy_without_a_recycle_bin_is_captured_light_and_dark, both network-deep's (fail on 1f2bd3aa alone and on keyboard-pass; the test makes a folder read-only with chmod 0o555, which root ignores, like the other permission tests above).
+  Flaky on the branch alone, 1: tooltips::no_tooltip_stays_over_a_menu_the_rename_box_or_the_next_folder. Passes alone on the merge (2 of 2); after the tiles_and_content tests it failed 1 of 2 on the merge and 2 of 4 on keyboard-pass f5d8ecdd alone (the hover after closing the column menu waits for a tooltip). Its test and quiet_tooltips.rs are identical to keyboard-pass's, so no glue.
+  Merge-only: the build error fixed by glue ccd67a63; no test failure is merge-only.
+
+ONE UNIQUE STRING PER BRANCH IN THE BUILT BINARY (/opt/openxplorer/bin/openxplorer, strings | grep -cF; credited to the first branch in merge order that holds the commit adding it, and absent from main's sources):
+   1 more-bugs:             "Couldn't check for updates (HTTP" = 1
+   2 windows-differences-2: "7z File" = 1
+   3 network-thumbnails:    "Show thumbnails in network folders" = 1
+   4 supere-uninstall:      "forget_removed_launch_shortcut_apps" = 6 (function symbol; adds no translatable string)
+   5 top-bugs:              "GtkTooltipWindow" = 1 (adds no translatable string)
+   6 network-deep:          "confirm_undo_without_recycle_bin" = 1 (function symbol)
+   7 big-folders:           "snapshot@GMT-" = 1
+   8 open-save-dialogs:     "Save as _type:" = 1
+   9 gallery-match:         "Choose which folders to see in Gallery" = 1
+  10 dnd-pass:              "carries_archive_items" = 1 (function symbol)
+  11 archives-pass:         "Show extracted files when complete" = 1
+  12 search-pass:           "add_match_function" = 5 (function symbol)
+  13 recycle-pass:          "empty_recycle_bin_reporting" = 12 (function symbol; its only new message is the generic "Deleted")
+  14 properties-pass:       "Type the target the shortcut opens." = 1
+  15 settings-pass:         "Apply to F_olders" = 1
+  16 keyboard-pass:         "Collapse the folder, or go to the folder it is in (navigation pane)" = 1
+POLKIT: record /var/lib/openxplorer/install-updates-without-password = "off" before install -> /etc/polkit-1/rules.d empty after install, record still "off". Purge left neither.
+IDENTITY: all 292 new commits (branches and merges) and the deb commit are addition-official <239187859+addition-official@users.noreply.github.com> with no trailers; no other author or committer. The only address in the added lines is network-thumbnails' fictional test URI sftp://demo@server.example. In the deb, AKolenda appears only in the upstream repository and update-check URLs, and the other addresses are the same third-party set as before. No other personal name was found.
+NOTE: Old branches NOT deleted: test-combined-34 and claude/test-combined-34-deb are still on the fork. This session's command to delete them was blocked by its own safety check (deleting branches needs the user's go-ahead here), so they stay until the user confirms or someone deletes them on GitHub.
