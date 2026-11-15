@@ -1,4 +1,14 @@
 STATUS: WORKING
-HEAD: recycle-pass dd39e3ba (upstream main, nothing committed yet)
+HEAD: recycle-pass e6abae59
 QUESTION: none
-NOTE: Started. Reading the Recycle Bin and delete code, building the test suite, measuring Empty Recycle Bin.
+NOTE: Two fixes pushed (Empty Recycle Bin speed, opening/Properties of Recycle Bin items). Auditing the rest of the area next.
+
+FAIL (main) -> PASS: Empty Recycle Bin, 6,000 items, watched bin: main 22.1 s, now under 8 s (test bound)
+FAIL (main) -> PASS: Empty Recycle Bin, 10,000 items: main 15.2-20.3 s, now ~4.7 s (before the last tuning)
+FAIL (main) -> PASS: Empty Recycle Bin, 20,000 items, watched bin: now 10.3 s
+FAIL (main): Empty Recycle Bin, 50,000 items, unwatched: main 228 s
+FAIL (main): Recycle Bin listing right after recycling 50,000 items while watched: main returned 0 items after a 60 s GVfs timeout, twice (listing came back after ~136 s)
+FAIL (main) -> PASS: double-click on a file in the Recycle Bin opened it in its app; now Properties
+FAIL (main) -> PASS: Properties from a Recycle Bin item's menu said "Only local paths... supported"; now shows Origin and Deleted
+PASS: Delete to Recycle Bin, 10,000 files: 13.5-17.4 s (main and branch alike)
+PASS: Delete to Recycle Bin, 50,000 files: 67-96 s (main and branch alike, no errors)
