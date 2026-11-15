@@ -1,4 +1,4 @@
 STATUS: WORKING
-HEAD: properties-pass 23f7ecc4
+HEAD: properties-pass c05e547b
 QUESTION: none
-NOTE: Three fixes so far (Sharing tab on Samba 4.15+, name/Hidden greyed when rename is impossible, folder links among several items). Working on access keys and the Shortcut tab.
+NOTE: Six fixes pushed (Sharing on Samba 4.15+, rename rights, folder links among several items, Recycle Bin item Properties, Alt+letter access keys, 380x520 size). Next: shortcut tab, captures, checks.
