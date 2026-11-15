@@ -1,0 +1,3 @@
+codex-fixes (Codex findings on AKolenda/openxplorer #335-#338, fixed on fork branches)
+STATUS: WORKING
+NOTE: merging newest upstream main into each branch, then fixing findings test-first.
