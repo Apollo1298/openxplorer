@@ -30,6 +30,8 @@ Not changed:
 
 - Wildcard search words are matched in one pass over each name, with a fixed number of allocations per name. A wildcard search that finds little in a large search cache (`zz?zz`) no longer slows down as the cache grows; a test matches 100,000 names of 255 characters.
 - When `user-dirs.dirs` puts a standard folder at the home folder (`XDG_DESKTOP_DIR="$HOME"`), the home folder's tab shows Home's glyph, not Desktop's.
+- Alt-dragging the app's own items on GNOME (Wayland), where the desktop can narrow Alt to "ask", makes shortcuts instead of being refused.
+- Ctrl+C on a Home Quick access tile copies its folder, as the tile's menu (Copy, Ctrl+C) says. Before, the key copied the file list's selection, or nothing, never the tile.
 
 ## New dependency
 

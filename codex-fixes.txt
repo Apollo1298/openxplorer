@@ -1,5 +1,5 @@
 codex-fixes (Codex findings on AKolenda/openxplorer #335-#338, fixed on fork branches)
-STATUS: WORKING (round 2: findings A-D)
+STATUS: DONE (round 2: findings A-D fixed and pushed)
 NOTE: upstream main dd39e3ba merged into all 4 branches. Every new test failed before its fix and
 passes after. All 4 branches pushed (merges, no rebase, no force-push). No finding was judged wrong; all 8 changed.
 User-visible behavior changed on all 4 branches, so each <branch>-pr.md got an "After review" note.
@@ -35,6 +35,26 @@ Checks (Xvfb + private D-Bus, as tester; every test executable run even past fai
   windows-differences-2: 4451 passed, same 29 failed, nothing new; same steps pass.
   network-thumbnails: 4447 passed, same 29 failed, nothing new; same steps pass.
 
+Round 2 (findings A-D; upstream main still dd39e3ba, so no new merge; fast-forward pushes, no force-push):
+windows-differences-2:
+  A action.rs Wayland Alt-drop offering only ASK refused: fixed in a7e92601 (test an_alt_drop_offered_only_ask_is_answered_with_ask_and_makes_shortcuts)
+  B home_page.rs Ctrl+C on a Quick access tile ignored: fixed in c44eb603 (test ctrl_c_on_a_quick_access_tile_copies_its_folder)
+network-thumbnails:
+  C thumbnails.rs CIFS mount file: entries probe statfs: fixed in 61728ed6 (test a_file_of_a_mounted_share_asks_for_the_networks_slots)
+supere-uninstall:
+  D launch_shortcut.rs enable continues after incomplete removed-package cleanup: fixed in 068fc3aa (test turning_it_on_stops_while_a_removed_package_cannot_give_super_e_back)
+No finding was judged wrong; all 4 changed. Each new test failed before its fix and passes after.
+Checks, same setup as round 1 (totals from cargo's own "test result" lines; the round-1 figures above
+counted "... ok" lines, which undercount when GVFS warnings print mid-line):
+  unchanged upstream main: 4555 passed, 29 failed.
+  windows-differences-2: 4574 passed, same 29 failed, nothing new; parity, i18n, icons, rustfmt,
+    clippy -D warnings, sync-docs --check pass.
+  network-thumbnails: 4561 passed, same 29 failed, nothing new; same steps pass.
+  supere-uninstall: 4573 passed, same 29 failed, nothing new; same steps pass.
+  more-bugs: unchanged this round (4569 passed, same 29 failed in its round-1 run).
+User-visible behavior changed on the 3 round-2 branches, so windows-differences-2-pr.md,
+network-thumbnails-pr.md and supere-uninstall-pr.md got round-2 "After review" lines.
+
 STATUS: DONE
-Heads: more-bugs 9fc13864, windows-differences-2 aac7d977, network-thumbnails 5eef2b3c,
-supere-uninstall 511015df
+Heads: more-bugs 9fc13864, windows-differences-2 c44eb603, network-thumbnails 61728ed6,
+supere-uninstall 068fc3aa

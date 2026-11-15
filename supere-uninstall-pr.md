@@ -22,6 +22,7 @@ After review, tidying up keeps the way back when a step fails partway:
 - If giving Super+E back to the previous app fails at startup (for example while KDE's shortcut service restarts), Super+E goes back on the removed package and its records stay, so the next start gives it to the previous app (for example Dolphin) instead of leaving it free for good.
 - If KDE's service cannot say who has Super+E, no record of a removed package is deleted; the next start tidies up.
 - If rewriting a record to lead past a removed package fails (for example on a full disk), the removed package's record stays, so turning the switch off still gives Super+E to the installed app.
+- If a removed package still has Super+E because tidying up could not give it back, turning the switch on stops with KDE's error ("KDE's shortcut service did not answer: …") instead of taking Super+E without its way back. Turning it on again once the service answers works, and turning it off then gives Super+E to the previous app.
 
 ## What is written where
 

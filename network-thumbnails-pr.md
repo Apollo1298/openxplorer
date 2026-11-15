@@ -29,6 +29,8 @@ Pictures: `network-thumbnails-<scale>-<theme>-share-icons.png` (default), `-shar
 
 After review: folder listings now ask GIO for `standard::fast-content-type` too, so a network file that its backend types only by its fast type is typed by it, and with the setting on it gets its thumbnail.
 
+Also after review: with the setting on, files in a folder known to be on the network but listed by a local path (a kernel CIFS mount) make their thumbnails on the network's own slots from the start, without first asking their file system on a shared worker, so a mount that stops answering cannot hold up the workers local thumbnails need.
+
 ## CHANGED OWNER DECISIONS
 
 - #327 turned thumbnails in network folders on by default. This sets the default back to off, matching Windows 11; turning the setting on gives the #327 behavior.
