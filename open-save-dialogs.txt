@@ -1,4 +1,59 @@
-STATUS: WORKING
-HEAD: open-save-dialogs e10a45bc0115c41567f074c4e658994400d68cb4
+STATUS: DONE
+HEAD: open-save-dialogs 8a6e37aac0591a131374d8f7f8fc6511e5d7a656
 QUESTION: none
-NOTE: Seven fixes in, test-first; network-deep merged in (same files: picker.rs, features.toml). Full check.py run in progress; captures and PR text next.
+NOTE: Seven dialog fixes, test-first, each also confirmed with real keys through the real portal (fails on main, passes here). Merged network-deep (same files: picker.rs, features.toml); big-folders shares no files. Not done: the modal option; 2x dark Compact picture timed out in the capture tool.
+
+CHECKLIST (real xdg-desktop-portal on a private bus routed to the app; clients call the portal as Chromium/Electron do, plus real GTK 3 and GTK 4 apps; xdotool keys and clicks under Xvfb; "main" = unchanged upstream main dd39e3ba)
+PASS OpenFile: typed name + Enter, with filters and current_filter returned
+PASS OpenFile: typed ~/Documents/notes.md + Enter
+PASS OpenFile: typed folder name opens it, then a file there
+PASS OpenFile multiple: quoted list "a" "b" opens both
+PASS OpenFile directory: accept_label "_Upload" shows as Upload; a selected folder + Upload answers it
+PASS OpenFile directory: Enter in a folder showing no folders chooses it (main: FAIL, nothing happened)
+PASS GTK 4 FileDialog.select_folder, Enter in a folder with no subfolders (main: FAIL)
+PASS GTK 4 FileDialog.save and .open through the portal
+PASS GTK 3 FileChooserNative SaveFile with check boxes and a list (LibreOffice-like choices answered)
+PASS SaveFile as Chromium sends it (title "All Files" shows "Save as", glob classes *.[hH][tT][mM][lL]) + Enter
+PASS SaveFile current_name without extension gets the type's extension
+PASS SaveFile switching the type with the keyboard changes .html to .mhtml
+PASS SaveFile current_file starts in its folder and asks before replacing
+PASS SaveFile hidden extension: Backspace in File name erases a letter of the name, .txt kept
+PASS Overwrite: Confirm Save As, No, Enter asks again, Alt+Y saves (main: FAIL, Enter after No opened a folder)
+PASS Escape in Confirm Save As keeps the dialog; typing then goes to File name (main: FAIL)
+PASS Read-only folder: Save refused with a message, dialog kept; Escape cancels
+PASS Escape cancels; Escape while naming a new folder, in the open type list, the address bar, the search box or a context menu only closes that
+PASS Alt+Up from File name goes up a level; Ctrl+L path + Enter navigates
+PASS Alt+N to File name from a check box (main: FAIL, Enter toggled the check box)
+PASS Tab order: File name, type list, Save, Cancel, navigation buttons
+PASS Ring on Save after Tab, light and dark, normal and Compact view, 1x and 2x (main: FAIL, no ring)
+PASS Ctrl+Shift+N from File name makes a folder, Enter opens it, Alt+N, Enter saves inside (main: FAIL, saved "Exports.txt")
+PASS Three check boxes + a list: check boxes on one row; Tab reaches each, Space toggles (main: FAIL, four rows, file list a sliver)
+PASS Non-UTF-8 file name (caf\xe9 menu.txt) chosen by click, answered as %E9
+PASS Very long name (230 characters) saved whole; a name over 255 bytes refused with the dialog kept
+PASS Two dialogs at once answer separately
+PASS Caller exits while the dialog is open: the dialog closes
+PASS Size remembered: the next dialog opens at the size the last one was left
+PASS Samba fixture (smbd on 127.0.0.1:4450, gio mount): share browsed in the dialog; without FUSE (not available here) a file there is refused with "Choose a folder on this computer or a connected drive.", no hang
+PASS Weston (Wayland backend): dialog tests 98 of 103 pass; the 5 that fail need an active window, which headless weston never gives: main fails the same 4 plus the new ring test
+NOT RUN Share through GVfs FUSE (no /dev/fuse in this container)
+NOT RUN Dragging a file into the dialog (no drag source app here)
+NOT RUN Modal child of the caller on Wayland (weston 13 headless has no xdg-foreign)
+NOT DONE The portal's modal=false option is still ignored (could not be verified without xdg-foreign)
+NOT TOUCHED Backspace up a level in the dialog: not on main; windows-differences-2 adds it, this branch does not touch it
+
+NOT CONFIRMED (check in the VM, Windows 11 Save As dialog)
+- Ctrl+Shift+N with the keyboard in File name makes a new folder
+- The underlined letters are N in "File name:" and T in "Save as type:"
+- Confirm Save As answers to Y and N without Alt
+- After No in Confirm Save As, what part of the name is selected in File name
+- How Windows lays out several check boxes an application adds
+- Where Windows draws the focus ring on the accent-filled Save button
+
+CHANGED OWNER DECISIONS
+none (the ring keeps C29's accent color; only its place on the accept button changes)
+
+CHECKS
+PASS check.py stages: parity tests and inventory, i18n check, tools tests, drawn-icon guard, rustfmt, Clippy (pedantic)
+PASS python3 native/parity/check.py
+PASS all 81 test executables plus doctests run in check.py's isolation: failures identical by name to unchanged main (9 admin_copy, 2 sandboxed thumbnailer, 1 Python clipboard outside check.py), all from this machine (no user namespaces, root-owned checkout)
+NOTE check.py itself stops at its first failing executable here: location_fixture_drift fails with /usr/local Python 3.13.18's urlsplit, and passes the Python check with the system Python 3.12; an ox-core undo test flaked once on a GVfs name and passed 4 of 4 alone
