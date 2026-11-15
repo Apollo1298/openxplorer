@@ -1,4 +1,4 @@
 STATUS: WORKING
-HEAD: settings-pass 46489d190a3894344568a372299ef2d59132110a
+HEAD: settings-pass 71e46b47bb69dfe0e71d4ce5df7496a985d28bf3
 QUESTION: none
-NOTE: Fixes pushed; merged network-thumbnails, more-bugs, windows-differences-2, supere-uninstall, top-bugs, gallery-match. Full check.py running; captures and per-option checklist next.
+NOTE: Also fixed "Use the desktop font" springing back off (found by a new every-switch test). Full check.py rerunning; captures next.
