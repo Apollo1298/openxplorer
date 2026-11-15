@@ -1,7 +1,7 @@
 STATUS: DONE
-HEAD: recycle-pass 4e6f81cd
+HEAD: recycle-pass abda37da
 QUESTION: none
-NOTE: Merged every lower job (1-7; big-folders twice, its last head 190a8d49). Conflicts were only between other jobs: markdown.json regenerated each time; BACKLOG Archives sentences and an archives features.toml note merged keeping both; gallery scrubber CSS and two big-folders lint-fix hunks (model.rs, enumerate.rs) took the owning job's side. Full sweep of the final tree: 4,715 passed, 13 failed, the same 13 test names as unchanged main (environment: admin_copy x9 need root fstab setup, 2 sandboxed thumbnailers, 2 Python-fixture drifts); main: 4,571 passed, 13 failed. Merge-only and branch-only failures: none.
+NOTE: Delete/Shift+Delete/Empty questions now use the shared Windows message box (capture review), recaptured. Merged every lower job (1-7; big-folders twice, archives-pass twice, last heads 190a8d49 and c0bf7523); conflicts were only between other jobs (markdown.json regenerated; BACKLOG Archives and an archives features.toml note kept both sides; gallery scrubber CSS and two big-folders lint hunks took the owning job's side). Full sweep before the last archives-pass merge (2 small commits): 4,715 passed, 13 failed, the same 13 names as unchanged main (main 4,571/13). After it: archive suites, i18n, parity, rustfmt and Clippy pass; 3 archives window tests (a_compressed_tar_is_browsed..., a_password_zip_says_so..., open_in_archive_manager...) now time out waiting for a default application on unchanged main too, by the same names: the container changed, not the code.
 
 TIMINGS (debug build, 4 cores, Xvfb; "window" = real clicks with xdotool)
 FAIL (main) -> PASS: Empty Recycle Bin, 50,000 items, window: main 265 s; branch 19.3 s, and GVfs lists it right 13 s later ("0 items")
