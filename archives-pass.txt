@@ -1,8 +1,22 @@
 STATUS: WORKING
-HEAD: archives-pass e7f03672ccebc7360b1e6365daa6e93a1c78a49c
-QUESTION: none
-NOTE: Done so far: password-protected ZIPs (traditional ZIP encryption) now ask "Password needed" for open/Extract all/Extract here/copy out, with retry and Cancel; backslash-separated ZIP names now show and extract as folders. Next: ZIP64 writing, real-input runs, captures.
+HEAD: archives-pass 707302c73837b32c23b4cca3b60fc5e26b5c4147
+QUESTION: (1) May I add the RustCrypto crates aes, hmac, sha1 and pbkdf2 to decrypt AES-encrypted ZIPs (WinZip AE-1/AE-2)? Today AES ZIPs list but say "Use an archive manager". (2) May I merge windows-differences-2 (it brings sevenz-rust2 plus unrelated UI changes) to add 7z browse and extract? I have not merged it; 7z still opens in its default app.
+NOTE: Done: password ZIPs (traditional ZIP encryption) ask "Password needed" with retry/Cancel for open, Extract all, Extract here, copy out; backslash-separated ZIP names show and extract as folders; Compress to ZIP writes ZIP64 (over 4 GiB / 65,535 items); Extract dialog says "Show extracted files when complete". Running full check.py now; merges of lower jobs pending.
 
-PASS core archive tests (ox-core archive_* integration tests and lib archive unit tests) on the branch
-PASS window tests archive_passwords (5) and the 2 updated tests, except a_password_zip_says_so_and_offers_the_archive_manager, which times out at the final "launch" step (baseline comparison pending)
-PASS probe: 10,000-entry ZIP lists in 60 ms and extracts; Unicode and 245-character names; forced ZIP64 records; truncated, corrupt and CRC-damaged ZIPs give a clear error and leave nothing
+PASS password ZIP, real input 1x light (Xvfb, xdotool): double-click file inside -> "Password needed"; wrong password -> asked again with "The password is incorrect. Try again."; right password -> read-only copy opened in its app; second file opened without asking
+PASS password ZIP, real input 2x dark (Xvfb, xdotool): Extract all -> Extract -> prompt; Escape cancels, nothing written
+PASS Extract here on the password ZIP (real input): extracted beside it (password remembered in that window)
+PASS AES ZIP (real input): Extract dialog shows "This ZIP uses an encryption method OpenXplorer cannot open. Use an archive manager." with Open in archive manager
+PASS backslash ZIP (real input): Docs > Notes > a shown in the tab
+PASS 10,000-entry ZIP (real input): browses, Extract all extracts 10,000 files and shows the folder
+PASS damaged (truncated) ZIP (real input): tab says "File is not a zip file", no hang
+PASS Compress to > ZIP File (real input): empty folder kept, symlink to a file outside left out; second run makes "Harbor survey (2).zip"
+PASS ZIP64 write, real 4.3 GiB file (release build): Info-ZIP unzip -t OK, Python zipfile reads 4,617,089,843 bytes, app extraction byte-identical
+PASS 65,536-file folder -> ZIP (ZIP64 end records), read back by Python and by the app
+PASS disk full (2 MiB tmpfs): "Error writing to file: No space left on device", nothing left
+PASS read-only destination: "Permission denied", nothing left
+PASS zip bomb (200 MiB of zeros): refused before writing ("per-file decompression safety limit")
+PASS truncated/corrupt/bad-CRC ZIPs: clear error, nothing left
+PASS window tests archive_passwords (5) on Xvfb and on headless weston (Wayland)
+FAIL weston real input: Xwayland under headless weston segfaults on xdotool's XTEST input (no seat), so xdotool cannot drive the app there; GTK tests were run natively on weston instead
+NOT CONFIRMED (check in the VM): Microsoft's page https://support.microsoft.com/en-us/windows/zip-and-unzip-files-8d28fa72-f2f9-712f-67df-f80cf89fd4e5 says Windows 11 "does not support operations on encrypted archive files" - this conflicts with the brief's statement that Windows asks for a ZIP password; check whether Windows 11 24H2 asks for a ZipCrypto password
