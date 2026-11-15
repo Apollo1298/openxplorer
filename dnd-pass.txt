@@ -1,25 +1,46 @@
-STATUS: WORKING
-HEAD: dnd-pass c9f7bab0 (local, not pushed yet)
+STATUS: DONE
+HEAD: dnd-pass 6118de5acf8e36dc1dd4682160951389d4ea3957
 QUESTION: none
-NOTE: Four fixes done test-first and checked with real input on X11 and Weston; merged network-deep, open-save-dialogs, gallery-match (shared files) and windows-differences-2. Full test run on the merged branch in progress; Clippy shows 5 errors in picker.rs tests that come from open-save-dialogs, not from this branch.
+NOTE: Cut from upstream main dd39e3b; merged windows-differences-2 (Alt+drag) first, then the lower jobs that share files: network-deep 1f2bd3a, open-save-dialogs 6891b71, gallery-match 27e9a0a (big-folders shares none). Four fixes test-first (each new test fails before its fix, passes after); all suites rerun on the merged branch.
 
-Survey on main (real xdotool drags, Xvfb X11, 1x light; fictional files):
-PASS plain drag onto a folder, same drive: moves, label "Move to Launch planning"
-PASS Ctrl+drag: copies, label "+ Copy to Launch planning"
-PASS drop on a read-only folder: "Destination Folder Access Denied" with Continue/Skip/Cancel, nothing lost
-PASS navigation pane: Downloads row (move), Recycle Bin row ("Move to Recycle Bin", item in Trash), crumb "Home"
-PASS folder dropped into its own subfolder: "Interrupted Action / The destination folder is a subfolder of the source folder."
-PASS tab hover 800 ms shows the tab; drop straight onto a tab moves into its folder
-PASS split panes: drag left pane -> right pane moves, label names the right pane's folder
-PASS between windows: moved
+Real input (xdotool), fictional files; X11 = Xvfb, Wayland = Weston 13 (X11 backend); main = unchanged upstream main, branch = dnd-pass
+PASS plain drag onto a folder, same drive: moves, label "Move to Launch planning" (main, X11 1x light)
+PASS Ctrl+drag copies, "+ Copy to ..."; Shift+drag moves (main X11; branch X11 into Thunar)
+FAIL->PASS Alt+drag: main copied ("Copy to Archive"); branch makes "Meeting notes.md - Shortcut", label "Create link in Launch planning" (X11 1x) [from windows-differences-2]
+PASS right-drag menu: Copy here / Move here (bold) / Create shortcuts here / Cancel (main X11)
+PASS Esc during a drag cancels it, nothing moved (main X11)
+PASS read-only folder: "Destination Folder Access Denied" with Continue/Skip/Cancel, nothing lost
+PASS folder into its own subfolder: "Interrupted Action / The destination folder is a subfolder of the source folder."
+PASS navigation pane rows (Downloads move, Recycle Bin "Move to Recycle Bin" -> Trash), crumb "Home"
+PASS tab: 800 ms hover shows the tab; quick drop onto a tab moves into its folder
+PASS split panes and a second window: moved, label names the target folder
 PASS other drive (tmpfs): "Copy to Transfer", copied
-PASS 2,999 items at once: badge "2,999", "Move to Music", progress window, all moved in ~5 s, no freeze
-PASS right-drag: Copy here / Move here (bold) / Create shortcuts here / Cancel
-PASS Esc during a drag cancels it (also after a hung foreign drop target)
-FAIL Alt+drag copied ("Copy to Archive"); Microsoft: Alt+drag creates a shortcut -> fixed by merging windows-differences-2
-FAIL plain drag out into Thunar 4.18: Thunar's Copy here/Cancel menu on every drop (drag offered Copy+Ask) -> fixed
-PASS plain drag out into Nautilus 46 and Nemo: copied, no menu; Dolphin shows its own menu by default (its design)
-PASS Thunar -> app: copied, source kept
-FAIL folder tree (View > Folder tree): drop on a tree folder did nothing -> fixed
-FAIL drop on an open ZIP: silently refused (Windows adds the files) -> now explained, still read-only
-FAIL Chromium link/image dragged in: silently ignored (no text/uri-list offered); Firefox-style links get "Drop files or folders, rather than links or text." -> not changed, see NOT CONFIRMED
+PASS 2,999 items at once: badge, progress window, all moved in ~5 s
+FAIL->PASS plain drag out into Thunar 4.18: main opened Thunar's Copy here/Cancel menu every time; branch copies at once (X11 1x, X11 2x, Wayland 1x); right-drag still gets Thunar's menu
+PASS plain drag out into Nautilus 46 and Nemo: copied, no menu; Dolphin asks on every drop by its own default
+PASS Thunar -> app: copied, source kept (X11 1x, Wayland 2x)
+FAIL->PASS folder tree drop: main did nothing; branch: outline, "Move to Music", collapsed folder opens after 750 ms, file moved (X11 1x light, Wayland 1x and 2x)
+FAIL->PASS drop on an open ZIP: main silently refused; branch shows "An archive is read-only. Extract it to add items." while hovering, ZIP unchanged; dragging the ZIP's own member out shows nothing (X11 1x, Wayland 1x from Thunar)
+FAIL->PASS green GTK frame round the whole navigation pane / address bar during drags (main X11); gone on branch (X11, Wayland 1x and 2x)
+FAIL Chromium link / image dragged in: ignored without a message (no text/uri-list offered); Firefox-style links get "Drop files or folders, rather than links or text." Not changed (see NOT CONFIRMED)
+FAIL (not resolved) Wayland 2x, app -> Thunar: Thunar shows no drop feedback; could not compare with main (Weston placed windows off screen, once exited). Works at Wayland 1x and X11 1x/2x
+PASS no crash, no GTK criticals in the app logs (X11 and Weston sessions)
+PASS captures 1x/2x light/dark: dnd-pass-{1x,2x}-{light,dark}-{folder-tree-drop,open-zip-note,no-green-frame}.png via the tests' OX_NATIVE_CAPTURE_DIR hook (drag states cannot be reached by the snapshot hook); audit-public-data.py: no issues
+PASS rustfmt; parity/check.py; i18n check; sync-docs --check
+FAIL clippy: 5 errors, all in picker.rs test code from open-save-dialogs (none in dnd-pass files)
+PASS tests: 81 executables + doctests, isolated as check.py runs them, compared by name with unchanged main. Same failures on both (Python 3.13 interop, sandboxed thumbnailer, settings page, sidebar width). Branch-only failures, all from merged branches: picker a_save_dialog_keeps_save_as_type_under_file_name and an_open_dialog_has_its_type_list_beside_file_name_and_no_caption (open-save-dialogs mnemonics), gallery_view photos_fill_justified_rows... (thumbnail timeout) and stylesheets the_rules_name_colours_only_by_token ("black" in gallery-match CSS)
+Outside the area: the app panics at start with GTK_A11Y=none (ATContext null in gtk4 at_context.rs)
+
+NOT CONFIRMED (check in the VM):
+- plain Explorer drag into another app/desktop never shows a menu
+- same-drive move / other-drive copy default (no Microsoft page found)
+- no frame round the whole navigation pane / address bar during a drag
+- navigation pane opens a collapsed folder under a held drag, and the delay; tab hover delay (800 ms here)
+- browser link -> .url shortcut; browser picture -> saved file; text drop does nothing
+- "Copy to"/"Move to" labels for drags from other apps (only the app's own drags carry them here)
+- navigation pane folders can be dragged out (this folder tree still cannot)
+Confirmed by Microsoft: ZIP drop adds files (support.microsoft.com zip-and-unzip-files-8d28fa72-...); Ctrl/Shift/Alt+drag = copy/move/shortcut (keyboard-shortcuts-in-windows-dcc61a57-...)
+
+CHANGED OWNER DECISIONS:
+- DND-008: a plain drag out offers Copy only (was Copy and Ask); only right-button drags offer Ask. Alt (GNOME's ask key) while dragging out no longer opens the receiving app's menu
+- from windows-differences-2: Alt at a drop of the app's own items makes shortcuts (was copy on X11 / ask on GNOME Wayland)
