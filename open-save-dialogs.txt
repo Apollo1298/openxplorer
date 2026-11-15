@@ -1,7 +1,7 @@
-STATUS: DONE
+STATUS: WORKING
 HEAD: open-save-dialogs 8a6e37aac0591a131374d8f7f8fc6511e5d7a656
 QUESTION: none
-NOTE: Seven dialog fixes, test-first, each also confirmed with real keys through the real portal (fails on main, passes here). Merged network-deep (same files: picker.rs, features.toml); big-folders shares no files. Not done: the modal option; 2x dark Compact picture timed out in the capture tool.
+NOTE: New request: the Details pane covers the file list columns (dialog and main window). Working on it test-first.
 
 CHECKLIST (real xdg-desktop-portal on a private bus routed to the app; clients call the portal as Chromium/Electron do, plus real GTK 3 and GTK 4 apps; xdotool keys and clicks under Xvfb; "main" = unchanged upstream main dd39e3ba)
 PASS OpenFile: typed name + Enter, with filters and current_filter returned
