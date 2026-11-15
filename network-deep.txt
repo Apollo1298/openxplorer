@@ -1,7 +1,7 @@
 STATUS: WORKING
 HEAD: network-deep 1f2bd3aa64ca0f30cf1ecfc4ad104f7031993849
 QUESTION: none
-NOTE: Five fixes, each test-first (test commit before its fix): one large pasted file stayed at 0% with no time remaining; the progress window spelled a share as smb://host/share/; a refused sign-in lost the typed user name; Undo of a copy onto a share always failed ("Trash is not supported"); a Save into a share whose server went away said "The folder /run/user/.../gvfs/smb-share:... does not exist". Full suites (branch vs unchanged main, by test name) are running. No new dependency.
+NOTE: Five fixes, each test-first (test commit before its fix): one large pasted file stayed at 0% with no time remaining; the progress window spelled a share as smb://host/share/; a refused sign-in lost the typed user name; Undo of a copy onto a share always failed ("Trash is not supported"); a Save into a share whose server went away said "The folder /run/user/.../gvfs/smb-share:... does not exist". Full suites (branch vs unchanged main, by test name) are running. PR text in network-deep-pr.md. No new dependency.
 
 Setup: local Samba 4.19 on 127.0.0.2 (guest Studio, read-only Handbook, password Private and Team for the fictional user alex), a throttling/latency/drop TCP proxy on 127.0.0.3 (tc has no qdisc support in this kernel), OpenSSH SFTP on 127.0.0.4 (fictional user robin), GVfs with gvfsd-fuse (installed gvfs-fuse for the test machine only, as Ubuntu and Zorin ship it), app run as tester on Xvfb with a private D-Bus session and throwaway HOME; Chrome's SaveFile simulated by a script that owns org.freedesktop.portal.Desktop on that bus and calls the app's FileChooser backend.
 
@@ -33,6 +33,10 @@ FAIL (not run) kernel CIFS: this kernel has no cifs file system
 PASS captures (test harness capture hook OX_NATIVE_CAPTURE_DIR, fictional names, 1x and 2x, light and dark): network-deep-<scale>-<theme>-progress-share, -sign-in-retry, -undo-share-copy, -save-unavailable (the Save one shows the test's local temporary path: unit tests have no GVfs)
 PASS rustfmt; clippy -D warnings with the workspace lints: no finding in changed code. This machine's toolchain is 1.97 (not 1.92), whose new lints flag 3 untouched places (duration_suboptimal_units, map_unwrap_or in group_day.rs, decimal_bitwise_operands in picture_guard.rs), the same on main
 PASS native/parity/check.py; tools/i18n.py check after extract
+PASS tools/audit-public-data.py: no issues
+PASS 2x dark real input (X11, GDK_SCALE=2, xdotool): refused sign-in keeps "alex"; Undo of a copy on the share asks, Enter (Yes, focused) deletes the copy, source kept; no GTK criticals in any run
+FAIL (not run) Wayland: weston 13 with its X11 backend logged "Detected an unmapped surface or view in the layer list" and showed no dialog window at all, Delete's unchanged question included, so the dialog flows could not be checked there; copy to a share and its listing worked under Wayland at 2x dark
+N/A Compact view: the changed surfaces (progress window, sign-in dialog, Delete question, Save dialog message) do not depend on it
 
 NOT CONFIRMED, check in the VM:
 - Windows' Undo of a copy into a network folder: does it ask "Are you sure you want to permanently delete this file?" and delete it (what this branch does), or something else?
