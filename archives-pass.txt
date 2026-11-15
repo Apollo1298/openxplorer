@@ -1,4 +1,8 @@
 STATUS: WORKING
-HEAD: archives-pass dd39e3ba2d56e5a51a2e45ef10cb4d6c5e45e5e6
+HEAD: archives-pass e7f03672ccebc7360b1e6365daa6e93a1c78a49c
 QUESTION: none
-NOTE: Branch cut from upstream main; triage started (password ZIPs first).
+NOTE: Done so far: password-protected ZIPs (traditional ZIP encryption) now ask "Password needed" for open/Extract all/Extract here/copy out, with retry and Cancel; backslash-separated ZIP names now show and extract as folders. Next: ZIP64 writing, real-input runs, captures.
+
+PASS core archive tests (ox-core archive_* integration tests and lib archive unit tests) on the branch
+PASS window tests archive_passwords (5) and the 2 updated tests, except a_password_zip_says_so_and_offers_the_archive_manager, which times out at the final "launch" step (baseline comparison pending)
+PASS probe: 10,000-entry ZIP lists in 60 ms and extracts; Unicode and 245-character names; forced ZIP64 records; truncated, corrupt and CRC-damaged ZIPs give a clear error and leave nothing
