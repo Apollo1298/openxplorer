@@ -1,4 +1,4 @@
 STATUS: WORKING
-HEAD: keyboard-pass 21fda561
+HEAD: keyboard-pass 92a0fe20
 QUESTION: none
-NOTE: Cut from upstream main dd39e3ba; merged windows-differences-2 (focus rings) and top-bugs (Home focus return). Auditing keys now.
+NOTE: Cut from upstream main dd39e3ba; merged windows-differences-2 (focus rings) and top-bugs (Home focus return). Fixed dialog Tab trap; auditing further.
