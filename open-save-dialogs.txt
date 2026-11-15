@@ -1,4 +1,4 @@
 STATUS: WORKING
-HEAD: open-save-dialogs c74695aaf87d3c634c5ba5a50e8db82d765533f8
+HEAD: open-save-dialogs 6891b71ea4908cef58f3ff6bc17d33680050869a
 QUESTION: none
-NOTE: Two fixes in (keyboard back in File name after Confirm Save As; accept button is the default for Enter). End-to-end harness with the real xdg-desktop-portal, GTK 3/4 clients and xdotool under Xvfb is running; continuing with more cases.
+NOTE: Six fixes in (focus after Confirm Save As, Enter as default button, visible ring on Save/Open, Ctrl+Shift+N from File name, check boxes on one row, Alt+N/Alt+T). Next: full suites, before/after captures, PR text.
