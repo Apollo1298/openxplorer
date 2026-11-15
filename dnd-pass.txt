@@ -1,7 +1,7 @@
 STATUS: WORKING
-HEAD: dnd-pass 0d142352d4fed08aac05c9b699d68b121a897368
+HEAD: dnd-pass c9f7bab0 (local, not pushed yet)
 QUESTION: none
-NOTE: Cut from upstream main dd39e3b, merged windows-differences-2 (Alt+drag). Three fixes written test-first (Ask offer that made Thunar ask on every plain drag, folder-tree drops, silent refusal on an open ZIP); baseline tests on unchanged main running, then branch tests, Weston, captures. Not pushed yet.
+NOTE: Four fixes done test-first and checked with real input on X11 and Weston; merged network-deep, open-save-dialogs, gallery-match (shared files) and windows-differences-2. Full test run on the merged branch in progress; Clippy shows 5 errors in picker.rs tests that come from open-save-dialogs, not from this branch.
 
 Survey on main (real xdotool drags, Xvfb X11, 1x light; fictional files):
 PASS plain drag onto a folder, same drive: moves, label "Move to Launch planning"
