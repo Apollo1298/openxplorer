@@ -1,7 +1,7 @@
 codex-fixes (Codex findings on AKolenda/openxplorer #335-#338, fixed on fork branches)
 STATUS: WORKING
-NOTE: upstream main dd39e3ba merged into all 4 branches (not pushed yet). Fixes 1-5 committed
-locally with tests; fixes 6-8 written, tests pending. Full checks run one branch at a time
+NOTE: upstream main dd39e3ba merged into all 4 branches. Every new test failed before its fix and
+passes after. Pushed: more-bugs 9fc13864, supere-uninstall 511015df; the other two are being checked. Full checks run one branch at a time
 (disk is tight), compared with unchanged upstream main by test name.
 
 more-bugs: merge 271ccf50 (no conflicts; .pot and docs regenerated)
@@ -13,4 +13,13 @@ windows-differences-2: merge c99a9cd9 (docs.json/interface.md conflict: kept bot
 network-thumbnails: merge 47bc4284 (markdown.json conflict: regenerated)
   5 entry.rs fast content type: fixed in 5eef2b3c (test the_listing_query_asks_for_the_fast_content_type)
 supere-uninstall: merge 6bd93315 (markdown.json conflict: regenerated)
-  6-8: in progress
+  6 launch_shortcut.rs give-back failure deletes records: fixed in 511015df (test a_failed_give_back_at_start_keeps_the_way_back)
+  7 launch_shortcut.rs owner lookup failure deletes records: fixed in 511015df (test records_stay_while_the_service_cannot_say_who_has_super_e)
+  8 launch_shortcut.rs failed rewrite loses way_back: fixed in 511015df (test a_failed_rewrite_keeps_the_records_it_leads_through)
+
+Checks (Xvfb + private D-Bus, as tester; every test executable run even past failures):
+  unchanged upstream main: 4441 passed, 29 failed (9 admin_copy + 18 admin_delete need root
+    mounts; 2 compare against the retired Python app). check.py itself stops at the first of them.
+  supere-uninstall: 4456 passed, same 29 failed, nothing new; parity, i18n, icons, rustfmt,
+    clippy -D warnings, sync-docs --check pass.
+  more-bugs: 4457 passed, same 29 failed, nothing new; same steps pass.

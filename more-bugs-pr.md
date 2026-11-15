@@ -25,6 +25,11 @@ This fixes a set of smaller problems people notice in everyday use: how an offli
 | TAR dates | Members with time 0 showed "1/1/1980 12:00 AM" | They show no date |
 | Chinese | Home, the tab and navigation pane settings, Choose Details, Update and several dialogs were in English | 128 strings translated (separate commit) |
 
+After review:
+
+- A saved share's label, or a mapped share's label with its drive letter, keeps its own spelling when the share is browsed with other casing: saved "studio reports" stays "studio reports" after visiting `\\nas\Studio`. Only a label taken from the mount ("studio on nas") follows the address's spelling.
+- A TAR link stored with a folder's ending (`link/`) is hidden and counted with the other unsafe members, as extracting refuses it; before, it showed as a folder that opened empty.
+
 Left unchanged on purpose:
 
 - One file showing "2 KB" in the Size column and "2.00 KB" in the status bar matches Windows, which writes the Size column in whole kilobytes and the status bar, Properties and tooltips with three significant digits.

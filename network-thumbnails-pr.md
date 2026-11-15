@@ -27,6 +27,8 @@ https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-admx-
 
 Pictures: `network-thumbnails-<scale>-<theme>-share-icons.png` (default), `-share-thumbnails.png` (setting on) and `-settings-row.png`, at 1x and 2x, light and dark.
 
+After review: folder listings now ask GIO for `standard::fast-content-type` too, so a network file that its backend types only by its fast type is typed by it, and with the setting on it gets its thumbnail.
+
 ## CHANGED OWNER DECISIONS
 
 - #327 turned thumbnails in network folders on by default. This sets the default back to off, matching Windows 11; turning the setting on gives the #327 behavior.

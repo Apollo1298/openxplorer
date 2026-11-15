@@ -17,6 +17,12 @@ Uninstalling still changes nothing in anyone's home folder. Instead, the package
 - If the app that had Super+E was itself removed (for example Dolphin), turning the switch on takes Super+E from it without recording it.
 - On other desktops and in the Flatpak, nothing is read or written. When there is no record and no removed package has Super+E, the settings folder is not touched.
 
+After review, tidying up keeps the way back when a step fails partway:
+
+- If giving Super+E back to the previous app fails at startup (for example while KDE's shortcut service restarts), Super+E goes back on the removed package and its records stay, so the next start gives it to the previous app (for example Dolphin) instead of leaving it free for good.
+- If KDE's service cannot say who has Super+E, no record of a removed package is deleted; the next start tidies up.
+- If rewriting a record to lead past a removed package fails (for example on a full disk), the removed package's record stays, so turning the switch off still gives Super+E to the installed app.
+
 ## What is written where
 
 | | Before | After |

@@ -26,6 +26,11 @@ Not changed:
 
 - **Home as the default start.** Microsoft says File Explorer opens to Home with Quick access by default ([File Explorer in Windows](https://support.microsoft.com/en-us/windows/experience/fileexplorer/file-explorer-in-windows)). "Open Quick access on Home" stays off, the owner's choice.
 
+## After review
+
+- Wildcard search words are matched in one pass over each name, with a fixed number of allocations per name. A wildcard search that finds little in a large search cache (`zz?zz`) no longer slows down as the cache grows; a test matches 100,000 names of 255 characters.
+- When `user-dirs.dirs` puts a standard folder at the home folder (`XDG_DESKTOP_DIR="$HOME"`), the home folder's tab shows Home's glyph, not Desktop's.
+
 ## New dependency
 
 `sevenz-rust2` (Apache-2.0, pure Rust) writes the 7z archives. It's pinned at `=0.20.2` with `default-features = false` and only the `compress` feature: no encryption, PPMd, BZip2 or other codecs. 0.20.2 is the last release that builds with the workspace's `rust-version` of 1.92 (0.21 and later need 1.93). It brings `lzma-rust2` 0.16.5 (Apache-2.0) next to the 0.25 already in the tree. `cargo deny` found no advisories for either crate, and their licenses are allowed. Cargo.lock and the Flatpak `cargo-sources.json` are updated, and the packages install each crate's license from Cargo.lock as before.
