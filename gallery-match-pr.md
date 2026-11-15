@@ -22,6 +22,8 @@ Gallery now looks and works like Windows 11 File Explorer's Gallery (build 26200
 - **A photo's right-click menu.** The strip has Cut, Copy, Share and Delete. The menu has Open, Open with, Share with, Set as desktop background, Rotate right, Rotate left, Open file location, Add to Favorites, Compress to, Copy as path, Properties and Show more options. Windows-only app commands are left out.
 - **Tooltip.** Hovering a photo shows "Path: name (folder)", "Item type: PNG File", "Date: …" and "Size: …".
 - **Rotate left and Rotate right.** A JPEG is turned by its EXIF orientation alone, so its pixels stay byte-for-byte the same. The orientation is changed in place, or added without moving any existing EXIF data. A PNG's pixels are turned and saved as PNG again, which is lossless. The new file is written next to the photo and then renamed over it. No new dependency.
+- **Sharp thumbnails.** Each photo on screen is drawn from a picture at least as large as its tile in device pixels, at 1x and 2x and at every View size, so text in a screenshot stays readable. The desktop's thumbnail cache only goes up to 256 pixels, and a Medium tile can be 800 pixels wide. So a tile first shows the cached thumbnail, and once it is on screen the photo is decoded at the tile's size and replaces it. A few decode at a time, within the app's picture limits. A decode is cancelled when its tile leaves the screen, and a View change never blanks or blurs a photo. A photo on a network keeps the cached thumbnail.
+- **Honest loading progress.** Gallery cannot know how many photos it will find until every folder is read. While it lists, the address bar's progress sweeps instead of crawling toward an end it cannot know, and the status bar counts the photos found so far with "Loading…" ("4,800 items · Loading…").
 - **Set as background** and **Set as desktop background** show grayed. The app has no opt-in way yet to set the desktop's background.
 
 The month grouping from the first version of Gallery is removed. Other folders are unchanged.
@@ -43,6 +45,7 @@ The month grouping from the first version of Gallery is removed. Other folders a
 | The Gallery Locations dialog | Windows 11 build 26200 |
 | A photo's right-click menu | Windows 11 build 26200 |
 | A tooltip on hover | [Build 23471](https://blogs.windows.com/windows-insider/2023/06/01/announcing-windows-11-insider-preview-build-23471/); its lines as Windows 11 build 26200 shows them |
+| Sharp thumbnails at every size | Windows 11 build 26200 |
 | Alt+P and Shift+Alt+P open the panes | [Build 22631.2191](https://blogs.windows.com/windows-insider/2023/08/10/announcing-windows-11-insider-preview-build-22621-2191-and-22631-2191/) |
 
 ## Not confirmed
@@ -65,6 +68,7 @@ Not done: Set as background and Set as desktop background, which show grayed.
 
 ## How it was tested
 
+- **Tests first for sharpness and progress.** Before the change, two window tests failed: every photo on screen must be asked for and drawn at no less than its tile's device pixels at Medium, Extra large, Small and Large icons, and Gallery's listing must show the sweeping progress and a "Loading…" count. A unit test checks the decode size for photos of every shape. They pass at 1x and with `GDK_SCALE=2`.
 - **Tests first.** Fourteen window tests and a unit test for these behaviors were written before the change and failed on the earlier Gallery. They are in `window/tests/gallery_view.rs` and `window/tests/gallery_commands.rs`. Unit tests cover the justified layout, the heading text, the row heights and the rotation of JPEG and PNG files. All 55 Gallery-related tests pass.
 - **Full suite.** Every native test executable and the doctests ran with `native/tools/check.py`'s isolation and were compared by name with unchanged main: 4,645 tests on this branch, 4,584 on main. The 13 failures on main also fail here: `admin_copy` (9), the Python location fixture, the FUSE export paths and the two sandboxed-thumbnailer tests, which need bubblewrap permissions this machine lacks. The `admin_delete` parent-path tests failed here only because the test user could not write inside the checkout. Given a folder it owns (`OX_TEST_TRUSTED_BASE`), all 71 pass. A stylesheet test caught a raw colour in the scrubber's month label, which was fixed, and the test passes now.
 - **Other checks.** `native/parity/check.py`, the i18n check, the Markdown sync check, rustfmt, Clippy (`-D warnings`, and again with the pedantic flags) and `tools/audit-public-data.py` pass on the Gallery changes.
@@ -76,6 +80,7 @@ Not done: Set as background and Set as desktop background, which show grayed.
   - Gallery Locations through the real folder picker: Add then Cancel, Add then OK (saved), and Remove then Enter
   - Rotate right and Rotate left on a PNG
   - no GTK criticals
+- **Text screenshots.** The captures include generated screenshots of small, fictional text. At Extra large icons the text is crisp at 1x and 2x.
 - **10,000 photos in 100 folders.** The first photos show about 1 second after Enter. Page Down and the mouse wheel keep redrawing while the rest load. The status bar says "10,000 items", and a click on the scrubber jumps at once. Idle CPU is 0% after loading and after leaving.
 - **Empty or missing Pictures.** Gallery shows "No photos to show" with no error.
 
