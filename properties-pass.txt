@@ -1,4 +1,55 @@
 STATUS: WORKING
-HEAD: properties-pass c05e547b
+HEAD: properties-pass 8ebdf8fb
 QUESTION: none
-NOTE: Six fixes pushed (Sharing on Samba 4.15+, rename rights, folder links among several items, Recycle Bin item Properties, Alt+letter access keys, 380x520 size). Next: shortcut tab, captures, checks.
+NOTE: Ten fixes pushed with tests that fail on main. Merged recycle-pass (same Recycle Bin Properties fix; kept both), network-deep, open-save-dialogs, gallery-match, archives-pass; search-pass not merged yet because its branch does not compile right now (window/tests/home_page.rs). Captures and final test run in progress.
+
+PASS file .txt General: type, Opens with + Change... (Alt+C opens Open with), sizes, dates; Read-only via click+Apply and Alt+R/Alt+A persists (mode 444)
+PASS file Security/Details/Previous Versions tabs read correctly
+PASS photo .jpg Details: EXIF title, author, date taken, camera maker/model, dimensions
+PASS song .mp3 Details: title, artist, album, year, #, genre, length, audio stream
+PASS video .mp4 Details: title, length, frame size, rate, audio
+PASS PDF and .sh script: General and Details (file rows)
+FAIL->FIXED Details tab lost all media rows after the app's file was replaced while running (package update); reader now started via /proc/self/exe
+PASS small folder: General counts (4 Files, 1 Folders), Sharing, Security, Previous Versions, Customize
+PASS folder of 50,000 files: counts up to 50,000 Files, 50 Folders, Esc cancels
+PASS folder with an unreadable subfolder: partial totals marked with ≥
+FAIL->FIXED Sharing tab on Samba 4.19: "Invalid option -l: missing argument"; now net usershare info --long; Advanced Sharing shares/unshares against real Samba
+PASS drive loop-mounted ext4 (Example USB): General ring/space, Hardware, Sharing, Security, Previous Versions, Customize
+PASS read-only squashfs drive: General (0 bytes free), tabs
+PASS tmpfs mount reached as a folder: Mounted Volume with Target + Properties
+PASS root Local Disk
+NOTE drive label empty: container has no udev database (app reads labels from udev); not an app bug
+FAIL->FIXED link to a file / link to a folder / .desktop launcher had no Shortcut tab; folder link had Sharing, Customize and "Opens with: No default application"; launcher showed "Opens with: LibreOffice Writer"
+PASS Shortcut tab: Target type, Target location, Target, Start in, Comment, Open File Location (Alt+F reveals target selected), edits apply on OK/Apply, launcher keeps keys/translations/mode 755
+FAIL->FIXED Enter in a Shortcut tab field did not press OK
+FAIL->FIXED several items with a folder link: "≥ 167 bytes", "1 Files, 1 Folders"; now exact and "2 Files, 0 Folders"
+PASS several items: Read-only/Hidden mixed states, Security owner/group
+FAIL->FIXED Recycle Bin item: only "Only local paths, smb:// locations ... supported"; now General with Origin and Deleted (merged with recycle-pass's same fix)
+PASS file on Samba share (smb://localhost guest): General, Security (Unknown owner, greyed edit), Details, Hidden enabled, Read-only greyed
+FAIL->FIXED Hidden/name editable on an item the user cannot rename; Apply failed "Permission denied"; now greyed
+FAIL->FIXED Alt+letter did nothing anywhere in Properties; now access keys on every button/check box, underlined while Alt is held
+PASS Esc = Cancel discards (Hidden ticked, Esc, folder unchanged); Enter = OK applies and closes
+PASS Tab order top to bottom; tab row is one stop with arrows; Ctrl+1..9 and Ctrl+Tab switch tabs
+FAIL->FIXED window size was 402 x ~590; now 380 x 520 for every kind on every tab (tests + Xvfb 1x/2x + weston Wayland 1x/2x); long text wraps or ends in …, tall pages scroll inside
+PASS Xvfb xdotool 1x light, 1x dark, 2x dark
+PASS weston native Wayland scale 1 and 2: Properties draws at 380x520 logical (snapshot hook)
+FAIL(env) weston + Xwayland: any xdotool/XTEST input crashes headless Xwayland, so real-input checks under weston were not possible
+PASS no crash, no GTK criticals (tests run with G_DEBUG=fatal-criticals), no data loss (link re-point is atomic; launcher rewritten in place keeping mode)
+
+TESTS: full ox-app test program as user tester on private Xvfb: branch (before merges) 2374 passed, 9 failed; main 2366 passed, 8 failed; same 8 names on both (4 settings_page Python-fixture tests needing check.py's OX_PYTHON_APP, 2 thumbnailer sandbox, settings sidebar reset, sidebar_layout pitch); the 9th on the branch (archives::a_new_archive_is_renamed_in_place_and_undo_takes_it_away) timed out under load and passes 3/3 alone. cargo fmt --check OK; parity check OK; i18n check OK; clippy: no findings in changed code (installed clippy 1.97 also flags 7 spots in untouched files on main: duration_suboptimal_units x5, map_unwrap_or, decimal bitwise). Rust here is 1.97.0, not 1.92.
+
+NOT CONFIRMED (check in the VM):
+- exact access-key letters per tab (General R/H/C/A, Security E/V, Sharing S/D, Versions S/O/R, Customize O/S/F/R/I/T, drive D, Shortcut T/S/O/F)
+- Shortcut tab rows and order; Change Icon for launchers not offered yet
+- Recycle Bin item Properties rows (Origin, Deleted) and General-only tabs
+- whether a .lnk General tab shows Opens with; whether a shortcut to a folder has Sharing/Customize
+- whether Tab stops on read-only values of General
+- whether Windows refreshes an open Properties window when the file changes (this app does not)
+- whether Windows shows ≥ for partial folder totals (unchanged)
+
+CHANGED OWNER DECISIONS:
+- Properties size 402 x ~590 (earlier fixed-size change) -> 380 x 520 per the owner's standing rule; tall pages scroll inside
+- link to a folder: no Sharing/Customize tabs; no shortcut shows Opens with
+- Recycle Bin item: General tab only
+
+NOT DONE (ranked): Change Icon for launchers; PDF document metadata in Details (PROP-013 partial, unchanged); access keys in Folder Options beyond Apply
