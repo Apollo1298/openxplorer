@@ -1,5 +1,5 @@
 STATUS: DONE
-HEAD: top-bugs de6686f5
+HEAD: top-bugs 17841def
 QUESTION: none
 NOTE: All six fixed on top-bugs (cut from upstream main 04065186), plus the hidden-selection bug on Home and the deb 34 Home search miss, each with a test that failed before its fix; PR text in top-bugs-pr.md. Deb 34 cause: with pinned (cached) folders under home, a search of home was "own listing + cached subfolders" and never walked uncached folders such as OX-Test; the Home page has no listing, so only cached folders were searched. The branch is on 04065186; upstream main is now dd39e3ba (8 commits on), not rebased.
 
@@ -16,6 +16,7 @@ PASS a_window_fits_small_and_scaled_screens (new unit test of the fitting rule)
 PASS ctrl_a_on_a_page_never_selects_the_hidden_folder (before 2bf0edc1: "Home, after Ctrl+A selects nothing hidden" failed with Documents, Notes 2.txt, Notes 10.txt, Résumé.txt selected; that code is unchanged from main, where real input showed the same)
 PASS searching_from_home_finds_files_deep_in_uncached_folders (before de6686f5: "timed out waiting for every extra file from Home"; fictional home with a cached Documents, OX-Test/Deb32/Logs/extra_2,3,30,31.txt three levels down, a 400-file checkout; also from the home folder)
 PASS a_folder_with_an_indexed_subfolder_shows_both, updated: own matches first, then the cached one and the one in an uncached subfolder; caption "Current folder + subfolders"
+PASS no_tooltip_stays_over_a_menu_the_rename_box_or_the_next_folder made deterministic: each pointer move waits until the window has seen the pointer there (GTK merges quick moves), the pointer first rests on the empty part of the list until no tooltip shows and tooltips may show, real keys wait until the window has the X keyboard (it can be left on the root window after an earlier test's window closes), and rows and column titles are waited for until drawn. Run after tiles_and_content in one process: 20 of 20, and 20 of 20 with six CPU-bound loops running (before the last change, 1 of 10 failed under load at "the view shows Notes 2.txt")
 PASS settings_and_closed_search_results_keep_no_hidden_selection (Settings and results after Close search; these already kept no hidden selection)
 
 CHECKS
