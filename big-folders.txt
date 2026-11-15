@@ -1,21 +1,941 @@
-STATUS: WORKING
-HEAD: big-folders 9556bea5
+STATUS: DONE
+HEAD: big-folders 190a8d49
 QUESTION: none
-NOTE: Five fixes pushed (tree model only when folders expand, selection cache, per-item address facts, reader thread + filter passthrough, batched reload merge). Next: sorting/group-by/view switch stalls, open stalls, full matrix before/after.
+NOTE: Biggest freezes with 100,000 files fixed (Select all 3.2 s -> 0.19 s, Copy/Cut 3.9/4.3 s -> 0.39/0.52 s, Group by Type 3.7 s -> 0.49 s, live changes ~1 s -> 0.3-0.55 s; listing 5.4 s -> 2.8 s) and a GLib critical when changing Group by. Merged network-deep (#1; it also edits native/parity/features.toml, no conflict).
 
-Interim numbers, 100,000 files on local disk, 1x, Xvfb, release build, real xdotool input
-(max main-loop stall measured with _NET_WM_PING round trips; busy = until the app's CPU went idle):
-case                      main (dd39e3b)                  branch so far
-open: first rows          0.13 s                          0.16 s
-open: fully listed        5.1-8.0 s, CPU 5.5-6.5 s        3.6-5.6 s, CPU 3.8-3.9 s
-open: worst stall         159-276 ms                      124-226 ms
-Ctrl+A                    3.2-3.6 s freeze                0.42-0.80 s freeze
-Copy 100k selected        3.6 s freeze                    0.57 s freeze
-Cut 100k selected         4.5 s freeze                    0.69 s freeze
-1,000 files added live    1.0-2.1 s freeze (16.8 s in     0.26 s freeze
-                          the full run)
-1,000 files removed live  1.0-2.1 s (15.9 s full run)     0.45 s freeze
-memory after open (RSS)   583-603 MB                      489 MB
+PR text: big-folders-pr.md. No captures: nothing visible changes (no new or changed UI).
 
-Found on main (not fixed yet): GLib-GObject-CRITICAL "Too many GWeakRef registered" once during the full
-100k scenario (after live changes); not reproduced in isolation yet.
+WHAT WAS MEASURED AND HOW
+- Release builds of upstream main dd39e3b ("main") and of big-folders b2784b31 ("branch"; later commits are the
+  merge of network-deep and lint-only changes), run as the tester user on a private Xvfb (no window manager),
+  private D-Bus session and disposable HOME, with fictional folders created by a script:
+  "Files 10000/50000/100000" (Sample document NNNNNN.<txt|pdf|odt|ods|png|jpg|mp3|zip|csv|md>, random dates over
+  four years), "Mixed 100000" (every tenth item a folder), "Long names 10000" (~150-character names), on local
+  ext4 disk (/var/tmp) and on tmpfs (/dev/shm).
+- Real X input with xdotool (XTEST): the folder is typed into the address bar (Ctrl+L, Enter), column headers and
+  menus are clicked, keys are pressed, the scroll bar and a rubber band are dragged.
+- "stall" = the longest time GTK's main loop took to answer a _NET_WM_PING sent every 20 ms (the window could not
+  react to input for that long). "busy" = until the app's CPU use dropped below 3% for 0.5 s (includes that
+  0.5 s). First rows = first time text appears in the first row of the list (pixels read from the window).
+  Memory = VmRSS. GTK criticals/warnings are collected from the app's log for the whole run.
+- Same scenario at 1x and 2x (GDK_SCALE=2) and in Compact view (View > Show > Compact view).
+- weston 13 (headless backend, Wayland, no Xwayland on this machine): xdotool cannot drive Wayland clients, so only
+  launch + listing + criticals were checked. 100,000 files, time until idle / CPU / RSS:
+    main   1x 7.6 s / 8.1 s / 561 MB   2x 8.7 s / 10.9 s / 586 MB   no criticals
+    branch 1x 2.9 s / 4.8 s / 486 MB   2x 3.4 s / 5.5 s / 516 MB   no criticals
+- Profiles: perf with GTK/GLib debug symbols from Ubuntu's debuginfod. Main, opening 100,000 files: 4.9 s of
+  interface-thread CPU, 2.1 s of it GTK's TreeListModel rebuilding every node per batch (expandable folders are off
+  by default), 0.9 s GtkFilterListModel bitset searches, 0.5 s building rows (entry_from_info) on the main loop.
+  Select all: ~80% splitting/decoding every selected address for the command bar (selection_facts), repeated per
+  command refresh. Group by Type: the regroup went through "no section sorter", heading each item as its own group
+  (100,000 GroupSlot objects with weak refs to one model -> "Too many GWeakRef registered").
+
+TIMING TABLES (worst main-loop stall / busy time per case)
+
+100,000 files, local disk, 1x  (worst main-loop stall / busy time; main 30 GTK criticals, branch 0)
+  case                       main                                                       branch
+  open                       first 0.13s, listed 5.4s, worst 183ms, CPU 5.8s, 579MB     first 0.14s, listed 2.8s, worst 174ms, CPU 3.9s, 512MB
+  sort:name:first            88ms / 0.41s                                               75ms / 0.77s
+  sort:name:second           78ms / 0.89s                                               52ms / 0.64s
+  sort:modified:first        220ms / 0.45s                                              140ms / 0.35s
+  sort:modified:second       106ms / 0.85s                                              43ms / 1.05s
+  sort:type:first            186ms / 0.40s                                              116ms / 0.76s
+  sort:type:second           109ms / 0.33s                                              48ms / 0.34s
+  sort:size:first            261ms / 0.91s                                              166ms / 0.92s
+  sort:size:second           146ms / 0.79s                                              50ms / 0.32s
+  sort:name:back             325ms / 1.42s                                              353ms / 1.01s
+  group:modified             570ms / 1.22s                                              333ms / 0.97s
+  group:type                 3676ms / 4.43s                                             489ms / 1.56s
+  group:none                 692ms / 1.69s                                              377ms / 1.03s
+  view:extra-large           30ms / 0.34s                                               52ms / 0.23s
+  view:large                 27ms / 0.87s                                               35ms / 0.87s
+  view:medium                45ms / 1.32s                                               45ms / 1.28s
+  view:small                 94ms / 1.33s                                               46ms / 1.19s
+  view:list                  151ms / 1.03s                                              180ms / 1.64s
+  view:tiles                 230ms / 0.86s                                              268ms / 1.25s
+  view:content               16ms / 0.86s                                               88ms / 0.98s
+  view:details               49ms / 0.65s                                               73ms / 0.61s
+  view:compact-toggle        11ms / 0.77s                                               10ms / 0.66s
+  view:compact-toggle-back   19ms / 0.99s                                               15ms / 0.97s
+  select:ctrl+a              3206ms / 3.95s                                             188ms / 1.14s
+  select:click-one           35ms / 2.47s                                               52ms / 1.92s
+  select:shift+end           3470ms / 4.24s                                             150ms / 0.80s
+  select:home                69ms / 1.09s                                               96ms / 0.68s
+  select:ctrl+click-15       40ms / 2.05s                                               40ms / 0.32s
+  select:shift+click-range   25ms / 0.45s                                               10ms / 0.44s
+  select:rubber-band         19ms / 1.49s                                               26ms / 1.62s
+  select:ctrl+a-again        3512ms / 3.74s                                             145ms / 0.78s
+  cmd:copy                   3884ms / 8.03s                                             390ms / 2.07s
+  cmd:cut                    4346ms / 8.95s                                             524ms / 3.89s
+  cmd:escape-cut             43ms / 0.97s                                               82ms / 0.86s
+  select:ctrl+a-3            3508ms / 4.47s                                             196ms / 2.12s
+  cmd:shift+delete-prompt    7ms / 0.54s, dialog 0.387s                                 11ms / 1.51s, dialog 0.014s
+  select:none                35ms / 0.97s                                               28ms / 1.00s
+  pane:open                  24ms / 1.72s                                               31ms / 1.41s
+  pane:ctrl+a                3497ms / 4.47s                                             199ms / 0.96s
+  pane:click-one             31ms / 1.83s                                               40ms / 1.29s
+  pane:close                 8ms / 1.08s                                                3ms / 1.17s
+  scroll:wheel-100           3ms / 0.75s                                                4ms / 0.86s
+  scroll:pagedown-20         4ms / 0.65s                                                1ms / 0.43s
+  scroll:end                 4ms / 1.08s                                                5ms / 1.81s
+  scroll:home                47ms / 0.98s                                               68ms / 0.97s
+  scroll:drag-bar            34ms / 0.10s                                               38ms / 0.96s
+  scroll:home-2              28ms / 0.12s                                               34ms / 0.52s
+  thumbs:large-icons         66ms / 0.98s                                               88ms / 0.46s
+  thumbs:wheel-100           5ms / 0.12s                                                10ms / 0.65s
+  thumbs:details             80ms / 1.12s                                               94ms / 0.90s
+  live:add-1000              974ms / 4.38s                                              319ms / 3.67s
+  live:remove-1000           1016ms / 4.00s                                             552ms / 2.70s
+  properties:folder          3ms / 0.64s, dialog 0.003s                                 4ms / 0.85s, dialog 0.004s
+
+100,000 mixed (10% folders), local disk, 1x  (worst main-loop stall / busy time; main 30 GTK criticals, branch 0)
+  case                       main                                                       branch
+  open                       first 0.17s, listed 5.7s, worst 179ms, CPU 5.9s, 573MB     first 0.15s, listed 3.4s, worst 141ms, CPU 3.7s, 509MB
+  sort:name:first            108ms / 0.44s                                              80ms / 1.09s
+  sort:name:second           78ms / 0.35s                                               58ms / 3.19s
+  sort:modified:first        344ms / 0.99s                                              108ms / 0.65s
+  sort:modified:second       114ms / 0.33s                                              52ms / 0.65s
+  sort:type:first            188ms / 2.20s                                              69ms / 0.21s
+  sort:type:second           105ms / 1.18s                                              39ms / 0.75s
+  sort:size:first            207ms / 0.95s                                              99ms / 1.66s
+  sort:size:second           104ms / 2.15s                                              29ms / 0.96s
+  sort:name:back             350ms / 1.42s                                              271ms / 0.48s
+  group:modified             582ms / 3.07s                                              324ms / 1.40s
+  group:type                 3459ms / 4.43s                                             446ms / 2.39s
+  group:none                 724ms / 1.82s                                              372ms / 2.85s
+  view:extra-large           34ms / 0.22s                                               25ms / 0.44s
+  view:large                 26ms / 1.27s                                               27ms / 1.20s
+  view:medium                51ms / 1.18s                                               67ms / 1.42s
+  view:small                 56ms / 0.98s                                               83ms / 1.34s
+  view:list                  225ms / 1.48s                                              205ms / 4.12s
+  view:tiles                 273ms / 1.23s                                              267ms / 1.88s
+  view:content               10ms / 0.85s                                               36ms / 0.65s
+  view:details               54ms / 0.24s                                               77ms / 1.00s
+  view:compact-toggle        9ms / 0.97s                                                15ms / 0.56s
+  view:compact-toggle-back   28ms / 0.54s                                               10ms / 0.65s
+  select:ctrl+a              3292ms / 3.83s                                             178ms / 1.24s
+  select:click-one           15ms / 2.48s                                               57ms / 1.95s
+  select:shift+end           3294ms / 4.26s                                             209ms / 0.86s
+  select:home                58ms / 0.57s                                               81ms / 0.85s
+  select:ctrl+click-15       26ms / 0.32s                                               30ms / 0.12s
+  select:shift+click-range   23ms / 0.44s                                               28ms / 0.46s
+  select:rubber-band         16ms / 0.31s                                               13ms / 1.61s
+  select:ctrl+a-again        3819ms / 4.78s                                             186ms / 1.06s
+  cmd:copy                   3862ms / 7.82s                                             471ms / 1.46s
+  cmd:cut                    4484ms / 9.18s                                             528ms / 3.72s
+  cmd:escape-cut             45ms / 0.98s                                               77ms / 0.97s
+  select:ctrl+a-3            3626ms / 4.61s                                             283ms / 2.02s
+  cmd:shift+delete-prompt    11ms / 0.87s, dialog 0.417s                                11ms / 1.43s, dialog 0.014s
+  select:none                23ms / 0.88s                                               31ms / 0.88s
+  pane:open                  20ms / 1.63s                                               17ms / 1.43s
+  pane:ctrl+a                3799ms / 4.57s                                             223ms / 0.89s
+  pane:click-one             33ms / 0.55s                                               41ms / 1.54s
+  pane:close                 3ms / 0.64s                                                4ms / 0.98s
+  scroll:wheel-100           82ms / 1.46s                                               11ms / 1.31s
+  scroll:pagedown-20         3ms / 0.11s                                                3ms / 0.86s
+  scroll:end                 1ms / 0.11s                                                1ms / 0.21s
+  scroll:home                59ms / 0.56s                                               58ms / 0.80s
+  scroll:drag-bar            45ms / 0.64s                                               48ms / 1.09s
+  scroll:home-2              28ms / 0.54s                                               22ms / 0.32s
+  thumbs:large-icons         74ms / 0.34s                                               69ms / 0.44s
+  thumbs:wheel-100           3ms / 0.11s                                                12ms / 0.12s
+  thumbs:details             90ms / 1.67s                                               104ms / 1.19s
+  live:add-1000              1047ms / 3.33s                                             349ms / 2.44s
+  live:remove-1000           835ms / 3.77s                                              311ms / 2.91s
+  properties:folder          7ms / 3.96s, dialog 0.005s                                 4ms / 0.32s, dialog 0.002s
+
+50,000 files, local disk, 1x  (worst main-loop stall / busy time; main 0 GTK criticals, branch 0)
+  case                       main                                                       branch
+  open                       first 0.13s, listed 3.4s, worst 116ms, CPU 3.1s, 459MB     first 0.16s, listed 2.3s, worst 125ms, CPU 2.2s, 420MB
+  sort:name:first            100ms / 0.32s                                              70ms / 0.65s
+  sort:name:second           36ms / 0.63s                                               16ms / 0.75s
+  sort:modified:first        118ms / 0.34s                                              81ms / 0.46s
+  sort:modified:second       45ms / 1.37s                                               18ms / 1.17s
+  sort:type:first            87ms / 0.78s                                               43ms / 0.24s
+  sort:type:second           33ms / 0.21s                                               15ms / 0.22s
+  sort:size:first            68ms / 0.23s                                               49ms / 0.22s
+  sort:size:second           51ms / 0.54s                                               27ms / 0.22s
+  sort:name:back             205ms / 0.86s                                              135ms / 0.56s
+  group:modified             363ms / 1.68s                                              192ms / 1.17s
+  group:type                 1773ms / 2.75s                                             201ms / 1.07s
+  group:none                 371ms / 1.46s                                              267ms / 0.92s
+  view:extra-large           10ms / 0.21s                                               28ms / 0.22s
+  view:large                 38ms / 0.75s                                               44ms / 1.32s
+  view:medium                32ms / 1.49s                                               52ms / 1.09s
+  view:small                 56ms / 0.87s                                               45ms / 0.33s
+  view:list                  173ms / 0.47s                                              208ms / 4.62s
+  view:tiles                 281ms / 1.36s                                              268ms / 1.22s
+  view:content               12ms / 0.75s                                               70ms / 0.65s
+  view:details               70ms / 0.37s                                               62ms / 0.28s
+  view:compact-toggle        12ms / 0.55s                                               9ms / 0.96s
+  view:compact-toggle-back   4ms / 0.75s                                                35ms / 0.56s
+  select:ctrl+a              1434ms / 1.76s                                             107ms / 1.71s
+  select:click-one           16ms / 0.84s                                               36ms / 2.84s
+  select:shift+end           1363ms / 1.78s                                             107ms / 1.42s
+  select:home                50ms / 0.55s                                               52ms / 0.79s
+  select:ctrl+click-15       36ms / 0.10s                                               38ms / 0.21s
+  select:shift+click-range   25ms / 0.45s                                               38ms / 0.46s
+  select:rubber-band         14ms / 1.09s                                               24ms / 1.92s
+  select:ctrl+a-again        2242ms / 2.35s                                             129ms / 1.31s
+  cmd:copy                   2343ms / 4.68s                                             191ms / 1.12s
+  cmd:cut                    2286ms / 5.18s                                             203ms / 1.17s
+  cmd:escape-cut             14ms / 1.07s                                               31ms / 1.12s
+  select:ctrl+a-3            1237ms / 2.52s                                             108ms / 0.76s
+  cmd:shift+delete-prompt    14ms / 0.55s, dialog 0.317s                                4ms / 2.07s, dialog 0.003s
+  select:none                20ms / 0.96s                                               19ms / 0.99s
+  pane:open                  11ms / 2.03s                                               12ms / 2.27s
+  pane:ctrl+a                1271ms / 1.38s                                             116ms / 1.18s
+  pane:click-one             11ms / 1.20s                                               20ms / 1.84s
+  pane:close                 4ms / 0.85s                                                14ms / 0.86s
+  scroll:wheel-100           11ms / 0.76s                                               18ms / 0.77s
+  scroll:pagedown-20         3ms / 0.00s                                                4ms / 0.33s
+  scroll:end                 1ms / 0.00s                                                1ms / 0.00s
+  scroll:home                38ms / 0.55s                                               56ms / 1.42s
+  scroll:drag-bar            21ms / 0.43s                                               30ms / 0.42s
+  scroll:home-2              46ms / 0.11s                                               19ms / 0.42s
+  thumbs:large-icons         80ms / 0.24s                                               85ms / 0.24s
+  thumbs:wheel-100           2ms / 0.21s                                                9ms / 0.54s
+  thumbs:details             79ms / 1.12s                                               102ms / 1.71s
+  live:add-1000              529ms / 3.23s                                              169ms / 2.25s
+  live:remove-1000           612ms / 2.17s                                              352ms / 1.79s
+  properties:folder          3ms / 0.43s, dialog 0.002s                                 4ms / 0.33s, dialog 0.002s
+
+10,000 files, local disk, 1x  (worst main-loop stall / busy time; main 0 GTK criticals, branch 0)
+  case                       main                                                       branch
+  open                       first 0.12s, listed 2.1s, worst 93ms, CPU 0.8s, 360MB      first 0.15s, listed 1.4s, worst 146ms, CPU 0.8s, 349MB
+  sort:name:first            91ms / 0.76s                                               56ms / 1.28s
+  sort:name:second           1ms / 0.11s                                                11ms / 0.12s
+  sort:modified:first        12ms / 0.21s                                               15ms / 0.55s
+  sort:modified:second       3ms / 0.11s                                                13ms / 0.54s
+  sort:type:first            7ms / 0.22s                                                32ms / 0.75s
+  sort:type:second           10ms / 0.86s                                               20ms / 0.33s
+  sort:size:first            11ms / 0.53s                                               24ms / 0.64s
+  sort:size:second           18ms / 0.42s                                               22ms / 0.22s
+  sort:name:back             27ms / 0.21s                                               40ms / 0.21s
+  group:modified             110ms / 1.51s                                              143ms / 1.99s
+  group:type                 310ms / 0.95s                                              30ms / 0.79s
+  group:none                 105ms / 0.86s                                              91ms / 2.75s
+  view:extra-large           27ms / 0.42s                                               72ms / 0.32s
+  view:large                 37ms / 0.98s                                               39ms / 0.55s
+  view:medium                38ms / 1.51s                                               66ms / 2.38s
+  view:small                 90ms / 1.14s                                               95ms / 1.03s
+  view:list                  231ms / 1.42s                                              180ms / 0.45s
+  view:tiles                 266ms / 0.92s                                              323ms / 0.95s
+  view:content               20ms / 0.78s                                               51ms / 0.87s
+  view:details               63ms / 0.68s                                               81ms / 1.03s
+  view:compact-toggle        22ms / 0.56s                                               10ms / 0.77s
+  view:compact-toggle-back   7ms / 0.55s                                                20ms / 0.56s
+  select:ctrl+a              196ms / 2.02s                                              43ms / 1.30s
+  select:click-one           18ms / 1.00s                                               29ms / 2.84s
+  select:shift+end           182ms / 0.61s                                              39ms / 0.96s
+  select:home                18ms / 0.55s                                               24ms / 0.54s
+  select:ctrl+click-15       25ms / 0.11s                                               41ms / 0.43s
+  select:shift+click-range   4ms / 0.43s                                                4ms / 0.43s
+  select:rubber-band         11ms / 1.21s                                               14ms / 2.06s
+  select:ctrl+a-again        216ms / 0.97s                                              30ms / 0.76s
+  cmd:copy                   288ms / 1.73s                                              23ms / 1.50s
+  cmd:cut                    218ms / 0.92s                                              69ms / 2.95s
+  cmd:escape-cut             18ms / 1.50s                                               28ms / 0.97s
+  select:ctrl+a-3            192ms / 0.85s                                              48ms / 1.63s
+  cmd:shift+delete-prompt    1ms / 0.00s, dialog 0.002s                                 14ms / 0.78s, dialog 0.002s
+  select:none                14ms / 0.65s                                               18ms / 1.31s
+  pane:open                  3ms / 0.11s                                                8ms / 0.44s
+  pane:ctrl+a                189ms / 0.83s                                              40ms / 0.45s
+  pane:click-one             13ms / 2.25s                                               42ms / 1.03s
+  pane:close                 10ms / 0.63s                                               7ms / 3.26s
+  scroll:wheel-100           26ms / 1.08s                                               4ms / 2.40s
+  scroll:pagedown-20         3ms / 0.00s                                                4ms / 0.86s
+  scroll:end                 1ms / 0.21s                                                1ms / 1.29s
+  scroll:home                32ms / 0.54s                                               53ms / 1.10s
+  scroll:drag-bar            23ms / 0.11s                                               45ms / 0.86s
+  scroll:home-2              37ms / 0.42s                                               22ms / 0.76s
+  thumbs:large-icons         73ms / 0.33s                                               94ms / 1.77s
+  thumbs:wheel-100           3ms / 0.53s                                                12ms / 0.23s
+  thumbs:details             93ms / 1.46s                                               196ms / 1.63s
+  live:add-1000              90ms / 1.51s                                               54ms / 1.89s
+  live:remove-1000           221ms / 1.86s                                              202ms / 1.71s
+  properties:folder          6ms / 0.33s, dialog 0.004s                                 8ms / 0.87s, dialog 0.004s
+
+10,000 long names (~150 chars), local disk, 1x  (worst main-loop stall / busy time; main 0 GTK criticals, branch 0)
+  case                       main                                                       branch
+  open                       first 0.21s, listed 2.4s, worst 87ms, CPU 1.7s, 372MB      first 0.14s, listed 3.7s, worst 171ms, CPU 1.0s, 365MB
+  sort:name:first            59ms / 0.53s                                               71ms / 1.29s
+  sort:name:second           19ms / 0.43s                                               16ms / 0.54s
+  sort:modified:first        30ms / 0.21s                                               32ms / 0.63s
+  sort:modified:second       14ms / 0.22s                                               19ms / 0.33s
+  sort:type:first            41ms / 0.52s                                               49ms / 0.34s
+  sort:type:second           14ms / 0.63s                                               69ms / 0.33s
+  sort:size:first            46ms / 0.21s                                               49ms / 0.22s
+  sort:size:second           38ms / 0.22s                                               40ms / 0.32s
+  sort:name:back             48ms / 0.56s                                               87ms / 0.50s
+  group:modified             153ms / 1.34s                                              126ms / 1.44s
+  group:type                 357ms / 1.01s                                              33ms / 0.67s
+  group:none                 129ms / 1.11s                                              158ms / 0.81s
+  view:extra-large           65ms / 0.25s                                               24ms / 0.76s
+  view:large                 50ms / 0.65s                                               48ms / 0.86s
+  view:medium                119ms / 1.59s                                              102ms / 1.36s
+  view:small                 76ms / 0.80s                                               77ms / 0.69s
+  view:list                  204ms / 1.13s                                              255ms / 0.75s
+  view:tiles                 278ms / 1.64s                                              292ms / 0.92s
+  view:content               21ms / 0.86s                                               17ms / 1.39s
+  view:details               85ms / 0.71s                                               92ms / 0.71s
+  view:compact-toggle        20ms / 0.53s                                               30ms / 0.96s
+  view:compact-toggle-back   18ms / 0.98s                                               23ms / 0.64s
+  select:ctrl+a              355ms / 0.98s                                              38ms / 1.73s
+  select:click-one           19ms / 0.45s                                               24ms / 3.35s
+  select:shift+end           380ms / 0.60s                                              22ms / 1.07s
+  select:home                32ms / 0.53s                                               38ms / 0.54s
+  select:ctrl+click-15       35ms / 0.12s                                               43ms / 0.21s
+  select:shift+click-range   7ms / 0.43s                                                22ms / 0.43s
+  select:rubber-band         50ms / 1.73s                                               23ms / 2.04s
+  select:ctrl+a-again        385ms / 0.60s                                              30ms / 1.18s
+  cmd:copy                   435ms / 1.40s                                              54ms / 1.46s
+  cmd:cut                    444ms / 1.44s                                              60ms / 0.97s
+  cmd:escape-cut             17ms / 2.24s                                               12ms / 1.92s
+  select:ctrl+a-3            434ms / 0.96s                                              33ms / 0.75s
+  cmd:shift+delete-prompt    11ms / 1.41s, dialog 0.027s                                1ms / 0.00s, dialog 0.002s
+  select:none                36ms / 0.79s                                               38ms / 1.11s
+  pane:open                  26ms / 1.51s                                               21ms / 2.03s
+  pane:ctrl+a                409ms / 1.04s                                              40ms / 0.88s
+  pane:click-one             24ms / 2.15s                                               27ms / 1.75s
+  pane:close                 4ms / 1.08s                                                9ms / 3.05s
+  scroll:wheel-100           4ms / 0.75s                                                7ms / 2.20s
+  scroll:pagedown-20         3ms / 0.53s                                                5ms / 0.33s
+  scroll:end                 12ms / 1.29s                                               1ms / 0.00s
+  scroll:home                72ms / 1.07s                                               40ms / 1.41s
+  scroll:drag-bar            30ms / 0.75s                                               53ms / 1.07s
+  scroll:home-2              23ms / 0.32s                                               18ms / 0.10s
+  thumbs:large-icons         85ms / 0.26s                                               86ms / 0.27s
+  thumbs:wheel-100           15ms / 0.10s                                               5ms / 0.11s
+  thumbs:details             98ms / 0.98s                                               103ms / 1.44s
+  live:add-1000              200ms / 1.94s                                              76ms / 2.18s
+  live:remove-1000           243ms / 1.79s                                              277ms / 1.72s
+  properties:folder          5ms / 0.22s, dialog 0.002s                                 4ms / 0.66s, dialog 0.002s
+
+100,000 files, tmpfs, 1x  (worst main-loop stall / busy time; main 30 GTK criticals, branch 0)
+  case                       main                                                       branch
+  open                       first 0.12s, listed 4.9s, worst 120ms, CPU 5.3s, 585MB     first 0.17s, listed 9.3s, worst 169ms, CPU 5.4s, 529MB
+  sort:name:first            78ms / 1.55s                                               98ms / 1.54s
+  sort:name:second           63ms / 0.46s                                               21ms / 0.67s
+  sort:modified:first        245ms / 0.48s                                              207ms / 0.97s
+  sort:modified:second       173ms / 1.38s                                              44ms / 0.44s
+  sort:type:first            250ms / 1.12s                                              221ms / 0.77s
+  sort:type:second           288ms / 1.07s                                              70ms / 0.99s
+  sort:size:first            267ms / 0.91s                                              158ms / 0.49s
+  sort:size:second           143ms / 0.80s                                              95ms / 0.42s
+  sort:name:back             292ms / 0.51s                                              219ms / 0.43s
+  group:modified             524ms / 1.62s                                              261ms / 1.04s
+  group:type                 3288ms / 4.80s                                             433ms / 1.42s
+  group:none                 586ms / 2.53s                                              309ms / 1.40s
+  view:extra-large           47ms / 0.44s                                               27ms / 0.23s
+  view:large                 53ms / 0.67s                                               32ms / 0.88s
+  view:medium                88ms / 1.31s                                               128ms / 1.57s
+  view:small                 44ms / 0.65s                                               116ms / 0.67s
+  view:list                  211ms / 1.77s                                              218ms / 1.45s
+  view:tiles                 268ms / 0.92s                                              303ms / 1.15s
+  view:content               102ms / 0.76s                                              24ms / 0.77s
+  view:details               57ms / 0.27s                                               65ms / 0.70s
+  view:compact-toggle        9ms / 0.66s                                                6ms / 0.54s
+  view:compact-toggle-back   40ms / 0.58s                                               23ms / 0.97s
+  select:ctrl+a              2616ms / 2.83s                                             187ms / 0.31s
+  select:click-one           29ms / 0.65s                                               24ms / 0.74s
+  select:shift+end           2475ms / 2.60s                                             136ms / 0.35s
+  select:home                63ms / 0.57s                                               66ms / 1.28s
+  select:ctrl+click-15       21ms / 0.43s                                               38ms / 1.43s
+  select:shift+click-range   20ms / 0.98s                                               21ms / 0.54s
+  select:rubber-band         35ms / 0.32s                                               22ms / 2.06s
+  select:ctrl+a-again        2950ms / 3.92s                                             134ms / 0.90s
+  cmd:copy                   3176ms / 6.87s                                             494ms / 1.86s
+  cmd:cut                    3669ms / 7.80s                                             513ms / 3.49s
+  cmd:escape-cut             42ms / 1.29s                                               79ms / 0.99s
+  select:ctrl+a-3            2679ms / 3.65s                                             146ms / 2.32s
+  cmd:shift+delete-prompt    7ms / 0.45s, dialog 0.321s                                 10ms / 1.43s, dialog 0.017s
+  select:none                33ms / 0.76s                                               46ms / 0.75s
+  pane:open                  15ms / 1.62s                                               8ms / 1.49s
+  pane:ctrl+a                2616ms / 3.59s                                             152ms / 0.91s
+  pane:click-one             26ms / 2.15s                                               19ms / 2.04s
+  pane:close                 8ms / 0.76s                                                12ms / 0.95s
+  scroll:wheel-100           4ms / 1.08s                                                6ms / 1.51s
+  scroll:pagedown-20         4ms / 0.22s                                                4ms / 0.22s
+  scroll:end                 1ms / 0.00s                                                1ms / 0.00s
+  scroll:home                44ms / 0.96s                                               49ms / 0.86s
+  scroll:drag-bar            54ms / 0.21s                                               36ms / 0.84s
+  scroll:home-2              28ms / 0.11s                                               55ms / 0.54s
+  thumbs:large-icons         142ms / 0.68s                                              134ms / 0.25s
+  thumbs:wheel-100           15ms / 0.44s                                               10ms / 0.34s
+  thumbs:details             102ms / 1.49s                                              104ms / 1.82s
+  live:add-1000              1425ms / 7.03s                                             302ms / 3.70s
+  live:remove-1000           1068ms / 3.83s                                             436ms / 2.63s
+  properties:folder          4ms / 0.44s, dialog 0.002s                                 1ms / 0.43s, dialog 0.002s
+
+100,000 files, local disk, 2x  (worst main-loop stall / busy time; main 30 GTK criticals, branch 0)
+  case                       main                                                       branch
+  open                       first 0.21s, listed 10.0s, worst 214ms, CPU 12.5s, 614MB   first 0.24s, listed 3.8s, worst 170ms, CPU 4.8s, 524MB
+  sort:name:first            99ms / 0.85s                                               121ms / 0.39s
+  sort:name:second           70ms / 0.80s                                               68ms / 0.89s
+  sort:modified:first        258ms / 1.02s                                              168ms / 1.56s
+  sort:modified:second       108ms / 0.78s                                              77ms / 0.77s
+  sort:type:first            236ms / 0.56s                                              246ms / 1.55s
+  sort:type:second           160ms / 1.23s                                              90ms / 0.51s
+  sort:size:first            263ms / 1.36s                                              226ms / 1.33s
+  sort:size:second           120ms / 0.66s                                              86ms / 0.69s
+  sort:name:back             323ms / 1.00s                                              366ms / 1.12s
+  group:modified             715ms / 1.75s                                              321ms / 1.84s
+  group:type                 3683ms / 4.77s                                             494ms / 2.75s
+  group:none                 700ms / 2.93s                                              412ms / 1.13s
+  view:extra-large           38ms / 0.77s                                               60ms / 0.78s
+  view:large                 63ms / 0.88s                                               68ms / 1.04s
+  view:medium                92ms / 1.82s                                               60ms / 1.60s
+  view:small                 88ms / 0.64s                                               64ms / 2.87s
+  view:list                  187ms / 0.47s                                              259ms / 0.58s
+  view:tiles                 258ms / 1.45s                                              260ms / 1.79s
+  view:content               32ms / 0.85s                                               78ms / 1.03s
+  view:details               94ms / 1.06s                                               148ms / 0.51s
+  view:compact-toggle        23ms / 0.67s                                               24ms / 0.65s
+  view:compact-toggle-back   25ms / 0.67s                                               24ms / 0.65s
+  select:ctrl+a              3405ms / 4.18s                                             237ms / 2.32s
+  select:click-one           45ms / 2.02s                                               68ms / 0.80s
+  select:shift+end           2958ms / 3.76s                                             193ms / 0.74s
+  select:home                64ms / 0.57s                                               99ms / 1.03s
+  select:ctrl+click-15       46ms / 2.17s                                               48ms / 1.95s
+  select:shift+click-range   20ms / 0.53s                                               24ms / 0.46s
+  select:rubber-band         55ms / 1.46s                                               46ms / 2.02s
+  select:ctrl+a-again        3730ms / 4.54s                                             188ms / 0.93s
+  cmd:copy                   3750ms / 7.68s                                             491ms / 1.57s
+  cmd:cut                    4571ms / 9.58s                                             559ms / 3.71s
+  cmd:escape-cut             44ms / 0.92s                                               88ms / 1.63s
+  select:ctrl+a-3            3503ms / 4.44s                                             204ms / 1.32s
+  cmd:shift+delete-prompt    13ms / 0.64s, dialog 0.388s                                18ms / 2.10s, dialog 0.027s
+  select:none                51ms / 0.68s                                               44ms / 0.80s
+  pane:open                  39ms / 1.53s                                               24ms / 1.75s
+  pane:ctrl+a                3074ms / 3.98s                                             165ms / 1.18s
+  pane:click-one             36ms / 2.31s                                               51ms / 1.13s
+  pane:close                 12ms / 0.82s                                               21ms / 1.43s
+  scroll:wheel-100           18ms / 1.31s                                               13ms / 0.67s
+  scroll:pagedown-20         1ms / 0.54s                                                28ms / 0.68s
+  scroll:end                 21ms / 1.29s                                               14ms / 0.99s
+  scroll:home                96ms / 0.99s                                               47ms / 0.55s
+  scroll:drag-bar            70ms / 0.23s                                               53ms / 0.94s
+  scroll:home-2              31ms / 0.54s                                               22ms / 0.11s
+  thumbs:large-icons         135ms / 0.35s                                              90ms / 0.90s
+  thumbs:wheel-100           14ms / 0.32s                                               16ms / 0.64s
+  thumbs:details             95ms / 1.16s                                               104ms / 0.92s
+  live:add-1000              970ms / 5.89s                                              366ms / 3.54s
+  live:remove-1000           1033ms / 5.16s                                             550ms / 3.14s
+  properties:folder          9ms / 0.77s, dialog 0.014s                                 14ms / 0.67s, dialog 0.012s
+
+100,000 files, local disk, 1x, Compact view  (worst main-loop stall / busy time; main 30 GTK criticals, branch 0)
+  case                       main                                                       branch
+  open                       first 0.15s, listed 8.1s, worst 168ms, CPU 7.1s, 633MB     first 0.14s, listed 6.2s, worst 162ms, CPU 4.2s, 555MB
+  sort:name:first            94ms / 0.98s                                               65ms / 1.29s
+  sort:name:second           80ms / 0.79s                                               42ms / 0.65s
+  sort:modified:first        253ms / 0.78s                                              182ms / 0.83s
+  sort:modified:second       164ms / 0.93s                                              59ms / 0.34s
+  sort:type:first            287ms / 1.06s                                              135ms / 0.46s
+  sort:type:second           208ms / 0.54s                                              57ms / 0.90s
+  sort:size:first            264ms / 0.58s                                              170ms / 0.72s
+  sort:size:second           160ms / 0.80s                                              75ms / 0.79s
+  sort:name:back             356ms / 1.22s                                              352ms / 1.01s
+  group:modified             577ms / 1.55s                                              285ms / 1.15s
+  group:type                 3630ms / 4.40s                                             516ms / 1.84s
+  group:none                 759ms / 2.28s                                              438ms / 1.30s
+  view:extra-large           29ms / 0.21s                                               25ms / 0.22s
+  view:large                 25ms / 0.97s                                               27ms / 0.88s
+  view:medium                60ms / 1.08s                                               35ms / 1.39s
+  view:small                 58ms / 0.55s                                               51ms / 0.96s
+  view:list                  200ms / 0.77s                                              162ms / 0.74s
+  view:tiles                 246ms / 0.90s                                              292ms / 0.94s
+  view:content               27ms / 0.86s                                               14ms / 0.96s
+  view:details               56ms / 0.24s                                               102ms / 0.33s
+  view:compact-toggle        23ms / 0.66s                                               11ms / 0.66s
+  view:compact-toggle-back   15ms / 0.63s                                               13ms / 0.56s
+  select:ctrl+a              3286ms / 4.04s                                             255ms / 1.78s
+  select:click-one           66ms / 2.19s                                               56ms / 3.14s
+  select:shift+end           3831ms / 4.94s                                             246ms / 0.90s
+  select:home                98ms / 0.92s                                               145ms / 1.00s
+  select:ctrl+click-15       46ms / 0.22s                                               44ms / 0.11s
+  select:shift+click-range   1ms / 0.00s                                                23ms / 0.45s
+  select:rubber-band         33ms / 1.74s                                               38ms / 1.74s
+  select:ctrl+a-again        3545ms / 5.46s                                             223ms / 0.87s
+  cmd:copy                   3775ms / 7.51s                                             547ms / 1.78s
+  cmd:cut                    4177ms / 9.09s                                             574ms / 4.02s
+  cmd:escape-cut             52ms / 1.62s                                               84ms / 1.33s
+  select:ctrl+a-3            3494ms / 4.87s                                             199ms / 1.61s
+  cmd:shift+delete-prompt    5ms / 0.54s, dialog 0.362s                                 9ms / 1.31s, dialog 0.019s
+  select:none                39ms / 0.75s                                               33ms / 0.78s
+  pane:open                  20ms / 2.06s                                               30ms / 1.96s
+  pane:ctrl+a                3188ms / 4.05s                                             209ms / 1.18s
+  pane:click-one             43ms / 2.26s                                               38ms / 1.31s
+  pane:close                 17ms / 0.66s                                               25ms / 1.41s
+  scroll:wheel-100           7ms / 1.11s                                                4ms / 0.87s
+  scroll:pagedown-20         3ms / 0.32s                                                4ms / 0.86s
+  scroll:end                 11ms / 1.51s                                               4ms / 0.88s
+  scroll:home                46ms / 1.52s                                               50ms / 1.09s
+  scroll:drag-bar            34ms / 0.86s                                               42ms / 0.54s
+  scroll:home-2              26ms / 1.07s                                               37ms / 0.65s
+  thumbs:large-icons         98ms / 0.38s                                               93ms / 0.79s
+  thumbs:wheel-100           13ms / 0.64s                                               12ms / 0.12s
+  thumbs:details             107ms / 1.54s                                              137ms / 1.65s
+  live:add-1000              1070ms / 4.38s                                             417ms / 4.11s
+  live:remove-1000           991ms / 3.54s                                              661ms / 3.40s
+  properties:folder          3ms / 0.86s, dialog 0.002s                                 4ms / 0.76s, dialog 0.002s
+
+PASS/FAIL (PASS = the window answered within 250 ms, no GTK criticals; open also needs first rows <= 0.5 s)
+370 PASS, 54 FAIL. Every FAIL is faster than main except "sort:name:back", "view:list" and "view:tiles"
+(about the same as main: GTK's own sort and grid setup, not changed here) and live:remove-1000 with 10,000 long
+names (277 ms against 243 ms on main, within run-to-run noise).
+PASS: 100,000 files, local disk, 1x: open: first 0.14s, listed 2.8s, worst 174ms, CPU 3.9s, 512MB (main: first 0.13s, listed 5.4s, worst 183ms, CPU 5.8s, 579MB)
+PASS: 100,000 files, local disk, 1x: sort:name:first: 75ms / 0.77s (main: 88ms / 0.41s)
+PASS: 100,000 files, local disk, 1x: sort:name:second: 52ms / 0.64s (main: 78ms / 0.89s)
+PASS: 100,000 files, local disk, 1x: sort:modified:first: 140ms / 0.35s (main: 220ms / 0.45s)
+PASS: 100,000 files, local disk, 1x: sort:modified:second: 43ms / 1.05s (main: 106ms / 0.85s)
+PASS: 100,000 files, local disk, 1x: sort:type:first: 116ms / 0.76s (main: 186ms / 0.40s)
+PASS: 100,000 files, local disk, 1x: sort:type:second: 48ms / 0.34s (main: 109ms / 0.33s)
+PASS: 100,000 files, local disk, 1x: sort:size:first: 166ms / 0.92s (main: 261ms / 0.91s)
+PASS: 100,000 files, local disk, 1x: sort:size:second: 50ms / 0.32s (main: 146ms / 0.79s)
+FAIL: 100,000 files, local disk, 1x: sort:name:back: 353ms / 1.01s (main: 325ms / 1.42s)
+FAIL: 100,000 files, local disk, 1x: group:modified: 333ms / 0.97s (main: 570ms / 1.22s)
+FAIL: 100,000 files, local disk, 1x: group:type: 489ms / 1.56s (main: 3676ms / 4.43s)
+FAIL: 100,000 files, local disk, 1x: group:none: 377ms / 1.03s (main: 692ms / 1.69s)
+PASS: 100,000 files, local disk, 1x: view:extra-large: 52ms / 0.23s (main: 30ms / 0.34s)
+PASS: 100,000 files, local disk, 1x: view:large: 35ms / 0.87s (main: 27ms / 0.87s)
+PASS: 100,000 files, local disk, 1x: view:medium: 45ms / 1.28s (main: 45ms / 1.32s)
+PASS: 100,000 files, local disk, 1x: view:small: 46ms / 1.19s (main: 94ms / 1.33s)
+PASS: 100,000 files, local disk, 1x: view:list: 180ms / 1.64s (main: 151ms / 1.03s)
+FAIL: 100,000 files, local disk, 1x: view:tiles: 268ms / 1.25s (main: 230ms / 0.86s)
+PASS: 100,000 files, local disk, 1x: view:content: 88ms / 0.98s (main: 16ms / 0.86s)
+PASS: 100,000 files, local disk, 1x: view:details: 73ms / 0.61s (main: 49ms / 0.65s)
+PASS: 100,000 files, local disk, 1x: view:compact-toggle: 10ms / 0.66s (main: 11ms / 0.77s)
+PASS: 100,000 files, local disk, 1x: view:compact-toggle-back: 15ms / 0.97s (main: 19ms / 0.99s)
+PASS: 100,000 files, local disk, 1x: select:ctrl+a: 188ms / 1.14s (main: 3206ms / 3.95s)
+PASS: 100,000 files, local disk, 1x: select:click-one: 52ms / 1.92s (main: 35ms / 2.47s)
+PASS: 100,000 files, local disk, 1x: select:shift+end: 150ms / 0.80s (main: 3470ms / 4.24s)
+PASS: 100,000 files, local disk, 1x: select:home: 96ms / 0.68s (main: 69ms / 1.09s)
+PASS: 100,000 files, local disk, 1x: select:ctrl+click-15: 40ms / 0.32s (main: 40ms / 2.05s)
+PASS: 100,000 files, local disk, 1x: select:shift+click-range: 10ms / 0.44s (main: 25ms / 0.45s)
+PASS: 100,000 files, local disk, 1x: select:rubber-band: 26ms / 1.62s (main: 19ms / 1.49s)
+PASS: 100,000 files, local disk, 1x: select:ctrl+a-again: 145ms / 0.78s (main: 3512ms / 3.74s)
+FAIL: 100,000 files, local disk, 1x: cmd:copy: 390ms / 2.07s (main: 3884ms / 8.03s)
+FAIL: 100,000 files, local disk, 1x: cmd:cut: 524ms / 3.89s (main: 4346ms / 8.95s)
+PASS: 100,000 files, local disk, 1x: cmd:escape-cut: 82ms / 0.86s (main: 43ms / 0.97s)
+PASS: 100,000 files, local disk, 1x: select:ctrl+a-3: 196ms / 2.12s (main: 3508ms / 4.47s)
+PASS: 100,000 files, local disk, 1x: cmd:shift+delete-prompt: 11ms / 1.51s, dialog 0.014s (main: 7ms / 0.54s, dialog 0.387s)
+PASS: 100,000 files, local disk, 1x: select:none: 28ms / 1.00s (main: 35ms / 0.97s)
+PASS: 100,000 files, local disk, 1x: pane:open: 31ms / 1.41s (main: 24ms / 1.72s)
+PASS: 100,000 files, local disk, 1x: pane:ctrl+a: 199ms / 0.96s (main: 3497ms / 4.47s)
+PASS: 100,000 files, local disk, 1x: pane:click-one: 40ms / 1.29s (main: 31ms / 1.83s)
+PASS: 100,000 files, local disk, 1x: pane:close: 3ms / 1.17s (main: 8ms / 1.08s)
+PASS: 100,000 files, local disk, 1x: scroll:wheel-100: 4ms / 0.86s (main: 3ms / 0.75s)
+PASS: 100,000 files, local disk, 1x: scroll:pagedown-20: 1ms / 0.43s (main: 4ms / 0.65s)
+PASS: 100,000 files, local disk, 1x: scroll:end: 5ms / 1.81s (main: 4ms / 1.08s)
+PASS: 100,000 files, local disk, 1x: scroll:home: 68ms / 0.97s (main: 47ms / 0.98s)
+PASS: 100,000 files, local disk, 1x: scroll:drag-bar: 38ms / 0.96s (main: 34ms / 0.10s)
+PASS: 100,000 files, local disk, 1x: scroll:home-2: 34ms / 0.52s (main: 28ms / 0.12s)
+PASS: 100,000 files, local disk, 1x: thumbs:large-icons: 88ms / 0.46s (main: 66ms / 0.98s)
+PASS: 100,000 files, local disk, 1x: thumbs:wheel-100: 10ms / 0.65s (main: 5ms / 0.12s)
+PASS: 100,000 files, local disk, 1x: thumbs:details: 94ms / 0.90s (main: 80ms / 1.12s)
+FAIL: 100,000 files, local disk, 1x: live:add-1000: 319ms / 3.67s (main: 974ms / 4.38s)
+FAIL: 100,000 files, local disk, 1x: live:remove-1000: 552ms / 2.70s (main: 1016ms / 4.00s)
+PASS: 100,000 files, local disk, 1x: properties:folder: 4ms / 0.85s, dialog 0.004s (main: 3ms / 0.64s, dialog 0.003s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: open: first 0.15s, listed 3.4s, worst 141ms, CPU 3.7s, 509MB (main: first 0.17s, listed 5.7s, worst 179ms, CPU 5.9s, 573MB)
+PASS: 100,000 mixed (10% folders), local disk, 1x: sort:name:first: 80ms / 1.09s (main: 108ms / 0.44s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: sort:name:second: 58ms / 3.19s (main: 78ms / 0.35s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: sort:modified:first: 108ms / 0.65s (main: 344ms / 0.99s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: sort:modified:second: 52ms / 0.65s (main: 114ms / 0.33s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: sort:type:first: 69ms / 0.21s (main: 188ms / 2.20s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: sort:type:second: 39ms / 0.75s (main: 105ms / 1.18s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: sort:size:first: 99ms / 1.66s (main: 207ms / 0.95s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: sort:size:second: 29ms / 0.96s (main: 104ms / 2.15s)
+FAIL: 100,000 mixed (10% folders), local disk, 1x: sort:name:back: 271ms / 0.48s (main: 350ms / 1.42s)
+FAIL: 100,000 mixed (10% folders), local disk, 1x: group:modified: 324ms / 1.40s (main: 582ms / 3.07s)
+FAIL: 100,000 mixed (10% folders), local disk, 1x: group:type: 446ms / 2.39s (main: 3459ms / 4.43s)
+FAIL: 100,000 mixed (10% folders), local disk, 1x: group:none: 372ms / 2.85s (main: 724ms / 1.82s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: view:extra-large: 25ms / 0.44s (main: 34ms / 0.22s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: view:large: 27ms / 1.20s (main: 26ms / 1.27s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: view:medium: 67ms / 1.42s (main: 51ms / 1.18s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: view:small: 83ms / 1.34s (main: 56ms / 0.98s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: view:list: 205ms / 4.12s (main: 225ms / 1.48s)
+FAIL: 100,000 mixed (10% folders), local disk, 1x: view:tiles: 267ms / 1.88s (main: 273ms / 1.23s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: view:content: 36ms / 0.65s (main: 10ms / 0.85s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: view:details: 77ms / 1.00s (main: 54ms / 0.24s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: view:compact-toggle: 15ms / 0.56s (main: 9ms / 0.97s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: view:compact-toggle-back: 10ms / 0.65s (main: 28ms / 0.54s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: select:ctrl+a: 178ms / 1.24s (main: 3292ms / 3.83s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: select:click-one: 57ms / 1.95s (main: 15ms / 2.48s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: select:shift+end: 209ms / 0.86s (main: 3294ms / 4.26s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: select:home: 81ms / 0.85s (main: 58ms / 0.57s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: select:ctrl+click-15: 30ms / 0.12s (main: 26ms / 0.32s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: select:shift+click-range: 28ms / 0.46s (main: 23ms / 0.44s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: select:rubber-band: 13ms / 1.61s (main: 16ms / 0.31s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: select:ctrl+a-again: 186ms / 1.06s (main: 3819ms / 4.78s)
+FAIL: 100,000 mixed (10% folders), local disk, 1x: cmd:copy: 471ms / 1.46s (main: 3862ms / 7.82s)
+FAIL: 100,000 mixed (10% folders), local disk, 1x: cmd:cut: 528ms / 3.72s (main: 4484ms / 9.18s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: cmd:escape-cut: 77ms / 0.97s (main: 45ms / 0.98s)
+FAIL: 100,000 mixed (10% folders), local disk, 1x: select:ctrl+a-3: 283ms / 2.02s (main: 3626ms / 4.61s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: cmd:shift+delete-prompt: 11ms / 1.43s, dialog 0.014s (main: 11ms / 0.87s, dialog 0.417s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: select:none: 31ms / 0.88s (main: 23ms / 0.88s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: pane:open: 17ms / 1.43s (main: 20ms / 1.63s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: pane:ctrl+a: 223ms / 0.89s (main: 3799ms / 4.57s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: pane:click-one: 41ms / 1.54s (main: 33ms / 0.55s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: pane:close: 4ms / 0.98s (main: 3ms / 0.64s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: scroll:wheel-100: 11ms / 1.31s (main: 82ms / 1.46s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: scroll:pagedown-20: 3ms / 0.86s (main: 3ms / 0.11s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: scroll:end: 1ms / 0.21s (main: 1ms / 0.11s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: scroll:home: 58ms / 0.80s (main: 59ms / 0.56s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: scroll:drag-bar: 48ms / 1.09s (main: 45ms / 0.64s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: scroll:home-2: 22ms / 0.32s (main: 28ms / 0.54s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: thumbs:large-icons: 69ms / 0.44s (main: 74ms / 0.34s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: thumbs:wheel-100: 12ms / 0.12s (main: 3ms / 0.11s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: thumbs:details: 104ms / 1.19s (main: 90ms / 1.67s)
+FAIL: 100,000 mixed (10% folders), local disk, 1x: live:add-1000: 349ms / 2.44s (main: 1047ms / 3.33s)
+FAIL: 100,000 mixed (10% folders), local disk, 1x: live:remove-1000: 311ms / 2.91s (main: 835ms / 3.77s)
+PASS: 100,000 mixed (10% folders), local disk, 1x: properties:folder: 4ms / 0.32s, dialog 0.002s (main: 7ms / 3.96s, dialog 0.005s)
+PASS: 50,000 files, local disk, 1x: open: first 0.16s, listed 2.3s, worst 125ms, CPU 2.2s, 420MB (main: first 0.13s, listed 3.4s, worst 116ms, CPU 3.1s, 459MB)
+PASS: 50,000 files, local disk, 1x: sort:name:first: 70ms / 0.65s (main: 100ms / 0.32s)
+PASS: 50,000 files, local disk, 1x: sort:name:second: 16ms / 0.75s (main: 36ms / 0.63s)
+PASS: 50,000 files, local disk, 1x: sort:modified:first: 81ms / 0.46s (main: 118ms / 0.34s)
+PASS: 50,000 files, local disk, 1x: sort:modified:second: 18ms / 1.17s (main: 45ms / 1.37s)
+PASS: 50,000 files, local disk, 1x: sort:type:first: 43ms / 0.24s (main: 87ms / 0.78s)
+PASS: 50,000 files, local disk, 1x: sort:type:second: 15ms / 0.22s (main: 33ms / 0.21s)
+PASS: 50,000 files, local disk, 1x: sort:size:first: 49ms / 0.22s (main: 68ms / 0.23s)
+PASS: 50,000 files, local disk, 1x: sort:size:second: 27ms / 0.22s (main: 51ms / 0.54s)
+PASS: 50,000 files, local disk, 1x: sort:name:back: 135ms / 0.56s (main: 205ms / 0.86s)
+PASS: 50,000 files, local disk, 1x: group:modified: 192ms / 1.17s (main: 363ms / 1.68s)
+PASS: 50,000 files, local disk, 1x: group:type: 201ms / 1.07s (main: 1773ms / 2.75s)
+FAIL: 50,000 files, local disk, 1x: group:none: 267ms / 0.92s (main: 371ms / 1.46s)
+PASS: 50,000 files, local disk, 1x: view:extra-large: 28ms / 0.22s (main: 10ms / 0.21s)
+PASS: 50,000 files, local disk, 1x: view:large: 44ms / 1.32s (main: 38ms / 0.75s)
+PASS: 50,000 files, local disk, 1x: view:medium: 52ms / 1.09s (main: 32ms / 1.49s)
+PASS: 50,000 files, local disk, 1x: view:small: 45ms / 0.33s (main: 56ms / 0.87s)
+PASS: 50,000 files, local disk, 1x: view:list: 208ms / 4.62s (main: 173ms / 0.47s)
+FAIL: 50,000 files, local disk, 1x: view:tiles: 268ms / 1.22s (main: 281ms / 1.36s)
+PASS: 50,000 files, local disk, 1x: view:content: 70ms / 0.65s (main: 12ms / 0.75s)
+PASS: 50,000 files, local disk, 1x: view:details: 62ms / 0.28s (main: 70ms / 0.37s)
+PASS: 50,000 files, local disk, 1x: view:compact-toggle: 9ms / 0.96s (main: 12ms / 0.55s)
+PASS: 50,000 files, local disk, 1x: view:compact-toggle-back: 35ms / 0.56s (main: 4ms / 0.75s)
+PASS: 50,000 files, local disk, 1x: select:ctrl+a: 107ms / 1.71s (main: 1434ms / 1.76s)
+PASS: 50,000 files, local disk, 1x: select:click-one: 36ms / 2.84s (main: 16ms / 0.84s)
+PASS: 50,000 files, local disk, 1x: select:shift+end: 107ms / 1.42s (main: 1363ms / 1.78s)
+PASS: 50,000 files, local disk, 1x: select:home: 52ms / 0.79s (main: 50ms / 0.55s)
+PASS: 50,000 files, local disk, 1x: select:ctrl+click-15: 38ms / 0.21s (main: 36ms / 0.10s)
+PASS: 50,000 files, local disk, 1x: select:shift+click-range: 38ms / 0.46s (main: 25ms / 0.45s)
+PASS: 50,000 files, local disk, 1x: select:rubber-band: 24ms / 1.92s (main: 14ms / 1.09s)
+PASS: 50,000 files, local disk, 1x: select:ctrl+a-again: 129ms / 1.31s (main: 2242ms / 2.35s)
+PASS: 50,000 files, local disk, 1x: cmd:copy: 191ms / 1.12s (main: 2343ms / 4.68s)
+PASS: 50,000 files, local disk, 1x: cmd:cut: 203ms / 1.17s (main: 2286ms / 5.18s)
+PASS: 50,000 files, local disk, 1x: cmd:escape-cut: 31ms / 1.12s (main: 14ms / 1.07s)
+PASS: 50,000 files, local disk, 1x: select:ctrl+a-3: 108ms / 0.76s (main: 1237ms / 2.52s)
+PASS: 50,000 files, local disk, 1x: cmd:shift+delete-prompt: 4ms / 2.07s, dialog 0.003s (main: 14ms / 0.55s, dialog 0.317s)
+PASS: 50,000 files, local disk, 1x: select:none: 19ms / 0.99s (main: 20ms / 0.96s)
+PASS: 50,000 files, local disk, 1x: pane:open: 12ms / 2.27s (main: 11ms / 2.03s)
+PASS: 50,000 files, local disk, 1x: pane:ctrl+a: 116ms / 1.18s (main: 1271ms / 1.38s)
+PASS: 50,000 files, local disk, 1x: pane:click-one: 20ms / 1.84s (main: 11ms / 1.20s)
+PASS: 50,000 files, local disk, 1x: pane:close: 14ms / 0.86s (main: 4ms / 0.85s)
+PASS: 50,000 files, local disk, 1x: scroll:wheel-100: 18ms / 0.77s (main: 11ms / 0.76s)
+PASS: 50,000 files, local disk, 1x: scroll:pagedown-20: 4ms / 0.33s (main: 3ms / 0.00s)
+PASS: 50,000 files, local disk, 1x: scroll:end: 1ms / 0.00s (main: 1ms / 0.00s)
+PASS: 50,000 files, local disk, 1x: scroll:home: 56ms / 1.42s (main: 38ms / 0.55s)
+PASS: 50,000 files, local disk, 1x: scroll:drag-bar: 30ms / 0.42s (main: 21ms / 0.43s)
+PASS: 50,000 files, local disk, 1x: scroll:home-2: 19ms / 0.42s (main: 46ms / 0.11s)
+PASS: 50,000 files, local disk, 1x: thumbs:large-icons: 85ms / 0.24s (main: 80ms / 0.24s)
+PASS: 50,000 files, local disk, 1x: thumbs:wheel-100: 9ms / 0.54s (main: 2ms / 0.21s)
+PASS: 50,000 files, local disk, 1x: thumbs:details: 102ms / 1.71s (main: 79ms / 1.12s)
+PASS: 50,000 files, local disk, 1x: live:add-1000: 169ms / 2.25s (main: 529ms / 3.23s)
+FAIL: 50,000 files, local disk, 1x: live:remove-1000: 352ms / 1.79s (main: 612ms / 2.17s)
+PASS: 50,000 files, local disk, 1x: properties:folder: 4ms / 0.33s, dialog 0.002s (main: 3ms / 0.43s, dialog 0.002s)
+PASS: 10,000 files, local disk, 1x: open: first 0.15s, listed 1.4s, worst 146ms, CPU 0.8s, 349MB (main: first 0.12s, listed 2.1s, worst 93ms, CPU 0.8s, 360MB)
+PASS: 10,000 files, local disk, 1x: sort:name:first: 56ms / 1.28s (main: 91ms / 0.76s)
+PASS: 10,000 files, local disk, 1x: sort:name:second: 11ms / 0.12s (main: 1ms / 0.11s)
+PASS: 10,000 files, local disk, 1x: sort:modified:first: 15ms / 0.55s (main: 12ms / 0.21s)
+PASS: 10,000 files, local disk, 1x: sort:modified:second: 13ms / 0.54s (main: 3ms / 0.11s)
+PASS: 10,000 files, local disk, 1x: sort:type:first: 32ms / 0.75s (main: 7ms / 0.22s)
+PASS: 10,000 files, local disk, 1x: sort:type:second: 20ms / 0.33s (main: 10ms / 0.86s)
+PASS: 10,000 files, local disk, 1x: sort:size:first: 24ms / 0.64s (main: 11ms / 0.53s)
+PASS: 10,000 files, local disk, 1x: sort:size:second: 22ms / 0.22s (main: 18ms / 0.42s)
+PASS: 10,000 files, local disk, 1x: sort:name:back: 40ms / 0.21s (main: 27ms / 0.21s)
+PASS: 10,000 files, local disk, 1x: group:modified: 143ms / 1.99s (main: 110ms / 1.51s)
+PASS: 10,000 files, local disk, 1x: group:type: 30ms / 0.79s (main: 310ms / 0.95s)
+PASS: 10,000 files, local disk, 1x: group:none: 91ms / 2.75s (main: 105ms / 0.86s)
+PASS: 10,000 files, local disk, 1x: view:extra-large: 72ms / 0.32s (main: 27ms / 0.42s)
+PASS: 10,000 files, local disk, 1x: view:large: 39ms / 0.55s (main: 37ms / 0.98s)
+PASS: 10,000 files, local disk, 1x: view:medium: 66ms / 2.38s (main: 38ms / 1.51s)
+PASS: 10,000 files, local disk, 1x: view:small: 95ms / 1.03s (main: 90ms / 1.14s)
+PASS: 10,000 files, local disk, 1x: view:list: 180ms / 0.45s (main: 231ms / 1.42s)
+FAIL: 10,000 files, local disk, 1x: view:tiles: 323ms / 0.95s (main: 266ms / 0.92s)
+PASS: 10,000 files, local disk, 1x: view:content: 51ms / 0.87s (main: 20ms / 0.78s)
+PASS: 10,000 files, local disk, 1x: view:details: 81ms / 1.03s (main: 63ms / 0.68s)
+PASS: 10,000 files, local disk, 1x: view:compact-toggle: 10ms / 0.77s (main: 22ms / 0.56s)
+PASS: 10,000 files, local disk, 1x: view:compact-toggle-back: 20ms / 0.56s (main: 7ms / 0.55s)
+PASS: 10,000 files, local disk, 1x: select:ctrl+a: 43ms / 1.30s (main: 196ms / 2.02s)
+PASS: 10,000 files, local disk, 1x: select:click-one: 29ms / 2.84s (main: 18ms / 1.00s)
+PASS: 10,000 files, local disk, 1x: select:shift+end: 39ms / 0.96s (main: 182ms / 0.61s)
+PASS: 10,000 files, local disk, 1x: select:home: 24ms / 0.54s (main: 18ms / 0.55s)
+PASS: 10,000 files, local disk, 1x: select:ctrl+click-15: 41ms / 0.43s (main: 25ms / 0.11s)
+PASS: 10,000 files, local disk, 1x: select:shift+click-range: 4ms / 0.43s (main: 4ms / 0.43s)
+PASS: 10,000 files, local disk, 1x: select:rubber-band: 14ms / 2.06s (main: 11ms / 1.21s)
+PASS: 10,000 files, local disk, 1x: select:ctrl+a-again: 30ms / 0.76s (main: 216ms / 0.97s)
+PASS: 10,000 files, local disk, 1x: cmd:copy: 23ms / 1.50s (main: 288ms / 1.73s)
+PASS: 10,000 files, local disk, 1x: cmd:cut: 69ms / 2.95s (main: 218ms / 0.92s)
+PASS: 10,000 files, local disk, 1x: cmd:escape-cut: 28ms / 0.97s (main: 18ms / 1.50s)
+PASS: 10,000 files, local disk, 1x: select:ctrl+a-3: 48ms / 1.63s (main: 192ms / 0.85s)
+PASS: 10,000 files, local disk, 1x: cmd:shift+delete-prompt: 14ms / 0.78s, dialog 0.002s (main: 1ms / 0.00s, dialog 0.002s)
+PASS: 10,000 files, local disk, 1x: select:none: 18ms / 1.31s (main: 14ms / 0.65s)
+PASS: 10,000 files, local disk, 1x: pane:open: 8ms / 0.44s (main: 3ms / 0.11s)
+PASS: 10,000 files, local disk, 1x: pane:ctrl+a: 40ms / 0.45s (main: 189ms / 0.83s)
+PASS: 10,000 files, local disk, 1x: pane:click-one: 42ms / 1.03s (main: 13ms / 2.25s)
+PASS: 10,000 files, local disk, 1x: pane:close: 7ms / 3.26s (main: 10ms / 0.63s)
+PASS: 10,000 files, local disk, 1x: scroll:wheel-100: 4ms / 2.40s (main: 26ms / 1.08s)
+PASS: 10,000 files, local disk, 1x: scroll:pagedown-20: 4ms / 0.86s (main: 3ms / 0.00s)
+PASS: 10,000 files, local disk, 1x: scroll:end: 1ms / 1.29s (main: 1ms / 0.21s)
+PASS: 10,000 files, local disk, 1x: scroll:home: 53ms / 1.10s (main: 32ms / 0.54s)
+PASS: 10,000 files, local disk, 1x: scroll:drag-bar: 45ms / 0.86s (main: 23ms / 0.11s)
+PASS: 10,000 files, local disk, 1x: scroll:home-2: 22ms / 0.76s (main: 37ms / 0.42s)
+PASS: 10,000 files, local disk, 1x: thumbs:large-icons: 94ms / 1.77s (main: 73ms / 0.33s)
+PASS: 10,000 files, local disk, 1x: thumbs:wheel-100: 12ms / 0.23s (main: 3ms / 0.53s)
+PASS: 10,000 files, local disk, 1x: thumbs:details: 196ms / 1.63s (main: 93ms / 1.46s)
+PASS: 10,000 files, local disk, 1x: live:add-1000: 54ms / 1.89s (main: 90ms / 1.51s)
+PASS: 10,000 files, local disk, 1x: live:remove-1000: 202ms / 1.71s (main: 221ms / 1.86s)
+PASS: 10,000 files, local disk, 1x: properties:folder: 8ms / 0.87s, dialog 0.004s (main: 6ms / 0.33s, dialog 0.004s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: open: first 0.14s, listed 3.7s, worst 171ms, CPU 1.0s, 365MB (main: first 0.21s, listed 2.4s, worst 87ms, CPU 1.7s, 372MB)
+PASS: 10,000 long names (~150 chars), local disk, 1x: sort:name:first: 71ms / 1.29s (main: 59ms / 0.53s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: sort:name:second: 16ms / 0.54s (main: 19ms / 0.43s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: sort:modified:first: 32ms / 0.63s (main: 30ms / 0.21s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: sort:modified:second: 19ms / 0.33s (main: 14ms / 0.22s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: sort:type:first: 49ms / 0.34s (main: 41ms / 0.52s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: sort:type:second: 69ms / 0.33s (main: 14ms / 0.63s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: sort:size:first: 49ms / 0.22s (main: 46ms / 0.21s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: sort:size:second: 40ms / 0.32s (main: 38ms / 0.22s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: sort:name:back: 87ms / 0.50s (main: 48ms / 0.56s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: group:modified: 126ms / 1.44s (main: 153ms / 1.34s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: group:type: 33ms / 0.67s (main: 357ms / 1.01s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: group:none: 158ms / 0.81s (main: 129ms / 1.11s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: view:extra-large: 24ms / 0.76s (main: 65ms / 0.25s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: view:large: 48ms / 0.86s (main: 50ms / 0.65s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: view:medium: 102ms / 1.36s (main: 119ms / 1.59s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: view:small: 77ms / 0.69s (main: 76ms / 0.80s)
+FAIL: 10,000 long names (~150 chars), local disk, 1x: view:list: 255ms / 0.75s (main: 204ms / 1.13s)
+FAIL: 10,000 long names (~150 chars), local disk, 1x: view:tiles: 292ms / 0.92s (main: 278ms / 1.64s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: view:content: 17ms / 1.39s (main: 21ms / 0.86s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: view:details: 92ms / 0.71s (main: 85ms / 0.71s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: view:compact-toggle: 30ms / 0.96s (main: 20ms / 0.53s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: view:compact-toggle-back: 23ms / 0.64s (main: 18ms / 0.98s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: select:ctrl+a: 38ms / 1.73s (main: 355ms / 0.98s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: select:click-one: 24ms / 3.35s (main: 19ms / 0.45s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: select:shift+end: 22ms / 1.07s (main: 380ms / 0.60s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: select:home: 38ms / 0.54s (main: 32ms / 0.53s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: select:ctrl+click-15: 43ms / 0.21s (main: 35ms / 0.12s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: select:shift+click-range: 22ms / 0.43s (main: 7ms / 0.43s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: select:rubber-band: 23ms / 2.04s (main: 50ms / 1.73s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: select:ctrl+a-again: 30ms / 1.18s (main: 385ms / 0.60s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: cmd:copy: 54ms / 1.46s (main: 435ms / 1.40s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: cmd:cut: 60ms / 0.97s (main: 444ms / 1.44s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: cmd:escape-cut: 12ms / 1.92s (main: 17ms / 2.24s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: select:ctrl+a-3: 33ms / 0.75s (main: 434ms / 0.96s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: cmd:shift+delete-prompt: 1ms / 0.00s, dialog 0.002s (main: 11ms / 1.41s, dialog 0.027s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: select:none: 38ms / 1.11s (main: 36ms / 0.79s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: pane:open: 21ms / 2.03s (main: 26ms / 1.51s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: pane:ctrl+a: 40ms / 0.88s (main: 409ms / 1.04s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: pane:click-one: 27ms / 1.75s (main: 24ms / 2.15s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: pane:close: 9ms / 3.05s (main: 4ms / 1.08s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: scroll:wheel-100: 7ms / 2.20s (main: 4ms / 0.75s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: scroll:pagedown-20: 5ms / 0.33s (main: 3ms / 0.53s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: scroll:end: 1ms / 0.00s (main: 12ms / 1.29s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: scroll:home: 40ms / 1.41s (main: 72ms / 1.07s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: scroll:drag-bar: 53ms / 1.07s (main: 30ms / 0.75s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: scroll:home-2: 18ms / 0.10s (main: 23ms / 0.32s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: thumbs:large-icons: 86ms / 0.27s (main: 85ms / 0.26s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: thumbs:wheel-100: 5ms / 0.11s (main: 15ms / 0.10s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: thumbs:details: 103ms / 1.44s (main: 98ms / 0.98s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: live:add-1000: 76ms / 2.18s (main: 200ms / 1.94s)
+FAIL: 10,000 long names (~150 chars), local disk, 1x: live:remove-1000: 277ms / 1.72s (main: 243ms / 1.79s)
+PASS: 10,000 long names (~150 chars), local disk, 1x: properties:folder: 4ms / 0.66s, dialog 0.002s (main: 5ms / 0.22s, dialog 0.002s)
+PASS: 100,000 files, tmpfs, 1x: open: first 0.17s, listed 9.3s, worst 169ms, CPU 5.4s, 529MB (main: first 0.12s, listed 4.9s, worst 120ms, CPU 5.3s, 585MB)
+PASS: 100,000 files, tmpfs, 1x: sort:name:first: 98ms / 1.54s (main: 78ms / 1.55s)
+PASS: 100,000 files, tmpfs, 1x: sort:name:second: 21ms / 0.67s (main: 63ms / 0.46s)
+PASS: 100,000 files, tmpfs, 1x: sort:modified:first: 207ms / 0.97s (main: 245ms / 0.48s)
+PASS: 100,000 files, tmpfs, 1x: sort:modified:second: 44ms / 0.44s (main: 173ms / 1.38s)
+PASS: 100,000 files, tmpfs, 1x: sort:type:first: 221ms / 0.77s (main: 250ms / 1.12s)
+PASS: 100,000 files, tmpfs, 1x: sort:type:second: 70ms / 0.99s (main: 288ms / 1.07s)
+PASS: 100,000 files, tmpfs, 1x: sort:size:first: 158ms / 0.49s (main: 267ms / 0.91s)
+PASS: 100,000 files, tmpfs, 1x: sort:size:second: 95ms / 0.42s (main: 143ms / 0.80s)
+PASS: 100,000 files, tmpfs, 1x: sort:name:back: 219ms / 0.43s (main: 292ms / 0.51s)
+FAIL: 100,000 files, tmpfs, 1x: group:modified: 261ms / 1.04s (main: 524ms / 1.62s)
+FAIL: 100,000 files, tmpfs, 1x: group:type: 433ms / 1.42s (main: 3288ms / 4.80s)
+FAIL: 100,000 files, tmpfs, 1x: group:none: 309ms / 1.40s (main: 586ms / 2.53s)
+PASS: 100,000 files, tmpfs, 1x: view:extra-large: 27ms / 0.23s (main: 47ms / 0.44s)
+PASS: 100,000 files, tmpfs, 1x: view:large: 32ms / 0.88s (main: 53ms / 0.67s)
+PASS: 100,000 files, tmpfs, 1x: view:medium: 128ms / 1.57s (main: 88ms / 1.31s)
+PASS: 100,000 files, tmpfs, 1x: view:small: 116ms / 0.67s (main: 44ms / 0.65s)
+PASS: 100,000 files, tmpfs, 1x: view:list: 218ms / 1.45s (main: 211ms / 1.77s)
+FAIL: 100,000 files, tmpfs, 1x: view:tiles: 303ms / 1.15s (main: 268ms / 0.92s)
+PASS: 100,000 files, tmpfs, 1x: view:content: 24ms / 0.77s (main: 102ms / 0.76s)
+PASS: 100,000 files, tmpfs, 1x: view:details: 65ms / 0.70s (main: 57ms / 0.27s)
+PASS: 100,000 files, tmpfs, 1x: view:compact-toggle: 6ms / 0.54s (main: 9ms / 0.66s)
+PASS: 100,000 files, tmpfs, 1x: view:compact-toggle-back: 23ms / 0.97s (main: 40ms / 0.58s)
+PASS: 100,000 files, tmpfs, 1x: select:ctrl+a: 187ms / 0.31s (main: 2616ms / 2.83s)
+PASS: 100,000 files, tmpfs, 1x: select:click-one: 24ms / 0.74s (main: 29ms / 0.65s)
+PASS: 100,000 files, tmpfs, 1x: select:shift+end: 136ms / 0.35s (main: 2475ms / 2.60s)
+PASS: 100,000 files, tmpfs, 1x: select:home: 66ms / 1.28s (main: 63ms / 0.57s)
+PASS: 100,000 files, tmpfs, 1x: select:ctrl+click-15: 38ms / 1.43s (main: 21ms / 0.43s)
+PASS: 100,000 files, tmpfs, 1x: select:shift+click-range: 21ms / 0.54s (main: 20ms / 0.98s)
+PASS: 100,000 files, tmpfs, 1x: select:rubber-band: 22ms / 2.06s (main: 35ms / 0.32s)
+PASS: 100,000 files, tmpfs, 1x: select:ctrl+a-again: 134ms / 0.90s (main: 2950ms / 3.92s)
+FAIL: 100,000 files, tmpfs, 1x: cmd:copy: 494ms / 1.86s (main: 3176ms / 6.87s)
+FAIL: 100,000 files, tmpfs, 1x: cmd:cut: 513ms / 3.49s (main: 3669ms / 7.80s)
+PASS: 100,000 files, tmpfs, 1x: cmd:escape-cut: 79ms / 0.99s (main: 42ms / 1.29s)
+PASS: 100,000 files, tmpfs, 1x: select:ctrl+a-3: 146ms / 2.32s (main: 2679ms / 3.65s)
+PASS: 100,000 files, tmpfs, 1x: cmd:shift+delete-prompt: 10ms / 1.43s, dialog 0.017s (main: 7ms / 0.45s, dialog 0.321s)
+PASS: 100,000 files, tmpfs, 1x: select:none: 46ms / 0.75s (main: 33ms / 0.76s)
+PASS: 100,000 files, tmpfs, 1x: pane:open: 8ms / 1.49s (main: 15ms / 1.62s)
+PASS: 100,000 files, tmpfs, 1x: pane:ctrl+a: 152ms / 0.91s (main: 2616ms / 3.59s)
+PASS: 100,000 files, tmpfs, 1x: pane:click-one: 19ms / 2.04s (main: 26ms / 2.15s)
+PASS: 100,000 files, tmpfs, 1x: pane:close: 12ms / 0.95s (main: 8ms / 0.76s)
+PASS: 100,000 files, tmpfs, 1x: scroll:wheel-100: 6ms / 1.51s (main: 4ms / 1.08s)
+PASS: 100,000 files, tmpfs, 1x: scroll:pagedown-20: 4ms / 0.22s (main: 4ms / 0.22s)
+PASS: 100,000 files, tmpfs, 1x: scroll:end: 1ms / 0.00s (main: 1ms / 0.00s)
+PASS: 100,000 files, tmpfs, 1x: scroll:home: 49ms / 0.86s (main: 44ms / 0.96s)
+PASS: 100,000 files, tmpfs, 1x: scroll:drag-bar: 36ms / 0.84s (main: 54ms / 0.21s)
+PASS: 100,000 files, tmpfs, 1x: scroll:home-2: 55ms / 0.54s (main: 28ms / 0.11s)
+PASS: 100,000 files, tmpfs, 1x: thumbs:large-icons: 134ms / 0.25s (main: 142ms / 0.68s)
+PASS: 100,000 files, tmpfs, 1x: thumbs:wheel-100: 10ms / 0.34s (main: 15ms / 0.44s)
+PASS: 100,000 files, tmpfs, 1x: thumbs:details: 104ms / 1.82s (main: 102ms / 1.49s)
+FAIL: 100,000 files, tmpfs, 1x: live:add-1000: 302ms / 3.70s (main: 1425ms / 7.03s)
+FAIL: 100,000 files, tmpfs, 1x: live:remove-1000: 436ms / 2.63s (main: 1068ms / 3.83s)
+PASS: 100,000 files, tmpfs, 1x: properties:folder: 1ms / 0.43s, dialog 0.002s (main: 4ms / 0.44s, dialog 0.002s)
+PASS: 100,000 files, local disk, 2x: open: first 0.24s, listed 3.8s, worst 170ms, CPU 4.8s, 524MB (main: first 0.21s, listed 10.0s, worst 214ms, CPU 12.5s, 614MB)
+PASS: 100,000 files, local disk, 2x: sort:name:first: 121ms / 0.39s (main: 99ms / 0.85s)
+PASS: 100,000 files, local disk, 2x: sort:name:second: 68ms / 0.89s (main: 70ms / 0.80s)
+PASS: 100,000 files, local disk, 2x: sort:modified:first: 168ms / 1.56s (main: 258ms / 1.02s)
+PASS: 100,000 files, local disk, 2x: sort:modified:second: 77ms / 0.77s (main: 108ms / 0.78s)
+PASS: 100,000 files, local disk, 2x: sort:type:first: 246ms / 1.55s (main: 236ms / 0.56s)
+PASS: 100,000 files, local disk, 2x: sort:type:second: 90ms / 0.51s (main: 160ms / 1.23s)
+PASS: 100,000 files, local disk, 2x: sort:size:first: 226ms / 1.33s (main: 263ms / 1.36s)
+PASS: 100,000 files, local disk, 2x: sort:size:second: 86ms / 0.69s (main: 120ms / 0.66s)
+FAIL: 100,000 files, local disk, 2x: sort:name:back: 366ms / 1.12s (main: 323ms / 1.00s)
+FAIL: 100,000 files, local disk, 2x: group:modified: 321ms / 1.84s (main: 715ms / 1.75s)
+FAIL: 100,000 files, local disk, 2x: group:type: 494ms / 2.75s (main: 3683ms / 4.77s)
+FAIL: 100,000 files, local disk, 2x: group:none: 412ms / 1.13s (main: 700ms / 2.93s)
+PASS: 100,000 files, local disk, 2x: view:extra-large: 60ms / 0.78s (main: 38ms / 0.77s)
+PASS: 100,000 files, local disk, 2x: view:large: 68ms / 1.04s (main: 63ms / 0.88s)
+PASS: 100,000 files, local disk, 2x: view:medium: 60ms / 1.60s (main: 92ms / 1.82s)
+PASS: 100,000 files, local disk, 2x: view:small: 64ms / 2.87s (main: 88ms / 0.64s)
+FAIL: 100,000 files, local disk, 2x: view:list: 259ms / 0.58s (main: 187ms / 0.47s)
+FAIL: 100,000 files, local disk, 2x: view:tiles: 260ms / 1.79s (main: 258ms / 1.45s)
+PASS: 100,000 files, local disk, 2x: view:content: 78ms / 1.03s (main: 32ms / 0.85s)
+PASS: 100,000 files, local disk, 2x: view:details: 148ms / 0.51s (main: 94ms / 1.06s)
+PASS: 100,000 files, local disk, 2x: view:compact-toggle: 24ms / 0.65s (main: 23ms / 0.67s)
+PASS: 100,000 files, local disk, 2x: view:compact-toggle-back: 24ms / 0.65s (main: 25ms / 0.67s)
+PASS: 100,000 files, local disk, 2x: select:ctrl+a: 237ms / 2.32s (main: 3405ms / 4.18s)
+PASS: 100,000 files, local disk, 2x: select:click-one: 68ms / 0.80s (main: 45ms / 2.02s)
+PASS: 100,000 files, local disk, 2x: select:shift+end: 193ms / 0.74s (main: 2958ms / 3.76s)
+PASS: 100,000 files, local disk, 2x: select:home: 99ms / 1.03s (main: 64ms / 0.57s)
+PASS: 100,000 files, local disk, 2x: select:ctrl+click-15: 48ms / 1.95s (main: 46ms / 2.17s)
+PASS: 100,000 files, local disk, 2x: select:shift+click-range: 24ms / 0.46s (main: 20ms / 0.53s)
+PASS: 100,000 files, local disk, 2x: select:rubber-band: 46ms / 2.02s (main: 55ms / 1.46s)
+PASS: 100,000 files, local disk, 2x: select:ctrl+a-again: 188ms / 0.93s (main: 3730ms / 4.54s)
+FAIL: 100,000 files, local disk, 2x: cmd:copy: 491ms / 1.57s (main: 3750ms / 7.68s)
+FAIL: 100,000 files, local disk, 2x: cmd:cut: 559ms / 3.71s (main: 4571ms / 9.58s)
+PASS: 100,000 files, local disk, 2x: cmd:escape-cut: 88ms / 1.63s (main: 44ms / 0.92s)
+PASS: 100,000 files, local disk, 2x: select:ctrl+a-3: 204ms / 1.32s (main: 3503ms / 4.44s)
+PASS: 100,000 files, local disk, 2x: cmd:shift+delete-prompt: 18ms / 2.10s, dialog 0.027s (main: 13ms / 0.64s, dialog 0.388s)
+PASS: 100,000 files, local disk, 2x: select:none: 44ms / 0.80s (main: 51ms / 0.68s)
+PASS: 100,000 files, local disk, 2x: pane:open: 24ms / 1.75s (main: 39ms / 1.53s)
+PASS: 100,000 files, local disk, 2x: pane:ctrl+a: 165ms / 1.18s (main: 3074ms / 3.98s)
+PASS: 100,000 files, local disk, 2x: pane:click-one: 51ms / 1.13s (main: 36ms / 2.31s)
+PASS: 100,000 files, local disk, 2x: pane:close: 21ms / 1.43s (main: 12ms / 0.82s)
+PASS: 100,000 files, local disk, 2x: scroll:wheel-100: 13ms / 0.67s (main: 18ms / 1.31s)
+PASS: 100,000 files, local disk, 2x: scroll:pagedown-20: 28ms / 0.68s (main: 1ms / 0.54s)
+PASS: 100,000 files, local disk, 2x: scroll:end: 14ms / 0.99s (main: 21ms / 1.29s)
+PASS: 100,000 files, local disk, 2x: scroll:home: 47ms / 0.55s (main: 96ms / 0.99s)
+PASS: 100,000 files, local disk, 2x: scroll:drag-bar: 53ms / 0.94s (main: 70ms / 0.23s)
+PASS: 100,000 files, local disk, 2x: scroll:home-2: 22ms / 0.11s (main: 31ms / 0.54s)
+PASS: 100,000 files, local disk, 2x: thumbs:large-icons: 90ms / 0.90s (main: 135ms / 0.35s)
+PASS: 100,000 files, local disk, 2x: thumbs:wheel-100: 16ms / 0.64s (main: 14ms / 0.32s)
+PASS: 100,000 files, local disk, 2x: thumbs:details: 104ms / 0.92s (main: 95ms / 1.16s)
+FAIL: 100,000 files, local disk, 2x: live:add-1000: 366ms / 3.54s (main: 970ms / 5.89s)
+FAIL: 100,000 files, local disk, 2x: live:remove-1000: 550ms / 3.14s (main: 1033ms / 5.16s)
+PASS: 100,000 files, local disk, 2x: properties:folder: 14ms / 0.67s, dialog 0.012s (main: 9ms / 0.77s, dialog 0.014s)
+PASS: 100,000 files, local disk, 1x, Compact view: open: first 0.14s, listed 6.2s, worst 162ms, CPU 4.2s, 555MB (main: first 0.15s, listed 8.1s, worst 168ms, CPU 7.1s, 633MB)
+PASS: 100,000 files, local disk, 1x, Compact view: sort:name:first: 65ms / 1.29s (main: 94ms / 0.98s)
+PASS: 100,000 files, local disk, 1x, Compact view: sort:name:second: 42ms / 0.65s (main: 80ms / 0.79s)
+PASS: 100,000 files, local disk, 1x, Compact view: sort:modified:first: 182ms / 0.83s (main: 253ms / 0.78s)
+PASS: 100,000 files, local disk, 1x, Compact view: sort:modified:second: 59ms / 0.34s (main: 164ms / 0.93s)
+PASS: 100,000 files, local disk, 1x, Compact view: sort:type:first: 135ms / 0.46s (main: 287ms / 1.06s)
+PASS: 100,000 files, local disk, 1x, Compact view: sort:type:second: 57ms / 0.90s (main: 208ms / 0.54s)
+PASS: 100,000 files, local disk, 1x, Compact view: sort:size:first: 170ms / 0.72s (main: 264ms / 0.58s)
+PASS: 100,000 files, local disk, 1x, Compact view: sort:size:second: 75ms / 0.79s (main: 160ms / 0.80s)
+FAIL: 100,000 files, local disk, 1x, Compact view: sort:name:back: 352ms / 1.01s (main: 356ms / 1.22s)
+FAIL: 100,000 files, local disk, 1x, Compact view: group:modified: 285ms / 1.15s (main: 577ms / 1.55s)
+FAIL: 100,000 files, local disk, 1x, Compact view: group:type: 516ms / 1.84s (main: 3630ms / 4.40s)
+FAIL: 100,000 files, local disk, 1x, Compact view: group:none: 438ms / 1.30s (main: 759ms / 2.28s)
+PASS: 100,000 files, local disk, 1x, Compact view: view:extra-large: 25ms / 0.22s (main: 29ms / 0.21s)
+PASS: 100,000 files, local disk, 1x, Compact view: view:large: 27ms / 0.88s (main: 25ms / 0.97s)
+PASS: 100,000 files, local disk, 1x, Compact view: view:medium: 35ms / 1.39s (main: 60ms / 1.08s)
+PASS: 100,000 files, local disk, 1x, Compact view: view:small: 51ms / 0.96s (main: 58ms / 0.55s)
+PASS: 100,000 files, local disk, 1x, Compact view: view:list: 162ms / 0.74s (main: 200ms / 0.77s)
+FAIL: 100,000 files, local disk, 1x, Compact view: view:tiles: 292ms / 0.94s (main: 246ms / 0.90s)
+PASS: 100,000 files, local disk, 1x, Compact view: view:content: 14ms / 0.96s (main: 27ms / 0.86s)
+PASS: 100,000 files, local disk, 1x, Compact view: view:details: 102ms / 0.33s (main: 56ms / 0.24s)
+PASS: 100,000 files, local disk, 1x, Compact view: view:compact-toggle: 11ms / 0.66s (main: 23ms / 0.66s)
+PASS: 100,000 files, local disk, 1x, Compact view: view:compact-toggle-back: 13ms / 0.56s (main: 15ms / 0.63s)
+FAIL: 100,000 files, local disk, 1x, Compact view: select:ctrl+a: 255ms / 1.78s (main: 3286ms / 4.04s)
+PASS: 100,000 files, local disk, 1x, Compact view: select:click-one: 56ms / 3.14s (main: 66ms / 2.19s)
+PASS: 100,000 files, local disk, 1x, Compact view: select:shift+end: 246ms / 0.90s (main: 3831ms / 4.94s)
+PASS: 100,000 files, local disk, 1x, Compact view: select:home: 145ms / 1.00s (main: 98ms / 0.92s)
+PASS: 100,000 files, local disk, 1x, Compact view: select:ctrl+click-15: 44ms / 0.11s (main: 46ms / 0.22s)
+PASS: 100,000 files, local disk, 1x, Compact view: select:shift+click-range: 23ms / 0.45s (main: 1ms / 0.00s)
+PASS: 100,000 files, local disk, 1x, Compact view: select:rubber-band: 38ms / 1.74s (main: 33ms / 1.74s)
+PASS: 100,000 files, local disk, 1x, Compact view: select:ctrl+a-again: 223ms / 0.87s (main: 3545ms / 5.46s)
+FAIL: 100,000 files, local disk, 1x, Compact view: cmd:copy: 547ms / 1.78s (main: 3775ms / 7.51s)
+FAIL: 100,000 files, local disk, 1x, Compact view: cmd:cut: 574ms / 4.02s (main: 4177ms / 9.09s)
+PASS: 100,000 files, local disk, 1x, Compact view: cmd:escape-cut: 84ms / 1.33s (main: 52ms / 1.62s)
+PASS: 100,000 files, local disk, 1x, Compact view: select:ctrl+a-3: 199ms / 1.61s (main: 3494ms / 4.87s)
+PASS: 100,000 files, local disk, 1x, Compact view: cmd:shift+delete-prompt: 9ms / 1.31s, dialog 0.019s (main: 5ms / 0.54s, dialog 0.362s)
+PASS: 100,000 files, local disk, 1x, Compact view: select:none: 33ms / 0.78s (main: 39ms / 0.75s)
+PASS: 100,000 files, local disk, 1x, Compact view: pane:open: 30ms / 1.96s (main: 20ms / 2.06s)
+PASS: 100,000 files, local disk, 1x, Compact view: pane:ctrl+a: 209ms / 1.18s (main: 3188ms / 4.05s)
+PASS: 100,000 files, local disk, 1x, Compact view: pane:click-one: 38ms / 1.31s (main: 43ms / 2.26s)
+PASS: 100,000 files, local disk, 1x, Compact view: pane:close: 25ms / 1.41s (main: 17ms / 0.66s)
+PASS: 100,000 files, local disk, 1x, Compact view: scroll:wheel-100: 4ms / 0.87s (main: 7ms / 1.11s)
+PASS: 100,000 files, local disk, 1x, Compact view: scroll:pagedown-20: 4ms / 0.86s (main: 3ms / 0.32s)
+PASS: 100,000 files, local disk, 1x, Compact view: scroll:end: 4ms / 0.88s (main: 11ms / 1.51s)
+PASS: 100,000 files, local disk, 1x, Compact view: scroll:home: 50ms / 1.09s (main: 46ms / 1.52s)
+PASS: 100,000 files, local disk, 1x, Compact view: scroll:drag-bar: 42ms / 0.54s (main: 34ms / 0.86s)
+PASS: 100,000 files, local disk, 1x, Compact view: scroll:home-2: 37ms / 0.65s (main: 26ms / 1.07s)
+PASS: 100,000 files, local disk, 1x, Compact view: thumbs:large-icons: 93ms / 0.79s (main: 98ms / 0.38s)
+PASS: 100,000 files, local disk, 1x, Compact view: thumbs:wheel-100: 12ms / 0.12s (main: 13ms / 0.64s)
+PASS: 100,000 files, local disk, 1x, Compact view: thumbs:details: 137ms / 1.65s (main: 107ms / 1.54s)
+FAIL: 100,000 files, local disk, 1x, Compact view: live:add-1000: 417ms / 4.11s (main: 1070ms / 4.38s)
+FAIL: 100,000 files, local disk, 1x, Compact view: live:remove-1000: 661ms / 3.40s (main: 991ms / 3.54s)
+PASS: 100,000 files, local disk, 1x, Compact view: properties:folder: 4ms / 0.76s, dialog 0.002s (main: 3ms / 0.86s, dialog 0.002s)
+
+TESTS AND CHECKS (big-folders at 12883f78, run as tester; 190a8d49 only renames one test and fixes comment spelling, its test and parity check re-run: PASS)
+- cargo fmt --all -- --check: PASS. Clippy with the workspace lints (as CONTRIBUTING.md): PASS.
+- python3 native/parity/check.py: PASS (exit 0).
+- python3 native/tools/check.py: its inventory, parity, icon-guard, rustfmt and Clippy steps pass; it then stops at
+  its first failing test binary, location_fixture_drift
+  (python_fixture_matches_desktop_core_py), on main as well (this machine's Python parses '[V1.x]' URLs
+  differently from the committed fixture), so every test binary was also run with check.py's own isolation
+  (run_isolated) one after the other:
+  4548 passed, 59 failed in 13 binaries; all 59 also fail on unchanged main (same names), no new failures. Every new test passes.
+- Unchanged main (dd39e3b), same runner: 60 failing tests in the same 13 binaries (Python-app interop, keyring,
+  admin helpers, settings interop). window::tests::context_menus::new_in_a_pinned_folder_ends_a_search_first
+  failed once on main while the disk was full and passed when run again.
+
+CHANGED OWNER DECISIONS
+none
+
+NOT CONFIRMED, check in the VM
+- How long Windows 11 File Explorer takes to show the first rows and to finish listing a local folder of
+  100,000 files, and whether it re-sorts while listing. (No Microsoft documentation found; not guessed.)
+- Whether Windows 11 Explorer freezes on Ctrl+A / Ctrl+C / Ctrl+X with 100,000 items selected, and how long
+  Group by Type takes on such a folder.
+
+LEFT FOR LATER (measured, not fixed)
+- Copy/Cut of 100,000 items: 0.4-0.5 s freeze, mostly validating every address before it reaches the clipboard
+  (a safety rule, left as it is).
+- Changing Group by: 0.3-0.5 s, mostly GTK's sort with custom sorters and the grouped view's re-layout.
+- Switching to Tiles (and List at 2x / long names): 0.25-0.32 s even for 10,000 files, same as main (GTK grid setup).
+- Listing 100,000 files: 3-5 stalls of 100-180 ms while batches are taken in (GTK's sort model reports each batch
+  as a change of the whole list).
+- Live changes: 0.3-0.55 s when the changed files sort into the visible rows (GTK rebuilds those rows).
