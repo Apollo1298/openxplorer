@@ -1,4 +1,4 @@
 STATUS: WORKING
-HEAD: keyboard-pass 1da00e84
+HEAD: keyboard-pass 852873d5
 QUESTION: none
-NOTE: Cut from upstream main dd39e3ba; merged windows-differences-2 (focus rings) and top-bugs (Home focus return). Fixed: dialog Tab trap, F4 on drop-downs, F6 in split view. Auditing further.
+NOTE: Cut from upstream main dd39e3ba; merged windows-differences-2 (focus rings) and top-bugs (Home focus return). Six keyboard/focus fixes so far; auditing further.
