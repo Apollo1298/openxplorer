@@ -1,7 +1,7 @@
 STATUS: DONE
-HEAD: properties-pass 7c4fc5ca
+HEAD: properties-pass f7003d2b
 QUESTION: none
-NOTE: Ten fixes with tests that fail on main, 84 pictures, PR text in properties-pass-pr.md. Merged (no rebase) all lower branches that share files: network-deep, big-folders, open-save-dialogs, gallery-match, dnd-pass, archives-pass, search-pass, recycle-pass (recycle-pass had the same Recycle Bin Properties fix; kept both, using its is_recycle_bin_item). Merged branch fails the same 8 ox-app tests as main.
+NOTE: Every tab of every Properties kind now fits 380x520 at 1x without an outer scroll bar (compact spacing; only Security's permission entries, the Details list and Previous Versions' list scroll inside); new test no_tab_needs_an_outer_scroll_bar passes with Noto Sans, DejaVu Sans, Inter and Selawik (Segoe UI metrics; Segoe UI Variable itself cannot be installed here). Recycle Bin item now shows its General tab. All 88 pictures retaken. Lower branches merged again (network-deep, big-folders, archives-pass, search-pass, recycle-pass).
 
 PASS file .txt General: type, Opens with + Change... (Alt+C opens Open with), sizes, dates; Read-only via click+Apply and Alt+R/Alt+A persists (mode 444)
 PASS file Security/Details/Previous Versions tabs read correctly
@@ -30,17 +30,20 @@ FAIL->FIXED Hidden/name editable on an item the user cannot rename; Apply failed
 FAIL->FIXED Alt+letter did nothing anywhere in Properties; now access keys on every button/check box, underlined while Alt is held
 PASS Esc = Cancel discards (Hidden ticked, Esc, folder unchanged); Enter = OK applies and closes
 PASS Tab order top to bottom; tab row is one stop with arrows; Ctrl+1..9 and Ctrl+Tab switch tabs
-FAIL->FIXED window size was 402 x ~590; now 380 x 520 for every kind on every tab (tests + Xvfb 1x/2x + weston Wayland 1x/2x); long text wraps or ends in …, tall pages scroll inside
+FAIL->FIXED window size was 402 x ~590; now 380 x 520 for every kind on every tab (tests + Xvfb 1x/2x + weston Wayland 1x/2x); long text wraps or ends in …
+FAIL->FIXED tabs needed an outer scroll bar at 1x (Previous Versions 409/403 px, Customize, every tab of a drive with two tab rows 394/378); now all fit with Noto Sans, DejaVu Sans, Inter and Selawik; inner lists scroll in their own boxes; checked by hand on a two-row drive in Xvfb (Noto Sans)
+FAIL->FIXED Recycle Bin item hid its only tab; now shows General
 PASS Xvfb xdotool 1x light, 1x dark, 2x dark
 PASS weston native Wayland scale 1 and 2: Properties draws at 380x520 logical (snapshot hook)
 FAIL(env) weston + Xwayland: any xdotool/XTEST input crashes headless Xwayland, so real-input checks under weston were not possible
 PASS no crash, no GTK criticals (tests run with G_DEBUG=fatal-criticals), no data loss (link re-point is atomic; launcher rewritten in place keeping mode)
 
-TESTS: full ox-app test program as user tester on a private Xvfb (1440x1000): final merged branch 2470 passed, 8 failed; unchanged main 2366 passed, 8 failed; the same 8 names (4 settings_page tests that need OX_PYTHON_APP, 2 thumbnailer sandbox, settings sidebar reset, sidebar_layout pitch). New tests each failed on main first. cargo fmt --check OK; parity check + parity unit tests OK; i18n check OK; sync-docs --check OK; public-data audit: no issues.
+TESTS: full ox-app test program as user tester on a private Xvfb (1440x1000): final merged branch 2471 passed, 8 failed; unchanged main 2366 passed, 8 failed; the same 8 names (4 settings_page tests that need OX_PYTHON_APP, 2 thumbnailer sandbox, settings sidebar reset, sidebar_layout pitch). New tests each failed on main first. cargo fmt --check OK; parity check + parity unit tests OK; i18n check OK; sync-docs --check OK; public-data audit: no issues.
 check.py: run as root (tester cannot reach the Rust toolchain under /root); stops at Clippy because installed clippy 1.97 (env has Rust 1.97.0, not 1.92) flags 5 untouched ox-core files on main too; after merging, clippy also flags big-folders/gallery-match code (entry/enumerate.rs single_match_else, folder_view/model.rs doc_markdown + large_types_passed_by_value) - left to those branches; no findings in my files. Remaining check.py stages run through its own functions: inventories, icon guard, rustfmt OK, doctests OK; test executables failing only as root: display_scale and launch (app refuses root), ox-core integration_file_chooser/ops_delete_plan/location_fixture_drift/network_python (same 5 failures on main as root), and root-only permission tests inside ox-app/ox-core.
 Merge notes: generated docs (markdown.json etc.) regenerated with tools/sync-docs.py; BACKLOG/ARC note conflict between archives-pass and search-pass/dnd-pass combined (ZIP password + ZIP64 from archives, 7z writing from search); search-pass's picker.rs/folder-views.css edits conflicted with the owners' newer versions - kept the owners' (open-save-dialogs, gallery-match).
 
 NOT CONFIRMED (check in the VM):
+- fit with the real Segoe UI Variable (Selawik used as its metric stand-in)
 - exact access-key letters per tab (General R/H/C/A, Security E/V, Sharing S/D, Versions S/O/R, Customize O/S/F/R/I/T, drive D, Shortcut T/S/O/F)
 - Shortcut tab rows and order; Change Icon for launchers not offered yet
 - Recycle Bin item Properties rows (Origin, Deleted) and General-only tabs
@@ -50,6 +53,7 @@ NOT CONFIRMED (check in the VM):
 - whether Windows shows ≥ for partial folder totals (unchanged)
 
 CHANGED OWNER DECISIONS:
+- Properties spacing made compact (group boxes, button rows, page padding, drive ring margins); Previous Versions/Details lists start smaller and grow to fill the tab; Security's permission entries scroll in their own box
 - Properties size 402 x ~590 (earlier fixed-size change) -> 380 x 520 per the owner's standing rule; tall pages scroll inside
 - link to a folder: no Sharing/Customize tabs; no shortcut shows Opens with
 - Recycle Bin item: General tab only
