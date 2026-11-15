@@ -1,0 +1,4 @@
+STATUS: DONE
+HEAD: none
+QUESTION: none
+NOTE: Report-only review of upstream main dd39e3b in overnight-review-3-report.md. Bugs 14, Unlike Windows (Microsoft-confirmed) 0, Not sure 11, Still broken from earlier reviews 3, Worked well 13. No security findings. parity check and i18n check passed; cargo tests not run.
