@@ -14,7 +14,8 @@ Settings and Folder Options set several of the same preferences, but Settings na
 - moves the keyboard into the settings search when typing on the page starts one, so the space in "hidden files" no longer chooses a category and ends the search;
 - keeps Folder Options in step while it is open: a choice not changed there shows what Settings, the View menu, Ctrl+H or another window saved meanwhile, and a choice changed there keeps the change for OK;
 - gives Folder Options' choices and push buttons access keys (Alt and the underlined letter), distinct on each tab;
-- makes Enter press OK, the default button, wherever the keyboard is in Folder Options except on a push button, as in Windows. Before, the tab, check boxes and the start-place list took Enter themselves, so after Alt and a letter the dialog could not be closed with its choices saved.
+- makes Enter press OK, the default button, wherever the keyboard is in Folder Options except on a push button, as in Windows. Before, the tab, check boxes and the start-place list took Enter themselves, so after Alt and a letter the dialog could not be closed with its choices saved;
+- fixes Settings > Appearance > "Use the desktop font", which sprang back off as soon as it was turned on and was never saved.
 
 No persisted key, application ID or schema changes. Every option keeps its default.
 
@@ -33,6 +34,7 @@ No persisted key, application ID or schema changes. Every option keeps its defau
 | Folder Options while open | showed values from when it opened, even after Ctrl+H or Settings changed them | unchanged choices follow; changed ones keep the change | app-only (Windows' dialog does not have Settings beside it) |
 | Folder Options access keys | none | Alt+A, Alt+W (Browse folders), Alt+T (Open OpenXplorer to), Alt+L (Clear), Alt+O (Apply to Folders), Alt+R (Reset Folders), Alt+D (Restore Defaults) | letters NOT CONFIRMED |
 | Enter in Folder Options | did nothing on a tab, check box or the start list | presses OK | Enter presses a dialog's default button in Windows (NOT CONFIRMED for this dialog) |
+| Use the desktop font (Settings > Appearance) | turned itself back off, never saved | stays on and is saved | app-only |
 
 ## CHANGED OWNER DECISIONS
 
@@ -47,9 +49,10 @@ These are Windows 11 Folder Options labels and behaviors that no Microsoft page 
 
 ## How it was tested
 
-- A failing test per fix, run on unchanged main first (all failed there), then passing here: `windows_folder_option_words_find_their_settings`, `folder_views_rows_follow_hidden_files_and_extensions_and_open_folder_options`, `every_setting_of_the_earlier_layout_is_on_one_of_the_new_pages`, `typing_on_the_category_list_moves_the_keyboard_into_the_search`, `folder_options_follows_preferences_changed_while_it_is_open`, `folder_options_choices_and_buttons_have_access_keys`, `folder_options_has_the_general_view_and_search_tabs_of_windows`, `real_keys_choose_options_and_enter_presses_ok` (real keyboard through XTEST).
-- `python3 native/tools/check.py` and `python3 native/parity/check.py`, `python3 native/tools/i18n.py check`, `python3 tools/sync-docs.py` (results below).
-- Real input with xdotool on a private Xvfb display at 1x and 2x, fictional files only: Ctrl+, opens Settings; typing "hidden files", Enter and Space turn hidden files on; "file extensions" turns extensions on; Enter on Open Folder Options opens it; Alt+W, Alt+D (Restore Defaults), Alt+W and Enter save "Open each folder in its own window" and close it; Escape closes it without saving; after a restart every choice is still saved. No GTK criticals.
-- Pictures of every Settings page and Folder Options tab at 1x and 2x, light and dark, and in Simplified Chinese, through the repository's capture module.
+- A failing test first for each fix, run on unchanged main (all failed there) or before the fix, then passing: `windows_folder_option_words_find_their_settings`, `folder_views_rows_follow_hidden_files_and_extensions_and_open_folder_options`, `every_setting_of_the_earlier_layout_is_on_one_of_the_new_pages`, `folder_options_has_the_general_view_and_search_tabs_of_windows`, `folder_options_follows_preferences_changed_while_it_is_open`, `folder_options_choices_and_buttons_have_access_keys`, `typing_on_the_category_list_moves_the_keyboard_into_the_search`, `real_keys_choose_options_and_enter_presses_ok` (real keyboard through XTEST) and `the_desktop_font_switch_stays_on_and_saves_the_choice`.
+- New coverage test `every_preference_switch_saves_persists_and_turns_back_exactly`: every preference switch on General, Appearance, Files & folders, ZIP & archives, Confirmations and Search saves to the settings file, still shows after the file is read again, and turned back leaves the file byte for byte as it was (Default apps and About hold the opt-in desktop, browser and update actions and were not flipped).
+- The whole workspace's tests, serially in an isolated Xvfb session: 4755 passed, 14 failed. 11 of the failures fail the same way on unchanged main in this environment (`admin_copy` x9, the thumbnailer sandbox x2); the other 3 are in code outside this change. `python3 native/parity/check.py`, `python3 native/tools/i18n.py check` and the docs sync check pass; rustfmt and Clippy are clean on the files this change touches.
+- Real input with xdotool on a private Xvfb display at 1x and 2x, fictional files only: Ctrl+, opens Settings; typing "hidden files", Enter and Space turn hidden files on; "file extensions" turns extensions on; Enter on Open Folder Options opens it; Alt+W, Alt+D (Restore Defaults), Alt+W and Enter save "Open each folder in its own window" and close it; Escape closes it without saving; after a restart every choice is still saved; a click on "Use the desktop font" now keeps it on and saves it. No GTK criticals.
+- Pictures of every Settings page and Folder Options tab at 1x and 2x, light and dark, and of the Settings pages in Simplified Chinese, all from fictional demo files. Not run on a Wayland compositor.
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
