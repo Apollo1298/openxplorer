@@ -1,4 +1,25 @@
 STATUS: WORKING
-HEAD: dnd-pass dd39e3ba2d56e5a51a2e45ef10cb4d6c5e45e5e6
+HEAD: dnd-pass 0d142352d4fed08aac05c9b699d68b121a897368
 QUESTION: none
-NOTE: Cut from upstream main dd39e3ba; baseline checks on unchanged main running, then real drags with xdotool under Xvfb and Weston.
+NOTE: Cut from upstream main dd39e3b, merged windows-differences-2 (Alt+drag). Three fixes written test-first (Ask offer that made Thunar ask on every plain drag, folder-tree drops, silent refusal on an open ZIP); baseline tests on unchanged main running, then branch tests, Weston, captures. Not pushed yet.
+
+Survey on main (real xdotool drags, Xvfb X11, 1x light; fictional files):
+PASS plain drag onto a folder, same drive: moves, label "Move to Launch planning"
+PASS Ctrl+drag: copies, label "+ Copy to Launch planning"
+PASS drop on a read-only folder: "Destination Folder Access Denied" with Continue/Skip/Cancel, nothing lost
+PASS navigation pane: Downloads row (move), Recycle Bin row ("Move to Recycle Bin", item in Trash), crumb "Home"
+PASS folder dropped into its own subfolder: "Interrupted Action / The destination folder is a subfolder of the source folder."
+PASS tab hover 800 ms shows the tab; drop straight onto a tab moves into its folder
+PASS split panes: drag left pane -> right pane moves, label names the right pane's folder
+PASS between windows: moved
+PASS other drive (tmpfs): "Copy to Transfer", copied
+PASS 2,999 items at once: badge "2,999", "Move to Music", progress window, all moved in ~5 s, no freeze
+PASS right-drag: Copy here / Move here (bold) / Create shortcuts here / Cancel
+PASS Esc during a drag cancels it (also after a hung foreign drop target)
+FAIL Alt+drag copied ("Copy to Archive"); Microsoft: Alt+drag creates a shortcut -> fixed by merging windows-differences-2
+FAIL plain drag out into Thunar 4.18: Thunar's Copy here/Cancel menu on every drop (drag offered Copy+Ask) -> fixed
+PASS plain drag out into Nautilus 46 and Nemo: copied, no menu; Dolphin shows its own menu by default (its design)
+PASS Thunar -> app: copied, source kept
+FAIL folder tree (View > Folder tree): drop on a tree folder did nothing -> fixed
+FAIL drop on an open ZIP: silently refused (Windows adds the files) -> now explained, still read-only
+FAIL Chromium link/image dragged in: silently ignored (no text/uri-list offered); Firefox-style links get "Drop files or folders, rather than links or text." -> not changed, see NOT CONFIRMED
