@@ -1,7 +1,16 @@
 codex-fixes (Codex findings on AKolenda/openxplorer #335-#338, fixed on fork branches)
-STATUS: WORKING
+STATUS: DONE
 NOTE: upstream main dd39e3ba merged into all 4 branches. Every new test failed before its fix and
-passes after. Pushed: more-bugs 9fc13864, supere-uninstall 511015df; the other two are being checked. Full checks run one branch at a time
+passes after. All 4 branches pushed (merges, no rebase, no force-push). No finding was judged wrong; all 8 changed.
+User-visible behavior changed on all 4 branches, so each <branch>-pr.md got an "After review" note.
+Finding 3: the test counts allocations (at most 16 per name; the old matcher took 1,258) and
+times 100,000 names of 255 characters against NamePattern, which runs the same matcher as the
+cache's ox_name_matches SQL function. It does not index 100,000 names into a real cache.
+Finding 5: GVfs's SMB backend's fast type equals the name guess the old code already fell back to,
+so the gain is for backends whose fast type differs. The test queries a real local file with
+entry::ATTRIBUTES; no network backend was exercised.
+Findings 6-8 (one commit, one function): when both the give-back and the rollback onto the
+removed package fail, records are kept for that run only; a later start can still drop them. Full checks run one branch at a time
 (disk is tight), compared with unchanged upstream main by test name.
 
 more-bugs: merge 271ccf50 (no conflicts; .pot and docs regenerated)
@@ -23,3 +32,9 @@ Checks (Xvfb + private D-Bus, as tester; every test executable run even past fai
   supere-uninstall: 4456 passed, same 29 failed, nothing new; parity, i18n, icons, rustfmt,
     clippy -D warnings, sync-docs --check pass.
   more-bugs: 4457 passed, same 29 failed, nothing new; same steps pass.
+  windows-differences-2: 4451 passed, same 29 failed, nothing new; same steps pass.
+  network-thumbnails: 4447 passed, same 29 failed, nothing new; same steps pass.
+
+STATUS: DONE
+Heads: more-bugs 9fc13864, windows-differences-2 aac7d977, network-thumbnails 5eef2b3c,
+supere-uninstall 511015df
