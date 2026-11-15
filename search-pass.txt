@@ -1,7 +1,7 @@
 STATUS: WORKING
-HEAD: search-pass 3e618acd
+HEAD: search-pass 31791da2
 QUESTION: none
-NOTE: Advanced Query Syntax done and captured; merged windows-differences-2, big-folders, network-deep, open-save-dialogs, gallery-match and top-bugs (renumbered top-bugs' Search from Home to HOME-033, since gallery-match also took HOME-017). Full check.py running.
+NOTE: AQS done. Merged windows-differences-2, big-folders, network-deep, open-save-dialogs, gallery-match, top-bugs. Fixed merge fallout: top-bugs' Search from Home renumbered HOME-033 (gallery-match also took HOME-017); gallery-match raw 'black' shadow -> token; top-bugs tooltip test no longer needs a column-title tooltip (removed by windows-differences-2); Clippy lints in open-save-dialogs' picker tests. open-save-dialogs fails its own a_save_dialog_keeps_save_as_type_under_file_name and an_open_dialog_has_its_type_list_beside_file_name_and_no_caption (pass on main) - left to that branch.
 
 TIMINGS (release build, xdotool under Xvfb, 1x; main -> branch)
 100k-file tree, "report" (first 500 shown): 360 ms -> 330 ms
