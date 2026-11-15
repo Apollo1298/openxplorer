@@ -1,4 +1,4 @@
 STATUS: WORKING
-HEAD: gallery-match fde6dfe3e683af29360a1b8a2dba1b5447a5d0ca
+HEAD: gallery-match 27e9a0a10f2977a670263046eb6cd962a56e43c6
 QUESTION: none
-NOTE: Branch started from gallery-view 649a924b with upstream main dd39e3ba merged in (docs.json conflict resolved). Writing failing tests next.
+NOTE: Gallery reworked to the build 26200 facts: justified rows, one date-range heading, date scrubber, Windows' command bar, View, Collection, Gallery Locations dialog, photo menu, tooltip, lossless Rotate; month groups removed. Tests first (ef5489ed, 14 window tests + 1 unit test fail before the change); all 31 Gallery tests pass now. Running check.py and the full suite next, then xdotool checklist and captures.
