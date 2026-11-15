@@ -1,4 +1,4 @@
 STATUS: WORKING
-HEAD: open-save-dialogs dd39e3ba2d56e5a51a2e45ef10cb4d6c5e45e5e6
+HEAD: open-save-dialogs c74695aaf87d3c634c5ba5a50e8db82d765533f8
 QUESTION: none
-NOTE: Branch cut from upstream main dd39e3ba. Baseline: the 96 dialog tests pass on main. Building an end-to-end harness (real xdg-desktop-portal routed to the app, GTK clients, xdotool under Xvfb).
+NOTE: Two fixes in (keyboard back in File name after Confirm Save As; accept button is the default for Enter). End-to-end harness with the real xdg-desktop-portal, GTK 3/4 clients and xdotool under Xvfb is running; continuing with more cases.
