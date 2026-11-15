@@ -1,0 +1,81 @@
+STATUS: DONE
+HEAD: test-combined-36 ef765af1 (the deb was built from exactly this tree; cargo clean before the release build; guard on HEAD and a clean tree before and after)
+DEB: claude/test-combined-36-deb 168dd07a
+  openxplorer_2.0.17+test36_all.deb (io.winspace.Development)
+  SHA256: 9b8e085930b7de1361f34dd71bbfa3e27e790a9d2bcb37022dcf8a232957fa48
+BASE: upstream main dd39e3ba (2.0.17)
+
+MERGED HEADS, in this order (all descend from main; changed since deb 35 marked *):
+   1  more-bugs              9fc13864c5848b514286adcbbf014c4c088d0afa -> 185fc128 (clean)
+   2* windows-differences-2  c44eb603917bfa8a47855a164ba65f61de68be2c -> 1b5534b5
+   3* network-thumbnails     61728ed60bb097a0336bac4fe27179a6594c7e89 -> 2efdeaa0
+   4* supere-uninstall       068fc3aa6d9703d71737145ce0b9c357bd92da82 -> c21914ed
+   5* top-bugs               e74f8868cd27a2fe5dfe5fa5f40d578980402254 -> 8a0ef3e7
+   6* network-deep           38adcc25234a0bc17d35a966a24ac9e5be622554 -> efd84158
+   7  big-folders            190a8d49f42eff564f4834480899e7b9f77c238c -> 24b0ed74 (clean)
+   8  open-save-dialogs      8a6e37aac0591a131374d8f7f8fc6511e5d7a656 -> 06ab295a
+   9* gallery-match          e89473125d33161cb8c6ab74658dc307fdfd9bb1 -> 404318c4
+  10  dnd-pass               6118de5acf8e36dc1dd4682160951389d4ea3957 -> d6092072
+  11  archives-pass          c0bf75234caf2cec9c2132359dc62f4f6cd01850 -> a3a7fc4e
+  12  search-pass            0b4526c0bab1ac0d7622a671188ac737faf3d893 -> 2238f972, glue 192a95ac
+  13* recycle-pass           abda37dad02371312d7c4a267ccca789b1f8eb10 -> 1866e47e
+  14* properties-pass        f7003d2b5d88cb3aad620d068435e3b3248891f6 -> a7902e88
+  15  settings-pass          356b73d63197004b9a19426ad8865e2fc07b8612 -> b65a3d7c
+  16  keyboard-pass          f5d8ecdd8fcc1dcb4f3d542b8a5ec0e06fc8b69b -> 8c9e8e04
+  glue                       5526d1c8, ef765af1
+
+CONFLICTS (deb 35's resolutions reused where the same; new ones marked NEW):
+- docs, markdown.json: regenerated with tools/sync-docs.py at every conflict; the .pot regenerated with native/tools/i18n.py extract where it conflicted (gallery-match) or went stale after an auto-merge (network-deep). Final i18n check, sync-docs --check and parity/check.py pass.
+- 2 windows-differences-2: BACKLOG Archives, both sentences; location_view.rs imports KnownFolder and Storage without the shown_name import more-bugs removed (as in decks 34/35).
+- 3 network-thumbnails: BACKLOG, both entries.
+- 5 top-bugs: parity HOME fold note, both sentences; top-bugs' "Search from Home" entry kept.
+  NEW pane_content.rs: more-bugs keeps PaneState.error as Option<EntryError> (tab.error.clone()), top-bugs turns it into a string and adds `searching`; kept more-bugs' typed error plus top-bugs' searching field (false by default, set through PaneState::searching while a search runs).
+- 6 network-deep: window/tests.rs, both test modules (tooltips, undo_without_recycle_bin).
+- 9 gallery-match: empty_page.rs, EmptyState::Unavailable { .. } plus NoPhotos (as in deb 35).
+- 10 dnd-pass: auto-merge left two HOME-017 entries again; search-pass's merge (12) carries its renumbering of "Search from Home" to HOME-033, as in deb 35.
+- 11 archives-pass: BACKLOG Archives and three parity notes combined exactly as in deb 35 (ZIP64 writing replaces the "refused" clause; 7z paragraph appended).
+- 12 search-pass: BACKLOG both; model.rs and enumerate.rs big-folders' own lint fix; folder-views.css gallery-match's scrubber style (as in deb 35).
+  NEW tests/home_page.rs: top-bugs' new test searching_from_a_big_home_shows_matches_as_they_are_found kept (search-pass's older top-bugs has not got it).
+  NEW tests/tooltips.rs: top-bugs' newer test helpers (drawn_in_view, keep_keyboard_in, wait_for) kept, with search-pass's column-title rule (found as GtkColumnViewTitle by its label, no tooltip to wait for, VIEW-029) written with top-bugs' drawn_in_view; imports settle and wait_for both kept.
+- 13 recycle-pass: BACKLOG Archives, HEAD's (a superset).
+- 14 properties-pass: BACKLOG Archives with "for browsing and extraction"; features.toml merged by itself, keeping "Missing: password-protected ZIP" only.
+- 15 settings-pass: HEAD for tests/tooltips.rs (column-title step), BACKLOG and parity (as in deb 35).
+- 16 keyboard-pass: BACKLOG both entries; tests/tooltips.rs keeps top-bugs' newer keep_keyboard_in and "the column menu to close" lines that keyboard-pass's older top-bugs lacks.
+GLUE:
+- 192a95ac (as deb 35's ccd67a63, merge-only build error): wildcard_matches is pub(crate) again, so search-pass's name: and ext: wildcards and windows-differences-2's in-name wildcard search both work.
+- 5526d1c8 NEW (merge-only, parity id clash): gallery-match (e8947312) numbers "Gallery's photos are sharp at every size" HOME-033, the id search-pass gives "Search from Home"; it is HOME-035 now, with its markers in folder_view/gallery_view.rs, thumbnails.rs and window/tests/gallery_view.rs. top-bugs (e74f8868) still names Search from Home HOME-017 (Gallery's row in this tree) in its new test and in pane_content.rs; both now say HOME-033.
+- ef765af1 NEW (branch's own lint): properties-pass's 8c08feb1 takes open_item_properties to 103 lines (clippy::too_many_lines; the function is identical on f7003d2b, so the branch fails it too). Apply and keeping the pages until the window closes move into keep_pages; same behavior.
+
+CHECKS on ef765af1:
+- native/tools/check.py: inventories, parity, i18n and tool tests pass; it then stops at clippy on duration_suboptimal_units in ox-core files no branch touches (same on main). I ran its remaining steps with that lint (and map_unwrap_or, decimal_bitwise_operands) allowed: no drawn icons, rustfmt clean, clippy clean, every test binary plus doctests with OX_PYTHON_APP set.
+- parity/check.py, i18n check, sync-docs --check pass; cargo-sources.json matches a fresh run; the deb has rust-crates/sevenz-rust2-0.20.2.
+- Tests: 4784 passed, 24 failed.
+FAILURES by name:
+  Also fail on main dd39e3ba (environment: root, sandbox, Python fixtures, display scale), 23: the same 23 as decks 34 and 35.
+  Flaky, 1: search_history::a_tab_on_results_keeps_its_selection_and_scroll_position (a main test; failed once in the full run, then the search_history module passed 3 of 3 times on the merge; it passed in deb 35's run).
+  Gone since deb 35: network-deep's two undo-without-Recycle-Bin tests (38adcc25 no longer relies on chmod, so they pass as root) and the tooltip test (top-bugs' e74f8868 waits on the pointer instead of timing).
+  Branch-only: properties-pass's clippy finding above (fixed by glue). Merge-only: the build error and the parity id clash above (fixed by glue); no test failure is merge-only.
+
+ONE UNIQUE STRING PER BRANCH IN THE BUILT BINARY (/opt/openxplorer/bin/openxplorer, strings | grep -cF; credited to the first branch in merge order holding the commit that adds it; none in main's sources):
+   1 more-bugs:             "Couldn't check for updates (HTTP" = 1
+   2 windows-differences-2: "7z File" = 1
+   3 network-thumbnails:    "Show thumbnails in network folders" = 1
+   4 supere-uninstall:      "forget_removed_launch_shortcut_apps" = 6 (function symbol)
+   5 top-bugs:              "GtkTooltipWindow" = 1
+   6 network-deep:          "confirm_undo_without_recycle_bin" = 1 (function symbol)
+   7 big-folders:           "snapshot@GMT-" = 1
+   8 open-save-dialogs:     "Save as _type:" = 1
+   9 gallery-match:         "Choose which folders to see in Gallery" = 1
+  10 dnd-pass:              "carries_archive_items" = 1 (function symbol)
+  11 archives-pass:         "Show extracted files when complete" = 1
+  12 search-pass:           "add_match_function" = 5 (function symbol)
+  13 recycle-pass:          "empty_recycle_bin_reporting" = 12 (function symbol)
+  14 properties-pass:       "Type the target the shortcut opens." = 1
+  15 settings-pass:         "Apply to F_olders" = 1
+  16 keyboard-pass:         "Collapse the folder, or go to the folder it is in (navigation pane)" = 1
+EXTRA:
+  top-bugs' new Home search tooltip (6cdb4647): "Search names in this folder and its subfolders. Folders cached in Settings → Search are searched faster." = 2 (grep -caF on the binary; strings splits it at the arrow); the old "Search cached filenames and paths" = 0.
+  gallery-match's sharp-thumbnail fix (159c6716) adds no translatable string; its code is in: "cancel_pending_sharp" = 1 (function symbol). Its parity entry is HOME-035 here (see glue 5526d1c8).
+POLKIT: record /var/lib/openxplorer/install-updates-without-password = "off" before install -> /etc/polkit-1/rules.d empty after install, record still "off". Purge left neither.
+IDENTITY: all 316 new commits (branches, merges, glue) and the deb commit are addition-official <239187859+addition-official@users.noreply.github.com> with no trailers; no other author, committer or personal name. The only address in the added lines is network-thumbnails' fictional sftp://demo@server.example. In the deb, AKolenda appears only in the upstream repository and update-check URLs; the other addresses are the same third-party set as before (two more matches are code fragments, not addresses).
+NOTE: test-combined-35 and claude/test-combined-35-deb left for the PC manager to delete, as asked.
