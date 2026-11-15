@@ -1,4 +1,4 @@
 STATUS: WORKING
-HEAD: properties-pass dd39e3ba
+HEAD: properties-pass 23f7ecc4
 QUESTION: none
-NOTE: Branch cut from upstream main; testing every Properties tab under Xvfb with xdotool. First finding: no Alt+letter access keys in Properties.
+NOTE: Three fixes so far (Sharing tab on Samba 4.15+, name/Hidden greyed when rename is impossible, folder links among several items). Working on access keys and the Shortcut tab.
