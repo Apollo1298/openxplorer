@@ -1,7 +1,7 @@
-STATUS: WORKING
+STATUS: DONE
 HEAD: gallery-match 08685f8c35e293eaef3165504996710b30741b11
 QUESTION: none
-NOTE: Reworked to the build 26200 facts; merged network-deep, big-folders and open-save-dialogs (they touch tests.rs, features.toml, the .pot, docs, availability.rs, loading.rs). Checklist done on 8 configurations; branch suite done (4,645 tests); unchanged-main suite running for the by-name comparison.
+NOTE: Gallery matches the build 26200 facts (justified rows, date-range heading, scrubber, Windows' command bar, View, Collection, Gallery Locations, photo menu, tooltip, lossless Rotate); month groups removed; tests first at ef5489ed. Merged network-deep, big-folders and open-save-dialogs (overlapping tests.rs, features.toml, .pot, docs, availability.rs, loading.rs); Clippy -D warnings fails only on big-folders' own code (ox-core entry/enumerate.rs:123 single_match, also on big-folders alone; ox-app folder_view/model.rs:303/304/929 doc_markdown and large_types_passed_by_value under pedantic), left to that branch.
 
 CHECKLIST (real input with xdotool; X11 = Xvfb, Wayland = weston 13 kiosk-shell inside Xvfb; private D-Bus, disposable home, generated gradient photos only)
 PASS nav row: a real click on "Gallery" right under Home opens Gallery; typing "Gallery" in the address bar opens the same page (8/8 configurations)
@@ -20,3 +20,28 @@ PASS 1x and 2x (GDK_SCALE=2 on X11, weston --scale=2), light and dark, normal an
 PASS 10,000 photos in 100 folders: first photos 1.0 s after Enter, 30 Page Down + 40 wheel notches redraw while loading, "10,000 items", a scrubber click jumps at once, idle CPU 0% after loading and after Alt+Home, RSS 283 -> 368 MB, no criticals
 PASS empty Pictures and missing Pictures: "No photos to show", 0 items, no error, no criticals
 PASS no GTK criticals or panics in any app log above
+PASS full suite with check.py's isolation, keep-going: branch 4,645 tests, main 4,584; main's 13 failures (admin_copy x9, python_fixture_matches_desktop_core_py, fuse_export_paths_match_native_opening_py, 2 sandboxed thumbnailer tests) fail on both by name; branch-only admin_delete::parent_path x18 are environmental (root-owned checkout, test user cannot write there): all 71 admin_delete tests pass with OX_TEST_TRUSTED_BASE=/home/tester/trusted; branch-only theme::stylesheets the_rules_name_colours_only_by_token was mine (raw colour in the month label), fixed in 08685f8c and passes
+PASS rustfmt --check; Clippy -D warnings with workspace lints and with the CONTRIBUTING pedantic flags clean on my last pre-merge commit 4f80e6d2 and on the merged tree except big-folders' files (see NOTE)
+PASS native/parity/check.py; native/tools/i18n.py check; tools/sync-docs.py --check; tools/audit-public-data.py (no issues, repo and captures)
+PASS unit/window tests: 55 Gallery-related tests (gallery, gallery_view, gallery_commands, justified, photo_rotate, sidebar entries, location_view, view_zoom, snapshot scene); 14 window + 1 unit test failed before the change
+PASS captures: 40 PNGs via tools/native_capture.py and the snapshot hook (generated gradient photos, fictional /home/demo), 1x/2x x light/dark x normal/Compact x page, scrubber-hover, collection-menu, locations-dialog, photo-menu
+FAIL not done: Set as background / Set as desktop background shown grayed (no opt-in helper in the app); listed in BACKLOG.md
+FAIL not checked: Pictures over a real SMB/NFS share; screen-reader (Orca) pass over the tiles and scrubber
+
+NOT CONFIRMED, check in the VM (my choice in brackets):
+- Row heights at Small/Large/Extra large and the gap [100/240/320 px, 4 px]
+- Scrubber arrows' step, position mark look, shown when all fits, keyboard focus [one row; short accent bar; hidden; not focusable like a scroll bar]
+- Position of Set as background/Rotate in the bar and for several photos [after Collection; shown for any selection, Rotate enabled when all are JPEG/PNG]
+- Paste in Gallery [grayed]
+- What Compact view changes in Gallery [nothing]
+- Hover/selected/focused tile look, check boxes on photos [accent inner frame; outline ring; no check boxes]
+- Heading when no photo on screen has a date [empty heading row]
+- Which types Windows rotates and how [JPEG by EXIF orientation, PNG by pixels]
+- Tooltip date format; Path line for a subfolder photo [short date+time; the photo's own folder]
+- Arrow/Page/Home/End keys among photos [nearest tile in the row above/below]
+- Add… picker title, network folders, Enter = OK [ "Add a folder to Gallery"; local only; yes]
+- Month name in the scrubber hover: tooltip vs bubble [in-window bubble beside the track]
+
+CHANGED OWNER DECISIONS:
+- Still as in gallery-view: Gallery row shown by default in both navigation pane states although the owner made Home's page opt-in (HOME-012/SIDE-034).
+- Gallery's scroll bar is replaced by the scrubber (only in Gallery).
