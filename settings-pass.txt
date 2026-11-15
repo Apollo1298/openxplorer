@@ -1,4 +1,4 @@
 STATUS: WORKING
-HEAD: settings-pass a5e5501459175f13aede822e97af51aa5190ee7f
+HEAD: settings-pass 46489d190a3894344568a372299ef2d59132110a
 QUESTION: none
-NOTE: Fixed so far: Settings wording/rows for folder options, search typing focus, Folder Options sync, access keys, Enter=OK. Next: full suites, captures, merges.
+NOTE: Fixes pushed; merged network-thumbnails, more-bugs, windows-differences-2, supere-uninstall, top-bugs, gallery-match. Full check.py running; captures and per-option checklist next.
