@@ -1,0 +1,9 @@
+STATUS: WORKING
+HEAD: network-deep 45696500e48c1fc39039aa1116c49c9b3446132c
+QUESTION: none
+NOTE: Fixtures up (local Samba guest/password/read-only shares, throttling proxy, local sshd SFTP). First fix in: a pasted single large file stayed at 0% with no time remaining until done (any paste without conflicts).
+
+PASS share offline then F5: unavailable page, no hang (wording handled elsewhere, not changed here)
+PASS Try again after the server came back: listing returns
+FAIL->FIXED progress of one large file from a slow share: stuck at "0% complete", no time remaining (test a_paste_of_one_large_file_reports_how_much_it_writes fails on main)
+FAIL progress header names the share as "smb://127.0.0.3/studio/" (in progress)
