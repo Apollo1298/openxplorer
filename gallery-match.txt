@@ -1,7 +1,7 @@
 STATUS: WORKING
-HEAD: gallery-match 3235e100ae83093f509fa1f296806b981e470bff
+HEAD: gallery-match 08685f8c35e293eaef3165504996710b30741b11
 QUESTION: none
-NOTE: Reworked to the build 26200 facts; merged network-deep, big-folders and open-save-dialogs (they touch tests.rs, features.toml, the .pot, docs, availability.rs, loading.rs). Real-input checklist done on 8 configurations; full test suites on this branch and unchanged main are running.
+NOTE: Reworked to the build 26200 facts; merged network-deep, big-folders and open-save-dialogs (they touch tests.rs, features.toml, the .pot, docs, availability.rs, loading.rs). Checklist done on 8 configurations; branch suite done (4,645 tests); unchanged-main suite running for the by-name comparison.
 
 CHECKLIST (real input with xdotool; X11 = Xvfb, Wayland = weston 13 kiosk-shell inside Xvfb; private D-Bus, disposable home, generated gradient photos only)
 PASS nav row: a real click on "Gallery" right under Home opens Gallery; typing "Gallery" in the address bar opens the same page (8/8 configurations)
