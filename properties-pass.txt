@@ -1,7 +1,7 @@
 STATUS: WORKING
 HEAD: properties-pass 8ebdf8fb
 QUESTION: none
-NOTE: Ten fixes pushed with tests that fail on main. Merged recycle-pass (same Recycle Bin Properties fix; kept both), network-deep, open-save-dialogs, gallery-match, archives-pass; search-pass not merged yet because its branch does not compile right now (window/tests/home_page.rs). Captures and final test run in progress.
+NOTE: Ten fixes pushed with tests that fail on main. Merged recycle-pass (same Recycle Bin fix, kept both), network-deep, open-save-dialogs, gallery-match, archives-pass; search-pass not merged yet (its branch does not compile now). 84 pictures pushed. Final checks running.
 
 PASS file .txt General: type, Opens with + Change... (Alt+C opens Open with), sizes, dates; Read-only via click+Apply and Alt+R/Alt+A persists (mode 444)
 PASS file Security/Details/Previous Versions tabs read correctly
