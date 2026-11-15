@@ -1,7 +1,7 @@
 STATUS: WORKING
-HEAD: keyboard-pass 6db3ad7b
+HEAD: keyboard-pass f5d8ecdd
 QUESTION: none
-NOTE: Cut from upstream main dd39e3ba; merged windows-differences-2 (focus rings) and top-bugs (Home focus return) at the start. Ten keyboard/focus fixes, each test-first. Overlap merges and the final suite run are next.
+NOTE: Cut from upstream main dd39e3ba; merged windows-differences-2 and top-bugs at the start. Ten keyboard/focus fixes, each test-first. Overlap: every lower-numbered branch shares files with this one (at least parity/features.toml and the .pot), so merged settings-pass (holds network-deep, gallery-match, dnd-pass, archives-pass, properties-pass, recycle-pass), search-pass (holds big-folders), open-save-dialogs, then the newer heads of properties-pass and recycle-pass; all ten contained at f5d8ecdd. Final suite run in progress.
 
 Microsoft source: https://support.microsoft.com/en-us/accessibility/windows/keyboard-shortcuts-in-windows (Windows 11 tab: "File Explorer keyboard shortcuts", "Dialog box keyboard shortcuts", general keys). The URL given for the job (…/keyboard-shortcuts-in-windows-dfc9ea72-…) answers 404 today; the repo's older citation (…-dcc61a57-…) now redirects to the page above.
 
