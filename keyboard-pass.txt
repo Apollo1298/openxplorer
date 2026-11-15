@@ -1,4 +1,105 @@
 STATUS: WORKING
-HEAD: keyboard-pass a0b41c76
+HEAD: keyboard-pass 6db3ad7b
 QUESTION: none
-NOTE: Cut from upstream main dd39e3ba; merged windows-differences-2 (focus rings) and top-bugs (Home focus return). Ten keyboard/focus fixes; next: weston, scales, captures, full checks.
+NOTE: Cut from upstream main dd39e3ba; merged windows-differences-2 (focus rings) and top-bugs (Home focus return) at the start. Ten keyboard/focus fixes, each test-first. Overlap merges and the final suite run are next.
+
+Microsoft source: https://support.microsoft.com/en-us/accessibility/windows/keyboard-shortcuts-in-windows (Windows 11 tab: "File Explorer keyboard shortcuts", "Dialog box keyboard shortcuts", general keys). The URL given for the job (…/keyboard-shortcuts-in-windows-dfc9ea72-…) answers 404 today; the repo's older citation (…-dcc61a57-…) now redirects to the page above.
+
+Real input: xdotool on Xvfb + openbox, private D-Bus + AT-SPI, fictional home (Documents/Agenda.txt … Timeline.txt, Projects, Reports), focus and selection read from the accessibility tree. Smoke script of 43 checks run at 1x and 2x, light and dark, normal and Compact view: 43/43 in all 8, 0 GTK criticals. Weston 13 headless: the app runs as a native Wayland client at 1x and 2x with 0 criticals; xdotool could not be used there (Xwayland segfaults at start in this container, also with -shm and GSK_RENDERER=cairo), so no key presses under Weston.
+
+SHORTCUTS (Microsoft's File Explorer list; real keys, file list unless stated)
+PASS Alt+D: address bar edit
+PASS Alt+Enter: Properties; Escape closes it, keyboard back on the item
+PASS Alt+Left / Backspace: back (Backspace erases a type-ahead prefix first)
+PASS Alt+P: preview pane; Alt+Shift+P: details pane
+PASS Alt+Right: forward; Alt+Up: up a level
+PASS Ctrl+arrow then Ctrl+Space: adds one item (Details and icons)
+PASS Ctrl+D / Delete: to the Recycle Bin, no question (Windows 11 default); Ctrl+Z restores
+PASS Ctrl+E / Ctrl+F / F3: search box
+PASS Ctrl+L / F4: address bar
+PASS Ctrl+mouse wheel: steps through Details, List and icon sizes and back
+PASS Ctrl+N: new window
+PASS Ctrl+1..9: tab of that number
+PASS Ctrl+Plus (keypad): size all columns (existing tests; listed in the shortcuts window)
+PASS Ctrl+Shift+E: navigation pane opened to the folder (existing tests)
+PASS Ctrl+Shift+N: new folder, named in place
+PASS Ctrl+Shift+1..8: views (2 Large icons, 5 List, 6 Details checked by hand)
+PASS Ctrl+T / Ctrl+W / Ctrl+Tab / Ctrl+Shift+Tab / Ctrl+Page Up/Down
+PASS End / Home: last / first item, selected (Details, icons, List)
+PASS F2: rename in place; Escape: back to the item
+PASS F5: refresh
+PASS F6 / Shift+F6: regions round the window (tabs, address, search, commands, navigation pane, file list, details pane)
+PASS F6 in split view: both panes (FIXED; reached only the pane in front)
+PASS F11: full screen and back
+PASS Left / Right in the navigation pane: collapse / expand, to the parent / first row; with nowhere to go the keyboard stays (FIXED; went to the resize handle)
+PASS Right in the folder tree: expand, then first subfolder; stays on a folder without subfolders (FIXED; went to the next folder)
+PASS Shift+arrow keys: range (Details, icons)
+PASS Shift+Delete: Delete File question, Yes focused
+PASS Shift+F10 / Menu key: context menu at the item; Escape gives the keyboard back
+PASS Type-ahead: prefix selects, repeated letter cycles, 1 s reset (Windows timing NOT CONFIRMED)
+PASS Page Up / Page Down: Details and icons
+FAIL Page Up / Page Down in List view: do nothing when every item fits one column (GTK's column layout; Windows behavior NOT CONFIRMED, left as is)
+PASS Ctrl+A: select all
+PASS Escape: clears the selection
+PASS Keys with a menu open (Ctrl+T, Ctrl+A, F2): taken by the menu, nothing behind it acts
+PASS Address bar crumb mode: Left/Right between crumbs, Down opens the folder menu, Enter navigates; Escape on the menu returns to the crumb (FIXED; went to the search box)
+PASS Address bar edit mode: Escape restores the path and returns to the list; Enter navigates
+PASS Search box: Enter shows results with the keyboard on the first result; Escape clears
+PASS Home page (Quick access on): arrows, Home/End between tiles, Down leaves the grid to Recent
+PASS This PC: arrows, Enter, Shift+F10, Alt+Enter on a drive
+PASS Recycle Bin: Delete asks, Tab goes round Yes/No (with the dialog fix), Shift+F10 Restore first
+PASS Keyboard shortcuts window (Ctrl+?): lists the keys that work, now also Backspace, Shift/Ctrl+arrow keys, Ctrl+Space, Home, End, Left/Right in the navigation pane, Alt alone, Ctrl+scroll wheel; Alt+Enter named as Windows names it (FIXED)
+
+DIALOG BOX KEYS (Microsoft's dialog list)
+PASS Ctrl+Tab / Ctrl+Shift+Tab / Ctrl+1,2,3: Properties tabs
+PASS Tab / Shift+Tab: forward / back (after the fix below)
+PASS Spacebar on a check box; arrow keys in an option group (Folder Options › Browse folders)
+PASS Backspace in the Open/Save dialog list: folder up (existing tests)
+PASS F4 on a drop-down: shows its items (FIXED; did nothing) in Folder Options, Map network drive, other dialogs; main window F4 still edits the address
+PASS Alt+underlined letter: message boxes that draw them (existing tests); Delete File / Rename File draw none (NOT CONFIRMED whether Windows does)
+
+TAB ORDER, DEFAULT BUTTON, ESC/ENTER, FOCUS ON OPEN AND CLOSE (real keys)
+PASS Main window Tab order (address, search, commands, navigation pane, tree, resizer, file list(s), details, status, tabs, nav buttons), wraps both ways
+PASS Delete File: opens on Yes, Tab Yes/No both ways, Escape = No, focus back to the list (FIXED; Tab after No lost the keyboard for good)
+PASS Rename File (name taken): opens on Yes, Tab Yes/No both ways, Escape back to the rename box (FIXED, same trap)
+PASS Confirm Save As: opens on No, Tab Yes/No (FIXED; went to the caption buttons), No/Escape gives File name the keyboard back (FIXED; went to the list)
+PASS Rename extension / other message boxes: same frame, covered by the dialog fix (existing mnemonic tests)
+PASS Replace or Skip (progress window): links, the three choices, wraps; Escape cancels the copy, keyboard back on the item
+PASS Progress window: no focus stolen while copying (by design), Tab reaches its rows
+PASS Create archive (in window): Tab stays inside (FIXED; went to tab strip and Minimize/Maximize/Close), Escape back to the item
+PASS Extract (in window): Tab stays inside, Escape back to the archive
+PASS Properties: opens on the General tab, wraps both ways, Escape closes and returns focus; value labels and title-bar Close are stops (NOT CONFIRMED)
+PASS Folder Options: wraps, radio groups by arrows, F4 opens Open OpenXplorer to (FIXED), Escape closes and returns focus to See more
+PASS Choose Details: Tab from Cancel to the title-bar Close then the list (GTK order; NOT CONFIRMED)
+PASS Keyboard shortcuts window: search field and Close, wraps; Page Down scrolls the list from the search field
+PASS About / Map network drive / Format: same dialog frame, covered by the dialog fix
+PASS Sign in to share: wraps both ways (new regression test)
+PASS Open with chooser: wraps, Escape closes
+PASS Open and Save dialogs (through a stand-in for the desktop portal in the private session): opens on File name, Tab round the window without traps, Escape cancels
+PASS Settings page: no trap; each category is a Tab stop and the caption buttons are reachable (owner decision "GTK's order"; NOT CONFIRMED)
+PASS Menus: Tab leaves a command bar menu and closes it; context menu strip reachable with Tab/Shift+Tab; Escape returns to the opener
+PASS Focus rings only after keyboard use (windows-differences-2 rule kept): a dialog body is ringed only while it holds the keyboard itself
+
+CHECKS (results after the overlap merges are added at the end)
+PASS rustfmt; Clippy -D warnings (workspace lints, all targets)
+PASS python3 native/parity/check.py
+PASS native/tools/i18n.py check; tools/sync-docs.py --check
+
+CAPTURES (tools/native_capture.py, fictional demo tree, 1x/2x, light/dark)
+keyboard-pass-<1x|2x>-<light|dark>-shortcuts-window.png
+keyboard-pass-<1x|2x>-<light|dark>-shortcuts-window-tab-ring.png
+keyboard-pass-<1x|2x>-<light|dark>-delete-file-tab-ring.png
+keyboard-pass-<1x|2x>-<light|dark>-map-network-drive-tab-ring.png
+
+NOT CONFIRMED (check in the VM)
+- Page Up/Page Down in List view when every item fits one column.
+- Whether Windows makes Properties' value fields and its title-bar Close Tab stops.
+- Whether Delete File / Rename File show Alt+letter mnemonics (&Yes / &No) in Windows 11.
+- Whether Windows' Quick access tiles on Home are one Tab stop with arrows inside.
+- Type-ahead reset time (here 1 s).
+- Whether Tab from Choose Details' Cancel goes to its list or its title bar.
+- Back history of a window opened on a folder from the command line (here Home is before it).
+- Tab inside a Windows 11 context menu (here Tab moves between rows and onto the icon strip).
+
+CHANGED OWNER DECISIONS
+- SIDE-033: Left/Right with nowhere to go in the navigation pane keep the keyboard on the row; they used to be "left to the list" (GTK then moved it to the resize handle).
