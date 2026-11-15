@@ -1,0 +1,4 @@
+STATUS: WORKING
+HEAD: recycle-pass dd39e3ba (upstream main, nothing committed yet)
+QUESTION: none
+NOTE: Started. Reading the Recycle Bin and delete code, building the test suite, measuring Empty Recycle Bin.
