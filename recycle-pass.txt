@@ -1,20 +1,57 @@
-STATUS: WORKING
-HEAD: recycle-pass 6371b8e3
+STATUS: DONE
+HEAD: recycle-pass 4e6f81cd
 QUESTION: none
-NOTE: All fixes in and the lower jobs merged (1-7, their heads as of now); full test sweep of the merged branch running, compared by name with main. Main: 4,571 passed, 13 failed (environment).
+NOTE: Merged every lower job (1-7; big-folders twice, its last head 190a8d49). Conflicts were only between other jobs: markdown.json regenerated each time; BACKLOG Archives sentences and an archives features.toml note merged keeping both; gallery scrubber CSS and two big-folders lint-fix hunks (model.rs, enumerate.rs) took the owning job's side. Full sweep of the final tree: 4,715 passed, 13 failed, the same 13 test names as unchanged main (environment: admin_copy x9 need root fstab setup, 2 sandboxed thumbnailers, 2 Python-fixture drifts); main: 4,571 passed, 13 failed. Merge-only and branch-only failures: none.
 
-FAIL (main) -> PASS: Empty Recycle Bin, 50,000 items, real clicks under Xvfb: main 265 s; branch 19.3 s, GVfs settled 13 s later, view "0 items"
-FAIL (main) -> PASS: Empty Recycle Bin, 10,000 items, real clicks: progress window counts (95% complete), done in ~2.5 s
-FAIL (main) -> PASS: Empty Recycle Bin, 6,000 items, watched bin (test): main 22.1 s, branch 2-4 s
-FAIL (main) -> PASS: Empty/Delete in the Recycle Bin had no progress; now counts items
+TIMINGS (debug build, 4 cores, Xvfb; "window" = real clicks with xdotool)
+FAIL (main) -> PASS: Empty Recycle Bin, 50,000 items, window: main 265 s; branch 19.3 s, and GVfs lists it right 13 s later ("0 items")
+FAIL (main): Empty Recycle Bin, 50,000 items, ox-core only, unwatched: main 228 s
+FAIL (main) -> PASS: Empty Recycle Bin, 10,000 items: main 15-20 s; branch ~2.5 s in the window, progress window counts (screenshot showed "95% complete")
+FAIL (main) -> PASS: Empty Recycle Bin, 6,000 items, watched (test emptying_a_large_recycle_bin_takes_seconds): main 22.1 s; branch 2-4 s (bound 15 s)
+FAIL (main) -> PASS: Recycle Bin listing after recycling 30,000 items, watched: main ~26 s (at 50,000 two 60 s timeouts that read as an EMPTY bin); branch 4.2 s
+FAIL (main) -> PASS: Undo of recycling 10,000 items: main 50.5 s; branch 15.0 s
+PASS (unchanged): Delete to Recycle Bin, 10,000 files 13.5-17.4 s; 50,000 files 67-96 s, no errors
+PASS (unchanged): Restore 10,000 items: 32 s on main and branch
+
+CASES
+FAIL (main) -> PASS: Delete/Empty in the Recycle Bin showed no progress; now counts items
 FAIL (main) -> PASS: double-click on a file in the Recycle Bin opened it in its app; now Properties (Origin, Deleted)
 FAIL (main) -> PASS: Properties from a Recycle Bin item's menu said "Only local paths... supported"
 FAIL (main) -> PASS: Properties of a trashed folder: Size/Contains "Unavailable"; now counted
 FAIL (main) -> PASS: Recycle Bin columns lacked Date modified; now Name, Original location, Date deleted, Date modified, Type, Size
-PASS: Delete 8 items with Delete key, then Ctrl+Z restores all 8 (real keys, 1x light, Details)
-PASS: Shift+Delete one file: "Delete File" / "Are you sure you want to permanently delete this file?" with Type/Size/Date modified, Yes/No
+FAIL (main) -> PASS: a new details view kept Date modified before Original location/Date deleted (creation order)
+FAIL (main) -> PASS: search inside the Recycle Bin showed Folder path "/" for every result; now the original folder
+PASS: Delete 8 items with the Delete key, Ctrl+Z restores all 8 (xdotool, 1x light, Details)
+PASS: Shift+Delete one file: "Delete File" / "Are you sure you want to permanently delete this file?" with Type/Size/Date modified, Yes focused / No
 PASS: Delete in the Recycle Bin, 5 items: "Delete Multiple Items" / "...permanently delete these 5 items?"
 PASS: Empty Recycle Bin question: "...permanently delete these 10,000 items?" / "50,000 items"
+PASS: Restore onto a taken name: "Moving 1 item to Documents", "The destination already has a file named "Notes.txt"", Replace / Skip / Compare info; Escape keeps it in the bin
+PASS: Details pane in the Recycle Bin; search in the Recycle Bin
 PASS: drive Trash (.Trash-UID on a loop-mounted ext4): restore and delete
-PASS: tmpfs and read-only ext4 report no Trash (access::can-trash FALSE), so Delete asks the permanent-delete question
-PASS: Delete to Recycle Bin, 10,000 files: 13.5-17.4 s; 50,000 files: 67-96 s (main and branch alike)
+PASS: tmpfs and read-only ext4: no Trash, Delete asks "Are you sure you want to permanently delete this file?"; on read-only media Yes reports "Read-only file system", file kept
+PASS: 254-byte name cannot be recycled ("File name too long"): "Interrupted Action" with Try Again/Skip/Cancel, file kept, never deleted silently
+PASS: non-UTF-8, 200-byte and same-name items deleted exactly (tests)
+PASS: read-only folders inside a trashed folder are emptied; an item deleted only in part stays listed with its .trashinfo (tests)
+PASS: headless weston (Wayland): Recycle Bin view renders, no criticals (snapshot hook; xdotool cannot drive Wayland)
+PASS: no crash, no GTK criticals (G_DEBUG=fatal-criticals) in any manual run
+Captures (tools/native_capture.py, fictional demo tree): 1x/2x, light/dark: view (Details), view-list, view-compactview, properties, properties-folder, empty-confirm, search
+
+NOT FIXED (outside this area or shared code)
+- folder_view/watch.rs: a dropped folder watch leaves its GVfs subscription answering nothing, so GVfs logs one "Timeout was reached" per later Trash change. Files touched by jobs 4-7, left alone.
+- Restore of many items stays ~3 ms per item (GVfs move per item).
+
+NOT CONFIRMED (check in the VM)
+- Windows opens Properties for a FOLDER in the Recycle Bin too, and for several selected items
+- Rows of a Recycle Bin item's Properties ("Origin", "Deleted")
+- Column order: Windows shows Size before Item type, Date Modified last
+- Message when an item cannot be recycled because its name is too long; whether Windows offers permanent delete
+- Delete disabled on read-only media
+- "Display delete confirmation dialog" off also skipping the permanent question on drives without a Recycle Bin
+- Delete on Home's Recent rows (off here, earlier decision)
+- Recycle Bin properties (max size, "Don't move files to the Recycle Bin"): not in the app (OPS-044)
+
+CHANGED OWNER DECISIONS
+- VIEW-062: Date deleted no longer replaces Date modified in the Recycle Bin; Date modified follows the bin's own columns
+- OPS-040: items directly in the Recycle Bin are not opened/browsed; opening shows Properties
+
+WINDOWS SOURCE: https://support.microsoft.com/en-us/office/restore-deleted-files-or-folders-in-onedrive-949ada80-0026-4db3-a953-c99083e6a84f (Restore puts items back in their original folder); everything else from the facts in the brief or listed above.
