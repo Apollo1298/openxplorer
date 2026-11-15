@@ -1,7 +1,7 @@
-STATUS: WORKING
-HEAD: properties-pass 8ebdf8fb
+STATUS: DONE
+HEAD: properties-pass 7c4fc5ca
 QUESTION: none
-NOTE: Ten fixes pushed with tests that fail on main. Merged recycle-pass (same Recycle Bin fix, kept both), network-deep, open-save-dialogs, gallery-match, archives-pass; search-pass not merged yet (its branch does not compile now). 84 pictures pushed. Final checks running.
+NOTE: Ten fixes with tests that fail on main, 84 pictures, PR text in properties-pass-pr.md. Merged (no rebase) all lower branches that share files: network-deep, big-folders, open-save-dialogs, gallery-match, dnd-pass, archives-pass, search-pass, recycle-pass (recycle-pass had the same Recycle Bin Properties fix; kept both, using its is_recycle_bin_item). Merged branch fails the same 8 ox-app tests as main.
 
 PASS file .txt General: type, Opens with + Change... (Alt+C opens Open with), sizes, dates; Read-only via click+Apply and Alt+R/Alt+A persists (mode 444)
 PASS file Security/Details/Previous Versions tabs read correctly
@@ -36,7 +36,9 @@ PASS weston native Wayland scale 1 and 2: Properties draws at 380x520 logical (s
 FAIL(env) weston + Xwayland: any xdotool/XTEST input crashes headless Xwayland, so real-input checks under weston were not possible
 PASS no crash, no GTK criticals (tests run with G_DEBUG=fatal-criticals), no data loss (link re-point is atomic; launcher rewritten in place keeping mode)
 
-TESTS: full ox-app test program as user tester on private Xvfb: branch (before merges) 2374 passed, 9 failed; main 2366 passed, 8 failed; same 8 names on both (4 settings_page Python-fixture tests needing check.py's OX_PYTHON_APP, 2 thumbnailer sandbox, settings sidebar reset, sidebar_layout pitch); the 9th on the branch (archives::a_new_archive_is_renamed_in_place_and_undo_takes_it_away) timed out under load and passes 3/3 alone. cargo fmt --check OK; parity check OK; i18n check OK; clippy: no findings in changed code (installed clippy 1.97 also flags 7 spots in untouched files on main: duration_suboptimal_units x5, map_unwrap_or, decimal bitwise). Rust here is 1.97.0, not 1.92.
+TESTS: full ox-app test program as user tester on a private Xvfb (1440x1000): final merged branch 2470 passed, 8 failed; unchanged main 2366 passed, 8 failed; the same 8 names (4 settings_page tests that need OX_PYTHON_APP, 2 thumbnailer sandbox, settings sidebar reset, sidebar_layout pitch). New tests each failed on main first. cargo fmt --check OK; parity check + parity unit tests OK; i18n check OK; sync-docs --check OK; public-data audit: no issues.
+check.py: run as root (tester cannot reach the Rust toolchain under /root); stops at Clippy because installed clippy 1.97 (env has Rust 1.97.0, not 1.92) flags 5 untouched ox-core files on main too; after merging, clippy also flags big-folders/gallery-match code (entry/enumerate.rs single_match_else, folder_view/model.rs doc_markdown + large_types_passed_by_value) - left to those branches; no findings in my files. Remaining check.py stages run through its own functions: inventories, icon guard, rustfmt OK, doctests OK; test executables failing only as root: display_scale and launch (app refuses root), ox-core integration_file_chooser/ops_delete_plan/location_fixture_drift/network_python (same 5 failures on main as root), and root-only permission tests inside ox-app/ox-core.
+Merge notes: generated docs (markdown.json etc.) regenerated with tools/sync-docs.py; BACKLOG/ARC note conflict between archives-pass and search-pass/dnd-pass combined (ZIP password + ZIP64 from archives, 7z writing from search); search-pass's picker.rs/folder-views.css edits conflicted with the owners' newer versions - kept the owners' (open-save-dialogs, gallery-match).
 
 NOT CONFIRMED (check in the VM):
 - exact access-key letters per tab (General R/H/C/A, Security E/V, Sharing S/D, Versions S/O/R, Customize O/S/F/R/I/T, drive D, Shortcut T/S/O/F)
