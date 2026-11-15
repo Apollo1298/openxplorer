@@ -1,9 +1,21 @@
 STATUS: WORKING
-HEAD: big-folders 93eb6963
+HEAD: big-folders 9556bea5
 QUESTION: none
-NOTE: Measuring 10k/50k/100k folders under Xvfb with real xdotool input; first two fixes pushed (no tree list model unless folders expand; selection looked up once per change). Baselines and after-numbers follow.
+NOTE: Five fixes pushed (tree model only when folders expand, selection cache, per-item address facts, reader thread + filter passthrough, batched reload merge). Next: sorting/group-by/view switch stalls, open stalls, full matrix before/after.
 
-Work in progress. Profile of opening 100,000 files on main (perf, release build):
-- 4.9 s of interface-thread CPU; 2.1 s of it in GTK's TreeListModel rebuilding every node per listing batch
-  (expandable folders are off by default, so the tree did nothing visible).
-- Selection: every change looked all selected items up 5+ times (status bar, details pane, commands).
+Interim numbers, 100,000 files on local disk, 1x, Xvfb, release build, real xdotool input
+(max main-loop stall measured with _NET_WM_PING round trips; busy = until the app's CPU went idle):
+case                      main (dd39e3b)                  branch so far
+open: first rows          0.13 s                          0.16 s
+open: fully listed        5.1-8.0 s, CPU 5.5-6.5 s        3.6-5.6 s, CPU 3.8-3.9 s
+open: worst stall         159-276 ms                      124-226 ms
+Ctrl+A                    3.2-3.6 s freeze                0.42-0.80 s freeze
+Copy 100k selected        3.6 s freeze                    0.57 s freeze
+Cut 100k selected         4.5 s freeze                    0.69 s freeze
+1,000 files added live    1.0-2.1 s freeze (16.8 s in     0.26 s freeze
+                          the full run)
+1,000 files removed live  1.0-2.1 s (15.9 s full run)     0.45 s freeze
+memory after open (RSS)   583-603 MB                      489 MB
+
+Found on main (not fixed yet): GLib-GObject-CRITICAL "Too many GWeakRef registered" once during the full
+100k scenario (after live changes); not reproduced in isolation yet.
