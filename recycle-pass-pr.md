@@ -12,6 +12,7 @@ What changed:
 
 - **Empty Recycle Bin and Delete in the Recycle Bin are fast.** Items that the Trash backend reports in a Trash folder the freedesktop Trash specification names (the home Trash, a drive's `.Trash-$UID` or `.Trash/$UID`) are deleted from disk: the item first, through the existing pinned permanent delete, then its `.trashinfo`. Anything else still goes through GVfs. Folders inside an item are made owner-only first, as GVfs does, so read-only folders go too. An item deleted only in part keeps its `.trashinfo` and stays listed.
 - **No backlog after big operations.** GVfs keeps a watched Trash folder's record in a sorted list and walks it from the start for every added or removed name. Items are now deleted in ascending and recycled in descending byte order of their names, so each lookup ends at once. Every Recycle Bin listing also shares one process-wide watch of `trash:///` instead of subscribing its own; GVfs kept sending changes to those after they were dropped.
+- **The delete questions are Windows message boxes.** Delete, Shift+Delete and Empty Recycle Bin ask in the shared message box that Rename and Confirm Save As use: the caption ("Delete File", "Delete Folder" or "Delete Multiple Items") in the title bar, the warning icon beside the question, one item's details under it, and Yes, which has focus, and No, also pressed with Alt+Y, Alt+N, Y and N. The wording and counts are unchanged.
 - **Progress.** Delete and Empty in the Recycle Bin now count the items done in the progress window (at most one report per 80 ms). Before, they showed no progress.
 - **Undo of a large Move to Trash** no longer scans the whole Recycle Bin once per item.
 - **Opening an item in the Recycle Bin** (double-click or Enter) shows its Properties, as Windows does, instead of opening the file in its app or browsing into the folder. Properties from the item's menu works now; before, it said the address was not supported. The General tab names its Origin and the date it was Deleted, and a trashed folder's Size and Contains are counted.
@@ -27,6 +28,7 @@ What changed:
 | Double-click a file in the Recycle Bin | Opens it in its app | Properties with Origin and Deleted | Properties |
 | Properties from a Recycle Bin item's menu | "Only local paths… are supported" | Properties | Properties |
 | Recycle Bin columns | Name, Original location, Date deleted, Type, Size | Name, Original location, Date deleted, Date modified, Type, Size | Name, Original Location, Date Deleted, Size, Item type, Date Modified |
+| Delete, Shift+Delete and Empty Recycle Bin questions | Large dialog with the caption as a bold heading | Message box: caption title, icon, question, Yes/No | Message box with caption, icon, question, Yes/No |
 | Folder path of a search result in the Recycle Bin | "/" | The folder it was deleted from | |
 
 ## CHANGED OWNER DECISIONS
@@ -40,6 +42,7 @@ These are not covered by Microsoft's documentation, so they still need checking 
 
 - Whether Windows opens Properties for a folder in the Recycle Bin, as it does for a file, and what several selected items open. Here both show Properties.
 - The exact rows of a Recycle Bin item's Properties in Windows 11 ("Origin", "Deleted").
+- The icon of Windows' delete questions; the app uses the warning icon of its other message boxes, with one item's details under the question.
 - The column order: Windows shows Size before Item type and Date Modified last. Here the folder's chosen order is kept after the Recycle Bin's own columns.
 - What Windows says when an item cannot be recycled because its name is too long for the Trash (here: "Interrupted Action", with the item kept), and whether it offers to delete it permanently instead.
 - Whether Windows disables Delete on read-only media. Here Delete asks the permanent-delete question and then reports "Read-only file system", and the file is kept.
