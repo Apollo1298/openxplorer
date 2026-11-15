@@ -1,7 +1,7 @@
 STATUS: WORKING
-HEAD: recycle-pass 8f3feec8
+HEAD: recycle-pass 6371b8e3
 QUESTION: none
-NOTE: Empty Recycle Bin of 50,000 items through the window: 265 s on main, now 19 s plus 13 s until GVfs lists it right. Auditing the rest next.
+NOTE: All fixes in and the lower jobs merged (1-7, their heads as of now); full test sweep of the merged branch running, compared by name with main. Main: 4,571 passed, 13 failed (environment).
 
 FAIL (main) -> PASS: Empty Recycle Bin, 50,000 items, real clicks under Xvfb: main 265 s; branch 19.3 s, GVfs settled 13 s later, view "0 items"
 FAIL (main) -> PASS: Empty Recycle Bin, 10,000 items, real clicks: progress window counts (95% complete), done in ~2.5 s
