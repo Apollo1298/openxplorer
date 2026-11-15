@@ -1,4 +1,22 @@
 STATUS: WORKING
-HEAD: gallery-match 27e9a0a10f2977a670263046eb6cd962a56e43c6
+HEAD: gallery-match 3235e100ae83093f509fa1f296806b981e470bff
 QUESTION: none
-NOTE: Gallery reworked to the build 26200 facts: justified rows, one date-range heading, date scrubber, Windows' command bar, View, Collection, Gallery Locations dialog, photo menu, tooltip, lossless Rotate; month groups removed. Tests first (ef5489ed, 14 window tests + 1 unit test fail before the change); all 31 Gallery tests pass now. Running check.py and the full suite next, then xdotool checklist and captures.
+NOTE: Reworked to the build 26200 facts; merged network-deep, big-folders and open-save-dialogs (they touch tests.rs, features.toml, the .pot, docs, availability.rs, loading.rs). Real-input checklist done on 8 configurations; full test suites on this branch and unchanged main are running.
+
+CHECKLIST (real input with xdotool; X11 = Xvfb, Wayland = weston 13 kiosk-shell inside Xvfb; private D-Bus, disposable home, generated gradient photos only)
+PASS nav row: a real click on "Gallery" right under Home opens Gallery; typing "Gallery" in the address bar opens the same page (8/8 configurations)
+PASS address/tab: blue picture glyph on the tab, glyph > "Gallery" in the address bar, "Gallery" title (screenshots, all configurations)
+PASS range heading: changes while scrolling with the wheel and returns at the top ("November 2026 – April 2026" style; 8/8)
+PASS justified layout with mixed aspect ratios (generated 16:9, 9:19.5, 3:1, 3:4, 1:1 ...): rows fill the width, one height per row, 4 px gaps (window test + screenshots)
+PASS scrubber: hover shows the month beside it, click near the bottom jumps, drag to the top jumps back, down arrow scrolls (8/8)
+PASS command bar: New and Sort grayed (a click on Sort opens nothing); a selected photo adds Set as background (grayed), Rotate left, Rotate right after Collection (8/8)
+PASS View menu: Extra large, Large, Medium (dot), Small icons | Details pane, Preview pane | Show (window test + screenshots)
+PASS Collection menu: Show all (dot), Pictures, separator, Manage collection (window test + screenshots)
+PASS Gallery Locations: Add… (real folder chooser) then Cancel saves nothing; Add… then OK saves galleryFolders; Remove then Enter (OK) takes it out; Remove grayed for Pictures; a folder that does not exist is refused (8/8)
+PASS photo menu: strip Cut, Copy, (Share where the desktop shares), Delete; Open, Open with, Set as desktop background (grayed), Rotate right, Rotate left, Open file location, Add to Favorites, Compress to, Copy as path, Properties, Show more options (window test + screenshots)
+PASS tooltip: "Path: Photo 00013 (/home/…/Pictures)", "Item type: PNG File", "Date: …", "Size: …" (window test + screenshots; hidden while a menu is open)
+PASS Rotate: Rotate right in the bar turns a 640x360 PNG to 360x640, Rotate left turns it back (8/8); JPEG by EXIF orientation only, pixels byte-identical (window + unit tests)
+PASS 1x and 2x (GDK_SCALE=2 on X11, weston --scale=2), light and dark, normal and Compact view: 144 checks, 0 failures over x11-1x-light-normal, x11-1x-dark-compact, x11-2x-dark-normal, x11-2x-light-compact, wl-1x-light-normal, wl-1x-dark-compact, wl-2x-light-normal, wl-2x-dark-compact
+PASS 10,000 photos in 100 folders: first photos 1.0 s after Enter, 30 Page Down + 40 wheel notches redraw while loading, "10,000 items", a scrubber click jumps at once, idle CPU 0% after loading and after Alt+Home, RSS 283 -> 368 MB, no criticals
+PASS empty Pictures and missing Pictures: "No photos to show", 0 items, no error, no criticals
+PASS no GTK criticals or panics in any app log above
