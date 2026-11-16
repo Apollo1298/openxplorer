@@ -1,7 +1,7 @@
-STATUS: WORKING
-HEAD: open-save-dialogs 8a6e37aac0591a131374d8f7f8fc6511e5d7a656
+STATUS: DONE
+HEAD: open-save-dialogs 0c4a40ad34cdd39a9cfca818e069cba1728100d0
 QUESTION: none
-NOTE: New request: the Details pane covers the file list columns (dialog and main window). Working on it test-first.
+NOTE: Added the Details-pane fix (Name gives way to 140 px before the list scrolls; pane narrows 235 to 180 px between 1190 and 961 px). Merged network-deep and big-folders again (same files incl. features.toml). After the big-folders merge, search_history::a_tab_on_results_keeps_its_selection_and_scroll_position fails about 1 run in 10; it does the same on big-folders alone and never on this branch before the merge (0/10).
 
 CHECKLIST (real xdg-desktop-portal on a private bus routed to the app; clients call the portal as Chromium/Electron do, plus real GTK 3 and GTK 4 apps; xdotool keys and clicks under Xvfb; "main" = unchanged upstream main dd39e3ba)
 PASS OpenFile: typed name + Enter, with filters and current_filter returned
@@ -27,6 +27,10 @@ PASS Alt+N to File name from a check box (main: FAIL, Enter toggled the check bo
 PASS Tab order: File name, type list, Save, Cancel, navigation buttons
 PASS Ring on Save after Tab, light and dark, normal and Compact view, 1x and 2x (main: FAIL, no ring)
 PASS Ctrl+Shift+N from File name makes a folder, Enter opens it, Alt+N, Enter saves inside (main: FAIL, saved "Exports.txt")
+PASS Details pane open, dialog 1000 px: every column shows beside the pane, nothing under it (main: FAIL, Type cut mid-word, Size hidden; 541 of 699 px shown)
+PASS Details pane open, main window 1000 px: same (main: FAIL)
+PASS Pane narrows with the window: 235 px at 1190, about 189 px at 1000, 180 px at 961 (main: FAIL, 235 throughout)
+PASS Main window 900 px: all columns show; split view: Name at 140 px, then each pane scrolls sideways (main: FAIL, Name kept 260 px, 676 of 699 px shown with one pane)
 PASS Three check boxes + a list: check boxes on one row; Tab reaches each, Space toggles (main: FAIL, four rows, file list a sliver)
 PASS Non-UTF-8 file name (caf\xe9 menu.txt) chosen by click, answered as %E9
 PASS Very long name (230 characters) saved whole; a name over 255 bytes refused with the dialog kept
@@ -42,6 +46,8 @@ NOT DONE The portal's modal=false option is still ignored (could not be verified
 NOT TOUCHED Backspace up a level in the dialog: not on main; windows-differences-2 adds it, this branch does not touch it
 
 NOT CONFIRMED (check in the VM, Windows 11 Save As dialog)
+- Whether the Open/Save dialog shows the Details pane by default and remembers it (Microsoft's Common Item Dialog page documents only folder persistence); the current default is kept
+- How Windows' Details view gives way when narrower than its columns, and whether its horizontal scroll bar always shows
 - Ctrl+Shift+N with the keyboard in File name makes a new folder
 - The underlined letters are N in "File name:" and T in "Save as type:"
 - Confirm Save As answers to Y and N without Alt
@@ -50,10 +56,12 @@ NOT CONFIRMED (check in the VM, Windows 11 Save As dialog)
 - Where Windows draws the focus ring on the accent-filled Save button
 
 CHANGED OWNER DECISIONS
-none (the ring keeps C29's accent color; only its place on the accept button changes)
+- LOOK-022: Name no longer keeps 260 px (1.x app's minmax(260px,1fr)); it gives way to 140 px before the list scrolls
+- LOOK-022: the details pane narrows from 235 to 180 px between 1190 and 961 px instead of keeping 235
+- the ring keeps C29's accent color; only its place on the accept button changes
 
 CHECKS
 PASS check.py stages: parity tests and inventory, i18n check, tools tests, drawn-icon guard, rustfmt, Clippy (pedantic)
 PASS python3 native/parity/check.py
-PASS all 81 test executables plus doctests run in check.py's isolation: failures identical by name to unchanged main (9 admin_copy, 2 sandboxed thumbnailer, 1 Python clipboard outside check.py), all from this machine (no user namespaces, root-owned checkout)
+PASS all 81 test executables plus doctests (after merging network-deep and big-folders): 4586 passed; failures are the machine's (9 admin_copy and 18 admin_delete path-trust tests from the root-owned checkout, 2 sandboxed thumbnailer tests: no user namespaces), the same by name as unchanged main once OX_TEST_TRUSTED_BASE is set, plus the big-folders search_history flake above
 NOTE check.py itself stops at its first failing executable here: location_fixture_drift fails with /usr/local Python 3.13.18's urlsplit, and passes the Python check with the system Python 3.12; an ox-core undo test flaked once on a GVfs name and passed 4 of 4 alone
