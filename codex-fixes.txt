@@ -1,5 +1,5 @@
 codex-fixes (Codex findings on AKolenda/openxplorer #335-#338, fixed on fork branches)
-STATUS: DONE (round 2: findings A-D fixed and pushed)
+STATUS: WORKING (round 3: merging upstream main 7f70b0ac (2.0.18) into windows-differences-2, network-thumbnails, supere-uninstall)
 NOTE: upstream main dd39e3ba merged into all 4 branches. Every new test failed before its fix and
 passes after. All 4 branches pushed (merges, no rebase, no force-push). No finding was judged wrong; all 8 changed.
 User-visible behavior changed on all 4 branches, so each <branch>-pr.md got an "After review" note.
