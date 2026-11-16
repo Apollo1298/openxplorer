@@ -1,13 +1,13 @@
 STATUS: DONE
-HEAD: top-bugs e74f8868
+HEAD: top-bugs 9cc46965
 QUESTION: none
-NOTE: Deb 35 Home search: fixed on branch top-bugs, commit 6cdb4647 (fix) and e74f8868 (tooltip test); search-pass is not the cause and was not changed. Cause: on the Home page the pane shows the "No matching items" page when the search starts, and the walk's results never switched it back to the list until the whole home folder had been walked; on a real home that takes long, so the user saw "No items found". The search box tooltip is upstream main's old text, not from search-pass; reworded. Merge notes for the combined build in the DEB 35 section. All six fixed on top-bugs (cut from upstream main 04065186), plus the hidden-selection bug on Home and the deb 34 Home search miss, each with a test that failed before its fix; PR text in top-bugs-pr.md. Deb 34 cause: with pinned (cached) folders under home, a search of home was "own listing + cached subfolders" and never walked uncached folders such as OX-Test; the Home page has no listing, so only cached folders were searched. The branch is on 04065186; upstream main is now dd39e3ba (8 commits on), not rebased.
+NOTE: Merged upstream main 7f70b0ac (2.0.18, with #339) into top-bugs as 9cc46965 (a merge, no force-push). Kept the owner's Ctrl+A-in-rename fix (inline_rename.rs and OPS-010 as on main, renaming::ctrl_a_selects_the_whole_name_being_edited) and removed mine (keep_select_all_in_field, ctrl_a_while_renaming_selects_the_name_not_the_items); inline_rename.rs and tests/renaming.rs now equal main. Everything else stays. Deb 35 Home search: fixed on branch top-bugs, commit 6cdb4647 (fix) and e74f8868 (tooltip test); search-pass is not the cause and was not changed. Cause: on the Home page the pane shows the "No matching items" page when the search starts, and the walk's results never switched it back to the list until the whole home folder had been walked; on a real home that takes long, so the user saw "No items found". The search box tooltip is upstream main's old text, not from search-pass; reworded. Merge notes for the combined build in the DEB 35 section. All six fixed on top-bugs (cut from upstream main 04065186), plus the hidden-selection bug on Home and the deb 34 Home search miss, each with a test that failed before its fix; PR text in top-bugs-pr.md. Deb 34 cause: with pinned (cached) folders under home, a search of home was "own listing + cached subfolders" and never walked uncached folders such as OX-Test; the Home page has no listing, so only cached folders were searched. The branch is on 04065186; upstream main is now dd39e3ba (8 commits on), not rebased.
 
 Commits on upstream main 04065186: b63bcce3 tests and the six fixes, a1c730cb tooltips stay hidden until the pointer moves (real-input follow-up), 534a8dee status bar counts Home search results, 2bf0edc1 no hidden rows behind Home and This PC (Ctrl+A and the file commands never act on the folder shown before), de6686f5 a local folder with only some subfolders cached is walked whole (Home and the home folder find files in uncached folders).
 
 TESTS FIRST (each failed on main 04065186, passes now)
 PASS searching_from_home_searches_the_home_folder_and_its_subfolders (main: "the search box works on Home" failed)
-PASS ctrl_a_while_renaming_selects_the_name_not_the_items (real XTEST keys; main: all 4 items selected in Details)
+REMOVED (superseded by #339 on main) ctrl_a_while_renaming_selects_the_name_not_the_items (real XTEST keys; main: all 4 items selected in Details)
 PASS no_tooltip_stays_over_a_menu_the_rename_box_or_the_next_folder (real XTEST pointer and keys; main: timed out waiting for no tooltip over the Shift+F10 menu)
 PASS every_new_search_names_its_own_words_in_the_tab_and_title (main: tab kept "notes - Search Results in ..." after typing on to "notes 1")
 PASS the_keyboard_comes_back_to_the_item_whose_menu_closed (main: timed out waiting for focus on the tile after Shift+F10)
@@ -20,7 +20,13 @@ PASS no_tooltip_stays_over_a_menu_the_rename_box_or_the_next_folder made determi
 PASS searching_from_a_big_home_shows_matches_as_they_are_found (before 6cdb4647: rows found while the "No matching items" page stayed up); combines a cached Documents (as pinned folders are), an uncached OX-Test three levels down and 1,500 more folders, and checks the search box tooltip
 PASS settings_and_closed_search_results_keep_no_hidden_selection (Settings and results after Close search; these already kept no hidden selection)
 
-CHECKS
+CHECKS AFTER MERGING MAIN 7f70b0ac (9cc46965)
+PASS rustfmt, Clippy (workspace lints), python3 native/parity/check.py, tools/i18n.py check
+PASS every test executable and the doctests, isolated with check.py's run_isolated, on the branch and on unchanged main 7f70b0ac: 77 of 81 executables plus the doctests pass on the branch
+PASS no test fails on the branch that passes on main (compared by name). Both fail: ox_app thumbnails::thumbnailers::tests::a_sandboxed_thumbnailer_runs_within_its_limits and a_sandboxed_thumbnailer_sees_only_its_item; ox_core admin_copy::tests (9); location_fixture_drift and network_python (gi import). ox_app: branch 2384 passed, main 2373 passed (the branch adds tests)
+NOTE main also failed 18 ox_core admin_delete::tests::parent_path tests only because its checkout's folders were group-writable (775), which those tests refuse; the branch does not change ox-core
+
+CHECKS (before the merge)
 PASS rustfmt (cargo fmt --all --check, Rust 1.92.0)
 PASS clippy (cargo clippy --workspace --all-targets --locked -- -D warnings, workspace lints)
 PASS python3 native/parity/check.py (exit 0) and its unit tests; new HOME-017 and VIEW-073; notes of SRCH-046, HOME-016, TAB-054, OPS-010, SEL-004 updated; BACKLOG unchanged (both new items are done)
@@ -40,7 +46,7 @@ PASS the status bar counts the results ("1 result"; it read "7 items", the Home 
 PASS Quick access off: Home is the home folder, Ctrl+E zebra finds the file (X11 1x, release build)
 NOTE pre-existing: with a pinned folder cached, a search of the home folder is "Current folder + cached subfolders", so "notes" (in Documents, not cached) is found neither from Home nor from the home folder on main; unchanged here
 
-RENAME CTRL+A (real input)
+RENAME CTRL+A (real input, before the merge; the fix on the branch is now main's #339)
 PASS Details, List, Tiles, Large icons, Content: F2, Ctrl+A selects the name only, "1 item selected"; Esc: "1 item selected" (X11 1x light, X11 2x dark)
 PASS Compact view (Wayland 1x dark Compact, Details)
 PASS search results ("3 results · Cached": 1 item selected after Ctrl+A and after Esc)
