@@ -1,5 +1,5 @@
 codex-fixes (Codex findings on AKolenda/openxplorer #335-#338, fixed on fork branches)
-STATUS: WORKING (round 3: merging upstream main 7f70b0ac (2.0.18) into windows-differences-2, network-thumbnails, supere-uninstall)
+STATUS: DONE (round 3: upstream main 7f70b0ac merged into windows-differences-2, network-thumbnails, supere-uninstall)
 NOTE: upstream main dd39e3ba merged into all 4 branches. Every new test failed before its fix and
 passes after. All 4 branches pushed (merges, no rebase, no force-push). No finding was judged wrong; all 8 changed.
 User-visible behavior changed on all 4 branches, so each <branch>-pr.md got an "After review" note.
@@ -65,7 +65,11 @@ windows-differences-2: merge 6d9ddf8e (features.toml OPS-010 conflict: kept the 
     3/3 alone and the whole set again); package-data 27 OK; all steps pass. Pushed.
 network-thumbnails: merge 0024e03e (markdown.json conflict: regenerated with the docs and .pot). Rename tests
     76 passed; package-data OK; all steps pass. Pushed.
+supere-uninstall: merge d272ea32 (markdown.json conflict: regenerated with the docs and .pot). Rename tests
+    76 passed; package-data OK; all steps pass. Pushed.
+more-bugs: left as is (still merges cleanly into upstream main).
+No user-visible change on the branches themselves in round 3, so the pr.md files are unchanged.
 
 STATUS: DONE
-Heads: more-bugs 9fc13864, windows-differences-2 c44eb603, network-thumbnails 61728ed6,
-supere-uninstall 068fc3aa
+Heads: more-bugs 9fc13864, windows-differences-2 6d9ddf8e, network-thumbnails 0024e03e,
+supere-uninstall d272ea32
