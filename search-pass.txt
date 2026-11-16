@@ -1,7 +1,7 @@
-STATUS: DONE
-HEAD: search-pass 0b4526c0
+STATUS: WORKING
+HEAD: search-pass 0b4526c0 (tab progress ring in progress)
 QUESTION: none
-NOTE: Advanced Query Syntax in the search box (phrases, AND/OR/NOT, name:, ext:, date: with dates/ranges, sizes with kb/mb/gb), same rules for filter, live walk, contents and cache. Merged windows-differences-2, big-folders (twice), network-deep, open-save-dialogs (twice), gallery-match, top-bugs; never archives-pass or dnd-pass.
+NOTE: Now adding the tab progress ring (search running, folder loading) and merged upstream main 7f70b0ac. Earlier: Advanced Query Syntax in the search box (phrases, AND/OR/NOT, name:, ext:, date: with dates/ranges, sizes with kb/mb/gb), same rules for filter, live walk, contents and cache. Merged windows-differences-2, big-folders (twice), network-deep, open-save-dialogs (twice), gallery-match, top-bugs; never archives-pass or dnd-pass.
 Merge fallout fixed here: top-bugs' Search from Home renumbered HOME-033 (gallery-match also used HOME-017); top-bugs' tooltip test no longer needs a column-title tooltip (windows-differences-2 removed it); gallery-match raw 'black' shadow -> @ox_shadow_key; Clippy lints in big-folders' newest commits (model.rs regroup, selection.rs, enumerate.rs). For other branches: open-save-dialogs' a_save_dialog_keeps_save_as_type_under_file_name and an_open_dialog_has_its_type_list_beside_file_name_and_no_caption failed on that branch at its earlier head (pass in the merged result now); big-folders alone makes 10k-folder "report" ~60 ms slower (681-720 ms vs main 598-646 ms).
 
 TIMINGS (release, xdotool under Xvfb, 1x; main -> branch)
