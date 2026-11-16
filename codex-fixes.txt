@@ -55,6 +55,15 @@ counted "... ok" lines, which undercount when GVFS warnings print mid-line):
 User-visible behavior changed on the 3 round-2 branches, so windows-differences-2-pr.md,
 network-thumbnails-pr.md and supere-uninstall-pr.md got round-2 "After review" lines.
 
+Round 3 (upstream main moved to 7f70b0ac: #339, the 2.0.18 release #340, #341; a merge each, no rebase or force-push;
+checks: touched suites only (ox-app rename tests, tools/test_package_data.py) plus fmt, clippy -D warnings,
+inventories, parity, i18n and sync-docs --check, compared with upstream main 7f70b0ac by test name):
+  upstream main 7f70b0ac: rename tests 76 passed; package-data 27 OK; all steps pass.
+windows-differences-2: merge 6d9ddf8e (features.toml OPS-010 conflict: kept the branch's Windows 11 Rename File
+    wording plus upstream's Ctrl+A sentence; markdown.json, docs and .pot regenerated). Rename tests 76 passed
+    (one first-run timeout in archives::a_new_archive_is_renamed_in_place_and_undo_takes_it_away did not recur:
+    3/3 alone and the whole set again); package-data 27 OK; all steps pass. Pushed.
+
 STATUS: DONE
 Heads: more-bugs 9fc13864, windows-differences-2 c44eb603, network-thumbnails 61728ed6,
 supere-uninstall 068fc3aa
