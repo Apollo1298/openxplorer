@@ -1,7 +1,7 @@
-STATUS: WORKING
-HEAD: search-pass 0b4526c0 (tab progress ring in progress)
+STATUS: DONE
+HEAD: search-pass a4c3625b
 QUESTION: none
-NOTE: Now adding the tab progress ring (search running, folder loading) and merged upstream main 7f70b0ac. Earlier: Advanced Query Syntax in the search box (phrases, AND/OR/NOT, name:, ext:, date: with dates/ranges, sizes with kb/mb/gb), same rules for filter, live walk, contents and cache. Merged windows-differences-2, big-folders (twice), network-deep, open-save-dialogs (twice), gallery-match, top-bugs; never archives-pass or dnd-pass.
+NOTE: Added the tab progress ring (spinning accent ring while a search runs or a folder lists, magnifier/icon after; still with animations off) on top of the Advanced Query Syntax work. Merged upstream main 7f70b0ac and the newest windows-differences-2, network-deep, big-folders, open-save-dialogs, gallery-match, top-bugs (never archives-pass/dnd-pass). Merge fallout fixed: Search from Home is now HOME-035 (gallery-match took HOME-017 and HOME-033); name:~ needs wildcard_matches, which windows-differences-2 made test-only; top-bugs' tooltip test keeps its new helper but finds column titles by type (no tooltip since windows-differences-2); took upstream's Ctrl+A-in-rename over top-bugs' copy; restored open-save-dialogs' Name minimum after an over-broad conflict resolution.
 Merge fallout fixed here: top-bugs' Search from Home renumbered HOME-033 (gallery-match also used HOME-017); top-bugs' tooltip test no longer needs a column-title tooltip (windows-differences-2 removed it); gallery-match raw 'black' shadow -> @ox_shadow_key; Clippy lints in big-folders' newest commits (model.rs regroup, selection.rs, enumerate.rs). For other branches: open-save-dialogs' a_save_dialog_keeps_save_as_type_under_file_name and an_open_dialog_has_its_type_list_beside_file_name_and_no_caption failed on that branch at its earlier head (pass in the merged result now); big-folders alone makes 10k-folder "report" ~60 ms slower (681-720 ms vs main 598-646 ms).
 
 TIMINGS (release, xdotool under Xvfb, 1x; main -> branch)
@@ -13,6 +13,10 @@ TIMINGS (release, xdotool under Xvfb, 1x; main -> branch)
 Navigate away mid-walk (100k): address bar answers in 36 ms, no stray results
 
 PASS/FAIL
+FAIL main / PASS branch: tab shows a progress ring while a search runs, magnifier when done (test + xdotool Xvfb 1x/2x light/dark + weston)
+FAIL main / PASS branch: canceled search (box emptied) takes the ring away
+FAIL main / PASS branch: a tab listing a folder shows the ring until listed
+PASS: ring turns with animations on (tab pixels differ 120 ms apart; 53 redraws in 2.5 s), stands still with them off
 FAIL main / PASS branch: "annual report" quoted phrase
 FAIL main / PASS branch: report NOT draft
 FAIL main / PASS branch: budget OR invoice; report AND annual
@@ -26,13 +30,14 @@ PASS: weston 13 headless via Xwayland (xdotool): report NOT draft
 PASS: open folder result, Back to results, Close search, Escape, navigate away mid-walk
 PASS: no GTK criticals (only a11y-bus/UDisks environment warnings)
 PASS: parity/check.py, rustfmt, clippy -D warnings (pedantic), i18n check, sync-docs check
-TESTS (as check.py runs them, all executables + doctests): 4670 passed, 12 failed
+TESTS (as check.py runs them, all executables + doctests): 4690 passed, 11 failed
   same on main (environment): 9 ox-core admin_copy::tests::*, 2 thumbnails::thumbnailers::tests::a_sandboxed_thumbnailer_*
-  flaky after merges (1 in 8 alone; 0 of 8 on top-bugs and top-bugs+big-folders): window::tests::tooltips::no_tooltip_stays_over_a_menu_the_rename_box_or_the_next_folder
+  window::tests::tooltips::no_tooltip_stays_over_a_menu_the_rename_box_or_the_next_folder passed in the last run (failed 1 in 8 earlier)
   location_fixture_drift passes with Python 3.12; fails with Python 3.13.18 (urlsplit change), environment
 check.py itself stops at the first failing executable, so the run above used its own isolation code per executable.
 
 NOT CONFIRMED (check in the VM)
+- the progress ring's exact size, stroke, arc length and speed (matched to the description, not measured); whether Windows shows the ring on background tabs that load
 - "-word" as NOT (docs only show "-" as a property's not-equal)
 - MB/GB units and 1 KB = 1024 or 1000 bytes (docs only show kb)
 - day-first dates / locale date formats; day and month names; future dates
