@@ -63,6 +63,8 @@ windows-differences-2: merge 6d9ddf8e (features.toml OPS-010 conflict: kept the 
     wording plus upstream's Ctrl+A sentence; markdown.json, docs and .pot regenerated). Rename tests 76 passed
     (one first-run timeout in archives::a_new_archive_is_renamed_in_place_and_undo_takes_it_away did not recur:
     3/3 alone and the whole set again); package-data 27 OK; all steps pass. Pushed.
+network-thumbnails: merge 0024e03e (markdown.json conflict: regenerated with the docs and .pot). Rename tests
+    76 passed; package-data OK; all steps pass. Pushed.
 
 STATUS: DONE
 Heads: more-bugs 9fc13864, windows-differences-2 c44eb603, network-thumbnails 61728ed6,
