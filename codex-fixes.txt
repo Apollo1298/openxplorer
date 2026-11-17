@@ -1,5 +1,5 @@
 codex-fixes (Codex findings on AKolenda/openxplorer #335-#338, fixed on fork branches)
-STATUS: DONE (round 4: settings-pass and keyboard-pass already merged upstream; nothing to merge)
+STATUS: DONE (round 4 cancelled: PRs merged upstream)
 NOTE: upstream main dd39e3ba merged into all 4 branches. Every new test failed before its fix and
 passes after. All 4 branches pushed (merges, no rebase, no force-push). No finding was judged wrong; all 8 changed.
 User-visible behavior changed on all 4 branches, so each <branch>-pr.md got an "After review" note.
@@ -70,7 +70,9 @@ supere-uninstall: merge d272ea32 (markdown.json conflict: regenerated with the d
 more-bugs: left as is (still merges cleanly into upstream main).
 No user-visible change on the branches themselves in round 3, so the pr.md files are unchanged.
 
-Round 4 (asked: merge the newest upstream main into recycle-pass #350, settings-pass #352, keyboard-pass #353):
+Round 4 cancelled: PRs merged upstream (#352 at 03:33 UTC, #353 at 03:35 UTC; recycle-pass #350 also merged).
+  Nothing was merged into or pushed to recycle-pass, settings-pass or keyboard-pass. Details as found:
+  (asked: merge the newest upstream main into recycle-pass #350, settings-pass #352, keyboard-pass #353):
   upstream main fetched fresh at defb8d06 (#355); it already contains #350, #352 (0176e963) and #353 (48167e5b),
   and upstream merged main into both branches on 2026-11-17.
 recycle-pass: not changed: #350 merged upstream (skipped as asked).
