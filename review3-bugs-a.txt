@@ -1,0 +1,4 @@
+STATUS: WORKING
+HEAD: review3-bugs-a (not pushed yet; cut from upstream main defb8d06)
+QUESTION: Item 7: an immediate save on SIGTERM/SIGINT needs either unsafe code (denied by the workspace lints) or async-signal as a new direct ox-app dependency (already in Cargo.lock through zbus). Add it? Until answered, the open tabs are saved every 3 s when they change (off the main thread) and at logout through GtkApplication query-end.
+NOTE: Item 1 (desktop font switch) already fixed on main in 0176e963 (#352); to be confirmed with real input. Items 2-8 fixed in code; tests being checked against unchanged main.
