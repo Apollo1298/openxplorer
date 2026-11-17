@@ -1,0 +1,32 @@
+STATUS: DONE
+HEAD: test-combined-40 c73f0a5d (the deb was built from exactly this tree; cargo clean before the release build; guard on HEAD and a clean tree before and after)
+DEB: claude/test-combined-40-deb 58975984
+  openxplorer_2.0.19+test40_all.deb (io.winspace.Development)
+  SHA256: b37458d67bcc7af7b2b2c65cab794bc00514f3338bfa225ce149fe5c3e0c4e11
+BASE: upstream main 6b877562 (2.0.19). Upstream main is still 6b877562 (checked when pushing: 6b877562), so there was nothing newer to hold back.
+
+MERGED HEADS, in this order (as deb 39, except vm-diffs-3):
+  1 review3-bugs-a  6a14b305271608f949148a556e24ca7885bf3ab0 -> 082cc57a (clean)
+  2 review3-bugs-b  d2faf38614e51bb6bde50b7f7691c9f19105fce7 -> b00d3adf (clean)
+  3 submenu-hover   f895cedf676eccb4541f6aedcf307cbda5ca8e9a -> 9737fc2b (clean)
+  4 vm-diffs-3      f1e55e78d19649142325b8b6d6968d1cd1239285 -> 178361a7 (was 5ec9bdfb; adds f1e55e78 "Fill the front tab's title up to its close button and cut it at the last pixel")
+  5 sevenz-browse   36cf872c906112c95a9abb24d0fbcaf19ea81c4f -> c73f0a5d
+
+CONFLICTS (as in deb 39):
+- 4 vm-diffs-3 / window/tests/tabs.rs: review3's the_open_tabs_are_saved_while_the_window_is_open and vm-diffs-3's tab-strip scroll-arrow helpers and tests, both kept; .pot regenerated with native/tools/i18n.py extract, markdown.json with tools/sync-docs.py.
+- 5 sevenz-browse: only markdown.json (regenerated).
+No glue was needed. The tree differs from test-combined-39 by exactly f1e55e78's change (same 6 files, same changed lines: tab_strip.rs, tab_strip/carried_tab.rs, new tab_strip/title_room.rs, tests/tabs.rs, docs/ui-spec.md, parity).
+
+CHECKS on c73f0a5d:
+- native/tools/check.py: inventories, parity, i18n and tool tests pass; it then stops at clippy on duration_suboptimal_units in ox-core files no branch touches (same on main). I ran its remaining steps with that lint (and map_unwrap_or, decimal_bitwise_operands) allowed: no drawn icons, rustfmt clean, clippy clean, every test binary plus doctests with OX_PYTHON_APP set.
+- parity/check.py, i18n check, sync-docs --check pass; cargo-sources.json matches a fresh run; the deb has rust-crates/sevenz-rust2-0.20.2.
+- Tests: 4855 passed, 23 failed: the same 23 as deb 39, which all fail on main 6b877562 (rerun there for deb 38; environment: root, sandbox, Python fixtures, display scale). No branch-only, merge-only or flaky failure.
+
+ONE UNIQUE STRING PER BRANCH IN THE BUILT BINARY (/opt/openxplorer/bin/openxplorer, grep -caF; none in main 6b877562's sources):
+  1 review3-bugs-a: "OpenXplorer can’t find ‘"
+  2 review3-bugs-b: "Alt+drag"
+  3 submenu-hover:  "rest_pointer_on_menu_row" (function symbol; it adds no translatable string)
+  4 vm-diffs-3:     "Scroll tab list forward"
+  5 sevenz-browse:  "This 7z archive is damaged or incomplete. Use an archive manager."
+POLKIT: record /var/lib/openxplorer/install-updates-without-password = "off" before install -> /etc/polkit-1/rules.d empty after install, record still "off". Purge left neither.
+IDENTITY: all 124 new commits (branches and merges) and the deb commit are addition-official <239187859+addition-official@users.noreply.github.com> with no trailers; no other author, committer or personal name. The only address in the added lines is the existing zh_CN translator credit (Clansty, already in main's zh_CN.po; only its header lines are reordered). In the deb, AKolenda appears only in the upstream repository and update-check URLs; the other addresses are the same third-party set as before, and the remaining matches are code-string fragments.
