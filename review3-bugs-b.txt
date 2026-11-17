@@ -1,4 +1,4 @@
 STATUS: WORKING
-HEAD: review3-bugs-b defb8d06
+HEAD: review3-bugs-b 0a1ac98a
 QUESTION: none
-NOTE: Cut from upstream main defb8d06. Re-checking each item on today's main, then test-first fixes.
+NOTE: Cut from upstream main defb8d06. Sizes, keys, tiny thumbnails and settings search fixed test-first (new tests fail on main, pass here); screen-reader names, split view and zh_CN in progress.
