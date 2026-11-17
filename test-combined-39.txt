@@ -1,0 +1,32 @@
+STATUS: DONE
+HEAD: test-combined-39 92716897 (the deb was built from exactly this tree; cargo clean before the release build; guard on HEAD and a clean tree before and after)
+DEB: claude/test-combined-39-deb 44b397c3
+  openxplorer_2.0.19+test39_all.deb (io.winspace.Development)
+  SHA256: ba09dc7c3b68790a3c48aba0228f32ce6912af9d5f000560603ac947131209d4
+BASE: upstream main 6b877562 (2.0.19)
+
+MERGED HEADS, in this order (all descend from main; changed since deb 38 marked *):
+  1  review3-bugs-a  6a14b305271608f949148a556e24ca7885bf3ab0 -> d30c1363 (clean)
+  2* review3-bugs-b  d2faf38614e51bb6bde50b7f7691c9f19105fce7 -> e60f6d7e (clean; adds the settings test fix)
+  3  submenu-hover   f895cedf676eccb4541f6aedcf307cbda5ca8e9a -> 6d03e9b7 (clean)
+  4* vm-diffs-3      5ec9bdfbf123282a3cd15aaf51f22133f8d5e3e8 -> 3aacaf68 (tab title fix)
+  5* sevenz-browse   36cf872c906112c95a9abb24d0fbcaf19ea81c4f -> 92716897 (now merges main 2.0.19)
+
+CONFLICTS (as in deb 38):
+- 4 vm-diffs-3 / window/tests/tabs.rs: review3's the_open_tabs_are_saved_while_the_window_is_open and vm-diffs-3's tab-strip scroll-arrow helpers and tests, both kept one after the other. .pot regenerated with native/tools/i18n.py extract, markdown.json with tools/sync-docs.py.
+- 5 sevenz-browse: only markdown.json (regenerated). Its parity Compress note no longer conflicts now that it has merged main; the result is the same as deb 38's resolution (main's "Missing: password-protected ZIP" plus the 7z empty-folders sentence).
+No glue was needed.
+
+CHECKS on 92716897:
+- native/tools/check.py: inventories, parity, i18n and tool tests pass; it then stops at clippy on duration_suboptimal_units in ox-core files no branch touches (same on main). I ran its remaining steps with that lint (and map_unwrap_or, decimal_bitwise_operands) allowed: no drawn icons, rustfmt clean, clippy clean, every test binary plus doctests with OX_PYTHON_APP set.
+- parity/check.py, i18n check, sync-docs --check pass; cargo-sources.json matches a fresh run; the deb has rust-crates/sevenz-rust2-0.20.2.
+- Tests: 4855 passed, 23 failed. The 23 are exactly the ones that fail on main 6b877562 (each rerun on main for deb 38; environment: root, sandbox, Python fixtures, display scale). No branch-only, no merge-only and no flaky failure this run. Deb 38's two extra failures pass: review3-bugs-b's settings escape test (fixed by d2faf386) and the Home layout test.
+
+ONE UNIQUE STRING PER BRANCH IN THE BUILT BINARY (/opt/openxplorer/bin/openxplorer, grep -caF; none in main 6b877562's sources):
+  1 review3-bugs-a: "OpenXplorer can’t find ‘"
+  2 review3-bugs-b: "Alt+drag"
+  3 submenu-hover:  "rest_pointer_on_menu_row" (function symbol; it adds no translatable string)
+  4 vm-diffs-3:     "Scroll tab list forward"
+  5 sevenz-browse:  "This 7z archive is damaged or incomplete. Use an archive manager."
+POLKIT: record /var/lib/openxplorer/install-updates-without-password = "off" before install -> /etc/polkit-1/rules.d empty after install, record still "off". Purge left neither.
+IDENTITY: all 123 new commits (branches and merges) and the deb commit are addition-official <239187859+addition-official@users.noreply.github.com> with no trailers; no other author, committer or personal name. The only address in the added lines is the existing zh_CN translator credit (Clansty, already in main's zh_CN.po; review3-bugs-b only reorders that header). In the deb, AKolenda appears only in the upstream repository and update-check URLs; the other addresses are the same third-party set as before.
