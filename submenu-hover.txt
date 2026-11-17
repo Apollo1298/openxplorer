@@ -1,7 +1,7 @@
 STATUS: DONE
 HEAD: submenu-hover f895cedf
 QUESTION: none
-NOTE: One fix in the shared menu code: GTK 4.14 sent the command bar's grab-less menus a fake pointer "leave" while they open, which cancelled hover (fails on main, real XTEST tests). Also added a safe triangle for diagonal moves and an over-the-menu fallback when a submenu fits on neither side.
+NOTE: One fix in the shared menu code: GTK 4.14 sent the command bar's grab-less menus a fake pointer "leave" while they open, which canceled hover (fails on main, real XTEST tests). Also added a safe triangle for diagonal moves and an over-the-menu fallback when a submenu fits on neither side.
 
 INVENTORY (hover on unchanged main -> with the fix; tested = real XTEST pointer on Xvfb)
 Command bar Sort > More                 main: NO, intermittent (fails when the pointer comes to rest as the menu opens) -> yes (tested)
