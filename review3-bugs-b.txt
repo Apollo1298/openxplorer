@@ -1,4 +1,31 @@
-STATUS: WORKING
+STATUS: DONE
 HEAD: review3-bugs-b f377135c
 QUESTION: none
-NOTE: All seven items fixed test-first except as noted; full checks and X11 real-input matrix done (8/8 combinations 23/23). Finishing the Weston 2x runs and the final status.
+NOTE: Cut from upstream main defb8d06; every item still needed work (parts already fixed on main noted below), each fixed test-first. zh_CN is its own droppable commit 4893316d (only the later refactor f377135c follows it and does not touch the catalog): 599 messages filled, 18 left in English; confidence high for UI strings, medium for long manual paragraphs. native/tools/i18n.py says "Machine translations are not accepted", so the owner may prefer to drop it.
+
+ITEMS (each re-checked on main defb8d06 first)
+PASS 1 drive capacity: This PC rounded (27.6 GB free of 252 GB) while Properties truncated (251 GB). Now one source (volumes::space_of) and one formatter (format::free_of_text). Test landing.rs a_drive_tile_and_its_properties_write_the_same_sizes fails on main with exactly those numbers. Commit f86ccae3
+PASS 2 key spelling: main still showed Shift+Ctrl+N, Shift+Alt+P and Escape (Alt+Return was already Alt+Enter, 48167e5b). Now Ctrl, Alt, Shift order and Enter, Esc, Spacebar, Left/Right/Up/Down arrow, per https://support.microsoft.com/en-us/accessibility/windows/keyboard-shortcuts-in-windows (the dfc9ea72 URL answers 404). Test the_shortcuts_window_spells_keys_as_windows_does fails on main. Commit f0456ff9
+PASS 3 missing keys: partly fixed on main by 48167e5b (Backspace, Home/End, Shift+arrows, Ctrl+Space, tree Left/Right). Added the rest of Microsoft's File Explorer list that works: Ctrl+arrow keys then Ctrl+Spacebar, Page Up, Page Down, Enter, Shift+right-click, Ctrl/Shift/Alt+drag. Groups kept; Microsoft's File Explorer section is one flat table. Test the_shortcuts_window_lists_every_key_of_microsofts_file_explorer_list fails on main (19 missing). Commits f0456ff9, f377135c
+PASS 4 New Bitmap image icon: a thumbnail under 4 px on its short side or 8 px on its long side keeps the type icon. Test view_styles.rs a_tiny_picture_keeps_its_type_icon fails on main. Commit 5f6d367a
+PASS 5 settings search: "extensions" already fixed on main (0176e963). Still broken: "hidden files" also found How sizes are counted, and "language" found nothing; fixed with a Language row that shows the desktop language. Control-less rows: Calculate folder sizes merged into How sizes are counted, and the three Dragging tabs and files rows (same problem) now read as help. Tests the_search_finds_settings_by_common_words and every_settings_row_has_a_control_or_a_status fail on main. Commits 411eb629, 4bb5d9f4
+PASS 6 screen-reader names: Details button named; search box named as shown ("Search Documents"); tabs described by location; title row named once; rows named as shown ("Budget 2026"). Also found and fixed: titles were paired with columns in build order, so "Date modified" was announced as "Date deleted" and Enter on it sorted by Date deleted. A probe of the four checkable parts fails on main. Commit c0c7bace
+PASS 7a split view at 1x: main's 0294679f lets Name give way, but at 1366 px with the Details pane Type was cut and Size reachable only by GTK's pointer-only overlay bar. A horizontal scroll bar now stays shown while columns overflow. Test narrow_windows.rs a_split_tab_beside_the_details_pane_at_1366_pixels_reaches_every_column fails on main. Commit 736d0eb9
+PASS 7b zh_CN: 599 filled, 18 left (EXIF exposure, metering and flash values, Conductors, Encoded by); msgfmt -c clean, placeholders checked. Commit 4893316d
+PASS 7c "1 bytes": pretty_bytes and drive byte counts use ngettext; the File Conflict window shows "1 byte" / "2 bytes" under real input. Test format.rs one_byte_is_singular fails on main. Commit f86ccae3
+
+CHECKS
+PASS native/parity/check.py
+PASS native/tools/i18n.py check
+PASS cargo fmt --check; clippy with workspace lints and the CONTRIBUTING pedantic flags
+FAIL native/tools/check.py stops at its first failing executable, so every executable was run with its isolation: 13 failures, the same by name on unchanged main (9 ox-core admin_copy::tests, 2 ox-app sandboxed thumbnailer tests, python_fixture_matches_desktop_core_py, fuse_export_paths_match_native_opening_py); doctests and all other tests passed
+PASS tools/audit-public-data.py: no issues
+
+REAL INPUT (xdotool keys, AT-SPI reads, fictional home, 23 checks per run)
+PASS X11 (Xvfb + openbox) 1x light/dark normal/Compact: 23/23 in all 4
+PASS X11 (Xvfb + openbox) 2x light/dark normal/Compact: 23/23 in all 4
+FAIL Weston 13 (x11 backend in Xvfb) 1x and 2x light/dark normal/Compact: 22/23 in all 8. The miss is "second Esc closes Replace or Skip": under Weston no window gets the keyboard back after a dialog closes until a click. Same with main's binary; not caused here
+PASS no crash and 0 GTK criticals in all 16 runs (one Gtk-WARNING "GtkGizmo (progress) reported min width -2" per run, also on main)
+
+CAPTURES (tools/native_capture.py, bwrap sandbox, demo tree; the driver widens its Xvfb screen for 2x)
+review3-bugs-b-{1x,2x}-{light,dark}-{shortcuts,shortcuts-search,new-bitmap,split-view,settings-search,settings-language}.png
