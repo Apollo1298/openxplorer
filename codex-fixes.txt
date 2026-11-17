@@ -1,5 +1,5 @@
 codex-fixes (Codex findings on AKolenda/openxplorer #335-#338, fixed on fork branches)
-STATUS: DONE (round 3: upstream main 7f70b0ac merged into windows-differences-2, network-thumbnails, supere-uninstall)
+STATUS: DONE (round 4: settings-pass and keyboard-pass already merged upstream; nothing to merge)
 NOTE: upstream main dd39e3ba merged into all 4 branches. Every new test failed before its fix and
 passes after. All 4 branches pushed (merges, no rebase, no force-push). No finding was judged wrong; all 8 changed.
 User-visible behavior changed on all 4 branches, so each <branch>-pr.md got an "After review" note.
@@ -70,6 +70,16 @@ supere-uninstall: merge d272ea32 (markdown.json conflict: regenerated with the d
 more-bugs: left as is (still merges cleanly into upstream main).
 No user-visible change on the branches themselves in round 3, so the pr.md files are unchanged.
 
+Round 4 (asked: merge the newest upstream main into recycle-pass #350, settings-pass #352, keyboard-pass #353):
+  upstream main fetched fresh at defb8d06 (#355); it already contains #350, #352 (0176e963) and #353 (48167e5b),
+  and upstream merged main into both branches on 2026-11-17.
+recycle-pass: not changed: #350 merged upstream (skipped as asked).
+settings-pass (origin f36a6b53): not changed: #352 is already merged upstream; a merge of defb8d06 would add nothing
+    but a markdown.json conflict that regenerates to main's copy, so the branch would just become main.
+keyboard-pass (origin 4f89a6a1): not changed: #353 is already merged upstream; merging defb8d06 gives exactly
+    upstream main's tree.
+No push to any of the three branches; search-pass and properties-pass not touched.
+
 STATUS: DONE
 Heads: more-bugs 9fc13864, windows-differences-2 6d9ddf8e, network-thumbnails 0024e03e,
-supere-uninstall d272ea32
+supere-uninstall d272ea32; settings-pass f36a6b53 and keyboard-pass 4f89a6a1 (unchanged, already merged upstream)
