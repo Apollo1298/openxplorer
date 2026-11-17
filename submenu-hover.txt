@@ -1,7 +1,7 @@
 STATUS: WORKING
-HEAD: submenu-hover 32790116
+HEAD: submenu-hover f895cedf
 QUESTION: none
-NOTE: Root cause found and fixed in the shared menu code (menu_popover.rs): under the command bar's grab-less menus GTK 4.14 sends a fake "leave" while the menu opens, which cancelled the hover timer. Full check.py run in progress.
+NOTE: Fix pushed. rustfmt, clippy and parity check pass. check.py stopped at an environmental ox-core failure (location_fixture_drift, system Python urllib), so every test binary is now running isolated.
 
 INVENTORY (hover on unchanged main -> with the fix; tested = real XTEST pointer on Xvfb)
 Command bar Sort > More                 main: NO, intermittent (fails when the pointer comes to rest as the menu opens) -> yes (tested)
