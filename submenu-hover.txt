@@ -1,0 +1,23 @@
+STATUS: WORKING
+HEAD: submenu-hover 32790116
+QUESTION: none
+NOTE: Root cause found and fixed in the shared menu code (menu_popover.rs): under the command bar's grab-less menus GTK 4.14 sends a fake "leave" while the menu opens, which cancelled the hover timer. Full check.py run in progress.
+
+INVENTORY (hover on unchanged main -> with the fix; tested = real XTEST pointer on Xvfb)
+Command bar Sort > More                 main: NO, intermittent (fails when the pointer comes to rest as the menu opens) -> yes (tested)
+Command bar Sort > Group by             main: NO, intermittent (same cause)        -> yes (tested)
+Command bar View > Show                 main: NO, intermittent (4/4 attempts fail when resting as View opens) -> yes (tested)
+Command bar Search options > Date modified/Kind/Size  same command-bar menu code -> same fix; not pointer-tested (needs a running search)
+Gallery View > Show                     same command-bar menu code -> same fix; not pointer-tested
+See more > Disconnect network drive     only with mapped drives; same code -> same fix; not pointer-tested
+New > template subfolders               only with a Templates subfolder; same code -> same fix; not pointer-tested
+Right-click compact, file: Open with, Compress to          main: yes -> yes (tested)
+Right-click compact, blank: View, Sort by, Group by, New   main: yes -> yes (tested)
+Right-click classic, file/folder: Send to                  main: yes -> yes (tested)
+Right-click classic, blank: View, Sort by, Group by, New   main: yes -> yes (tested)
+Right-click Share with / Service actions                   only with Bluetooth/mail or configured actions; same code; not pointer-tested
+Navigation pane pin: Compress to, New   main: yes -> yes (tested)
+Home Quick access tile: Compress to     main: yes -> yes (tested)
+Tab menu, column header menu, crumb/address menus, Collection, Settings and dialog drop-downs: no submenus (no MenuItem::submenu; address entry's own GTK menu has two plain items)
+All menus: slow diagonal move towards an open submenu   main: closes/switches it -> keeps it (tested)
+All menus: submenu with no room on either side          main: GTK closes it (hover and click) -> opens over the menu (tested)
