@@ -1,5 +1,5 @@
 STATUS: DONE
-HEAD: review3-bugs-b f377135c
+HEAD: review3-bugs-b d2faf386
 QUESTION: none
 NOTE: Cut from upstream main defb8d06; every item still needed work (parts already fixed on main noted below), each fixed test-first. zh_CN is its own droppable commit 4893316d (only the later refactor f377135c follows it and does not touch the catalog): 599 messages filled, 18 left in English; confidence high for UI strings, medium for long manual paragraphs. native/tools/i18n.py says "Machine translations are not accepted", so the owner may prefer to drop it.
 
@@ -18,7 +18,7 @@ CHECKS
 PASS native/parity/check.py
 PASS native/tools/i18n.py check
 PASS cargo fmt --check; clippy with workspace lints and the CONTRIBUTING pedantic flags
-FAIL native/tools/check.py stops at its first failing executable, so every executable was run with its isolation: 13 failures, the same by name on unchanged main (9 ox-core admin_copy::tests, 2 ox-app sandboxed thumbnailer tests, python_fixture_matches_desktop_core_py, fuse_export_paths_match_native_opening_py); doctests and all other tests passed
+FAIL native/tools/check.py stops at its first failing executable, so every executable was run with its isolation. Correction: 15 failures, not 13. 13 are the same by name on unchanged main (9 ox-core admin_copy::tests, 2 ox-app sandboxed thumbnailer tests, python_fixture_matches_desktop_core_py, fuse_export_paths_match_native_opening_py). The other two were missed by my log grep: settings_page::tests::escape_leaves_the_search_and_shows_every_row_again, caused by this branch (its row list lacked the new Language row), fixed in d2faf386, all 115 settings_page tests now pass; search_history::a_tab_on_results_keeps_its_selection_and_scroll_position, which passed twice when run alone, so flaky under load, not compared with main. review3-bugs-b-pr.md still says "the same thirteen" and was left unchanged as asked; it needs that line corrected before use. Doctests and all other tests passed
 PASS tools/audit-public-data.py: no issues
 
 REAL INPUT (xdotool keys, AT-SPI reads, fictional home, 23 checks per run)
