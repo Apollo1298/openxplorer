@@ -1,7 +1,7 @@
 STATUS: DONE
-HEAD: vm-diffs-3 f1e55e78d19649142325b8b6d6968d1cd1239285
+HEAD: vm-diffs-3 c9c07534106e125b94ed8099d99af185b860b64d
 QUESTION: none
-NOTE: Deb 39 follow-up: the front tab's title now runs up to its close button (the tab's parts were 10 px apart, plus 5 px inside the button around its glyph), keeps 7 average characters so "Home" fits, and is cut at the last pixel on one line instead of an ellipsis.
+NOTE: Deb 40 follow-up: the tab strip was capped at 70% of the window (TabStrip::cap_width, from the old web app's .tabs{max-width:70%}); now it grows with its "+" up to the window buttons, leaving only the 48 px drag area, and the arrows show only once every tab is at its narrowest.
 
 TESTS FIRST (each failed on unchanged main, run on main with only the test files copied in)
 FAIL (main) -> PASS: settings_page::tests::the_replaced_files_switch_is_off_by_default_and_saves_only_its_turning_on (main: "off by default, as in Windows")
@@ -65,6 +65,16 @@ PASS captures at 1x, light and dark, 25 tabs, front tab at the end and in the mi
 NOTE: a first try with GtkInscription was dropped: it wrapped long names onto two lines ("Launch / planning")
 NOT TESTED: the full test sweep for this commit; the user's own fonts (here "Home" also fit before)
 NOT CONFIRMED: Windows fades the cut edge of a title; here it is a hard cut at the last pixel
+
+STRIP WIDTH (deb 40 report: about 18 tabs at 2000 px, arrows showing, the strip ending at about x=1425 and about 480 px of empty title bar before the window buttons)
+NOTE: the cause was the 70% cap on the strip (MAX_STRIP_PERCENT, cap_width and apply_cap in tab_strip.rs, called from breakpoints.rs). Removed: the title bar's own layout now gives the strip everything but the drag area's 48 px minimum (TitleBarMinDragRegionWidth), the tabs shrink to fill it, and the arrows still show only while the tabs overflow
+FAIL (f1e55e78) -> PASS: tabs::tabs_fill_the_title_bar_up_to_the_drag_area_before_they_scroll (2 to 40 tabs, one at a time, at 1440 and 1000 px: whenever the arrows show, every tab is at its narrowest and the drag area is at most 60 px; the drag area never goes under 48 px). On f1e55e78: "9 tabs at 1440 pixels: the strip reaches the window buttons but for the drag area, which is 237 pixels". It replaces many_tabs_keep_the_strip_within_seventy_percent_of_the_window
+NOTE: the test display is 1440 px wide (check.py's Xvfb), so the test cannot size a window to 2000 px; 2000 px was checked by hand and in the captures
+PASS real input at 2000 px (xdotool, Xvfb 2000x1100, 1x light): 10 tabs fill the bar at about 175 px each with the "+" at about x=1788 and about 50 px of drag area before the window buttons, no arrows; 18 and 30 tabs: arrows, every tab at its narrowest, the "+" at the same place; no GTK criticals
+PASS captures, 1x light, 1, 6, 15 and 30 Home tabs at 2000 and 1000 px: vm-diffs-3-1x-light-tabs-{1,6,15,30}-at-{2000,1000}.png (2000 px: 6 and 15 tabs fill the bar without arrows, 30 scroll; 1000 px: 6 fit, 15 and 30 scroll). The capture tool's virtual display (1600 px) is too narrow for a 2000 px window, so the driver script widened it to 2200 px for these pictures; tools/native_capture.py itself is unchanged
+PASS window::tests::tab* (63), window::tab_strip (3), window::tab_moves (22), chrome (14), focus (19), accessibility (14), narrow_windows (5), look (13), drag tests (28), drop_on_zip (1), title_bar (3), panes_layout (10); rustfmt, Clippy -D warnings, parity/check.py
+PASS full ox_app run (every test, check.py's isolation): 2,526 passed, 7 failed; all 7 fail on unchanged main too (Python-app compatibility tests, 2 sandboxed thumbnailer tests)
+CHANGED OWNER DECISION: TAB-019, the strip is no longer capped at 70% of the window (ui-spec and features.toml updated)
 
 CHECKS
 PASS cargo fmt --check, cargo clippy -D warnings with the workspace lints (Rust 1.92)
