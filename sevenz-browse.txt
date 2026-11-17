@@ -1,7 +1,7 @@
 STATUS: DONE
 HEAD: sevenz-browse 448078ba2f6c0a9abf50e9ce77f4f2f8ab09a4bc
-QUESTION: Deflate 7z: sevenz-rust2's "deflate" feature adds no package to Cargo.lock, but it turns on flate2's "zlib-rs" feature, so the zlib-rs crate (Zlib license) is compiled into the app, where it is not built today, and every flate2 user (ZIP, .tar.gz) moves to that backend. I enabled only "bzip2" (nothing added to the build); Deflate 7z stays listed and refused plainly. Enable "deflate" anyway?
-NOTE: Merged upstream main bc3d0d34 (#336, #348 in); writer fix 3461f307 is now part of this PR. aes256 not enabled, as answered. Archive errors now show "This archive can't be opened" with an archive icon, no selection, no Try again (all formats). Earlier note corrected: a_7z_follows_the_zip_settings passes in the full run; it only times out when run in a small filtered subset, as main's TAR test does.
+QUESTION: none
+NOTE: Merged upstream main bc3d0d34 (#336, #348 in); writer fix 3461f307 is part of this PR. aes256 and deflate not enabled, as answered; bzip2 on (nothing added to the build); Deflate and PPMd 7z refused plainly, listed under Limits in the PR text. Archive errors show "This archive can't be opened" with an archive icon, no selection, no Try again (all formats).
 
 PASS core tests: 17 in native/crates/ox-core/tests/archive_seven_zip.rs; 14 failed before the reader, the BZip2 test failed before the feature (SevenZipMethod); all pass now
 PASS writer fix: a_7z_keeps_its_empty_folders_for_every_reader failed before (folders written as anti-items), passes after

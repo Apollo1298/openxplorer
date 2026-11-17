@@ -27,6 +27,12 @@ A `.7z` file now behaves like a ZIP or TAR file. Double-clicking it opens it lik
 | Encrypted 7z | Default app | Listed when names are readable, then "isn't supported" | "it does not support operations on encrypted archive files" ([Zip and unzip files](https://support.microsoft.com/en-us/windows/zip-and-unzip-files-8d28fa72-f2f9-712f-67df-f80cf89fd4e5)) |
 | Empty folders in a new 7z | Lost when 7-Zip or Windows extracts it | Kept | Creates 7z archives ([What's new in Windows 11, version 24H2](https://learn.microsoft.com/en-us/windows/whats-new/whats-new-windows-11-version-24h2): "Support for creating 7-zip and TAR archives") |
 
+## Limits
+
+- Encrypted 7z archives are refused plainly, as Windows 11 refuses encrypted archives ("it does not support operations on encrypted archive files", [Zip and unzip files](https://support.microsoft.com/en-us/windows/zip-and-unzip-files-8d28fa72-f2f9-712f-67df-f80cf89fd4e5)).
+- 7z archives packed with Deflate or PPMd are listed and refused plainly. Decoding Deflate would switch flate2, which every ZIP and .tar.gz uses, to another backend; that is too large a change for these rare files.
+- RAR archives still open in their default app.
+
 ## How it was tested
 
 - New tests: 17 in `native/crates/ox-core/tests/archive_seven_zip.rs`, 1 in `native/crates/ox-core/src/archive/create.rs`, 5 in `native/crates/ox-app/src/window/tests/seven_zip_folder.rs`. They were written first and failed before their change: 14 core and all 5 app tests before the reader, the BZip2 test before the feature, the empty-folder test before the writer fix and the archive-page checks before that fix. All pass now. The BCJ2 test was added with BCJ2 support, and a forged-coder test guards that path.
