@@ -1,7 +1,7 @@
 STATUS: DONE
-HEAD: vm-diffs-3 5ec9bdfbf123282a3cd15aaf51f22133f8d5e3e8
+HEAD: vm-diffs-3 f1e55e78d19649142325b8b6d6968d1cd1239285
 QUESTION: none
-NOTE: Fixed the empty space in narrow tabs from the deb 38 test: an inactive tab kept invisible room for its close button, so "Home" was cut to "Ho…". The close button now takes no room unless the tab is in front, hovered, focused or dragged, so the title fills to the tab's end; arrows and the minimum width kept.
+NOTE: Deb 39 follow-up: the front tab's title now runs up to its close button (the tab's parts were 10 px apart, plus 5 px inside the button around its glyph), keeps 7 average characters so "Home" fits, and is cut at the last pixel on one line instead of an ellipsis.
 
 TESTS FIRST (each failed on unchanged main, run on main with only the test files copied in)
 FAIL (main) -> PASS: settings_page::tests::the_replaced_files_switch_is_off_by_default_and_saves_only_its_turning_on (main: "off by default, as in Windows")
@@ -55,6 +55,16 @@ PASS window::tests::tab* (63), chrome (14), focus (19), accessibility (14), narr
 PASS captures at 1x, light and dark, with 1, 6 and 25 tabs of the demo folders: vm-diffs-3-1x-{light,dark}-tabs-{1,6,25}.png; at 25 tabs the titles read "Launch pl…", "Holiday 2…", "Documents", "Downloads" to the tab's end
 NOT TESTED: a fade at the title's edge as Windows draws it (the title ends in an ellipsis instead); the full test sweep was not run again for this commit
 NOT CONFIRMED: whether Windows 11 shows the X on a hovered tab behind (it does here, and the title shortens while the pointer is on it)
+
+FRONT TAB TITLE (deb 39 report: front tab "Ho…" then about 18 px empty before the X, tabs about 115 px at 1x with 25 tabs)
+NOTE: the 18 px were the tab box's 10 px spacing between title and close button, plus the button's 5 px around its 12 px glyph, plus the ellipsis' side. Now the parts have no spacing (the 10 px after the icon is the icon's margin), so the title ends at the button and the visible gap to the glyph is the button's own 5 px (Windows about 4; the button keeps its 22 px look and hit area). The title is a one-line label in a clipping room (tab_strip/title_room.rs) that keeps 7 average characters at the narrowest; tabs here are 108 px with Home tabs and 122 px with folder tabs at the narrowest
+FAIL (5ec9bdfb) -> PASS: tabs::a_tab_at_its_narrowest_gives_its_title_all_the_room_after_its_icon, extended: the front Home tab's title ends at its close button (within 1 px), the glyph is at most 6 px after it, "Home" fits whole at the narrowest, and the front tab is no wider than the others. On 5ec9bdfb (same test with the label type of that commit): "the title fills the room up to the close button: 63 then 73"
+PASS tab_strip unit test a_live_tab_has_no_badge_a_close_button_and_a_title_cut_at_the_last_pixel (renamed: no ellipsis, the title's room clips)
+PASS window::tests::tab* (63), window::tab_strip (3, the carried tab included), window::tab_moves (22), chrome (14), focus (19), accessibility (14), narrow_windows (5), look (13) on Xvfb; rustfmt, Clippy -D warnings, parity/check.py, i18n check
+PASS captures at 1x, light and dark, 25 tabs, front tab at the end and in the middle, Home tabs and folder tabs: vm-diffs-3-1x-{light,dark}-tabs-25-{home,folders}-front-{end,middle}.png ("Home" whole beside the X; "Launch p", "Downloa", "Holiday 2025" cut at the last pixel)
+NOTE: a first try with GtkInscription was dropped: it wrapped long names onto two lines ("Launch / planning")
+NOT TESTED: the full test sweep for this commit; the user's own fonts (here "Home" also fit before)
+NOT CONFIRMED: Windows fades the cut edge of a title; here it is a hard cut at the last pixel
 
 CHECKS
 PASS cargo fmt --check, cargo clippy -D warnings with the workspace lints (Rust 1.92)
