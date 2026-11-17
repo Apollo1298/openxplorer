@@ -1,22 +1,21 @@
 STATUS: DONE
-HEAD: sevenz-browse 0731703b9e086ed29b31e1a68d73328c7a2af14b
-QUESTION: Encrypted 7z needs sevenz-rust2's "aes256" feature. It adds no new packages to Cargo.lock (aes 0.8.4, cbc 0.1.2, sha2 0.10.9, getrandom 0.4.3 already ship through oo7), only new links from sevenz-rust2 to them. May I enable it? Same question for its "bzip2" and "deflate" features (also no new packages: bzip2 0.6.1 and flate2 already ship). PPMd would add a new crate (ppmd-rust), so I leave PPMd unsupported unless told otherwise. Until answered, encrypted 7z (and BZip2/Deflate/PPMd 7z) say plainly that they aren't supported.
-NOTE: 7z browse/open/extract done like ZIP and TAR; encrypted 7z refused plainly, as Windows 11 does ("does not support operations on encrypted archive files"), so the QUESTION only decides whether to go further than Windows. Writer fix 3461f307 (empty folders lost by 7-Zip) belongs in #336 too.
+HEAD: sevenz-browse 448078ba2f6c0a9abf50e9ce77f4f2f8ab09a4bc
+QUESTION: Deflate 7z: sevenz-rust2's "deflate" feature adds no package to Cargo.lock, but it turns on flate2's "zlib-rs" feature, so the zlib-rs crate (Zlib license) is compiled into the app, where it is not built today, and every flate2 user (ZIP, .tar.gz) moves to that backend. I enabled only "bzip2" (nothing added to the build); Deflate 7z stays listed and refused plainly. Enable "deflate" anyway?
+NOTE: Merged upstream main bc3d0d34 (#336, #348 in); writer fix 3461f307 is now part of this PR. aes256 not enabled, as answered. Archive errors now show "This archive can't be opened" with an archive icon, no selection, no Try again (all formats). Earlier note corrected: a_7z_follows_the_zip_settings passes in the full run; it only times out when run in a small filtered subset, as main's TAR test does.
 
-PASS core tests: 16 new in native/crates/ox-core/tests/archive_seven_zip.rs, 14 failed before the reader (commit 2b2b8d9e), all pass now; BCJ2 and coder-loop tests added with the BCJ2 support
-PASS app tests: 5 new in native/crates/ox-app/src/window/tests/seven_zip_folder.rs, all 5 failed on the commit before the reader, 4 pass now (Xvfb, check.py isolation)
-FAIL a_7z_follows_the_zip_settings: its last step (open with "Open archives as folders" off) times out waiting for the default application; the same step fails on unchanged upstream main in a_compressed_tar_is_browsed_and_extracted_unless_archives_open_elsewhere, so it is this container, not the change
+PASS core tests: 17 in native/crates/ox-core/tests/archive_seven_zip.rs; 14 failed before the reader, the BZip2 test failed before the feature (SevenZipMethod); all pass now
 PASS writer fix: a_7z_keeps_its_empty_folders_for_every_reader failed before (folders written as anti-items), passes after
-PASS real 7-Zip archives (generated with 7z 23): solid, non-solid, LZMA, ultra (BCJ2), list and extract byte-for-byte names and sizes; PPMd, BZip2, AES listed and refused plainly; -mhe refused before listing; -snl link hidden and refused
-PASS real input (xdotool, Xvfb) 1x light, 1x dark, 2x light, 2x dark: double-click opens the 7z like a folder; Enter opens a folder inside; Alt+Up back and out; Name column sort; a file inside opens as a private read-only copy; encrypted and cut 7z say why in the tab; Extract all from the bar writes the files (empty folder kept) and shows them
-PASS real input 1x light: 10,000-entry solid 7z opens in 1.6 s, a folder inside in 0.6 s (UI responsive)
-PASS real input: extraction progress shows percent; Cancel (panel close) stops it and leaves nothing
+PASS app tests: 5 in native/crates/ox-app/src/window/tests/seven_zip_folder.rs, all failed before the reader; the archive-page checks failed before that fix ("This location is unavailable"); all pass in the full run
+PASS full run after the merge, every test binary with --no-fail-fast in check.py isolation: branch 4,731 passed / 46 failed (38 names) vs unchanged main bc3d0d34 4,688 / 63 (56 names); no test fails only on the branch; no archive test fails
+PASS checks: parity/check.py, i18n check, sync-docs --check, rustfmt, clippy -D warnings (Rust 1.92, as tester); flatpak cargo-sources unchanged; check.py itself stops at location_fixture_drift, which fails on main too
+PASS 7-Zip 23 archives: solid, non-solid, LZMA, Ultra (BCJ2), BZip2 (solid and not) list and extract; Deflate, PPMd, AES listed and refused plainly; encrypted names refused before listing; -snl link hidden and refused
+PASS real input (xdotool, Xvfb) 1x light, 1x dark, 2x light, 2x dark, after the merge: double-click opens the 7z like a folder; Enter opens a folder inside; Alt+Up back and out; Name column sort; a file inside opens as a private read-only copy; a cut 7z shows the archive page; Extract all from the bar writes the files (empty folder kept) and shows them
+PASS real input 1x light: 10,000-entry solid 7z opens in 1.6 s, a folder inside in 0.6 s
+PASS real input: extraction progress; Cancel (panel close) stops it and leaves nothing
 PASS real input: conflict question, Skip keeps the old file and writes the rest; Replace overwrites it
 PASS real input: disk full (2 MiB tmpfs) "No space left on device", nothing left; read-only destination "Permission denied", nothing written
 PASS no crash, no GTK criticals in any real-input session
-NOT OFFERED Properties inside an archive: the app offers none inside ZIP or TAR either (menu: Open, Copy, Copy as path, Extract all); Details columns and the status bar show sizes for 7z as for ZIP
-PASS captures with tools/native_capture.py (fictional demo home, generated 7z): folder, extract-dialog, encrypted at 1x/2x light/dark
-PASS checks: parity/check.py, i18n check, sync-docs --check, rustfmt, clippy -D warnings (Rust 1.92, as tester); check.py itself stops at location_fixture_drift, which fails on unchanged main too
-PASS full run, every test binary with --no-fail-fast in check.py isolation: branch 4,670 passed / 44 failed (39 names) vs unchanged main 4,538 / 61 (56 names); only new on branch: theme::stylesheets::tests::the_rules_name_colours_only_by_token (from the gallery-match merge in archives-pass, no stylesheet changed here); no archive test fails
-PASS weston (headless, Wayland, native GTK): seven_zip_folder tests 4 of 5 pass; a_7z_follows_the_zip_settings fails at the same container-only step as main's TAR test
-FAIL weston real input: Xwayland exits at start under headless weston in this container ("xserver crashing too fast"), so xdotool cannot drive it; real input ran on Xvfb only
+PASS weston (headless, Wayland, native GTK): seven_zip_folder tests run natively; results match Xvfb
+FAIL weston real input: Xwayland exits at start under headless weston in this container, so xdotool cannot drive it; real input ran on Xvfb only
+NOT OFFERED Properties inside an archive: none inside ZIP or TAR either (menu: Open, Copy, Copy as path, Extract all); Details columns and the status bar show sizes
+PASS captures with tools/native_capture.py (fictional demo home, generated 7z), recaptured after the fix: folder, extract-dialog, encrypted (archive page) at 1x/2x light/dark
