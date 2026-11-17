@@ -1,0 +1,38 @@
+STATUS: DONE
+HEAD: test-combined-38 397dde80 (the deb was built from exactly this tree; cargo clean before the release build; guard on HEAD and a clean tree before and after)
+DEB: claude/test-combined-38-deb 1a4e55af
+  openxplorer_2.0.19+test38_all.deb (io.winspace.Development)
+  SHA256: c81764321c84055446d6cc3e52c3ba17470a5defbcb395ca66bbd4ab44354afa
+BASE: upstream main 6b877562 (2.0.19)
+
+MERGED HEADS, in this order (all descend from upstream main; none contains another):
+  1 review3-bugs-a  6a14b305271608f949148a556e24ca7885bf3ab0 -> 1e666cb3 (clean)
+  2 review3-bugs-b  f377135c737eafe7fbff6873f89572dcfc87fee1 -> 71ef0f71 (clean)
+  3 submenu-hover   f895cedf676eccb4541f6aedcf307cbda5ca8e9a -> 76570a6f (clean)
+  4 vm-diffs-3      b48b3677a39677f2325edc190754583bdb59f469 -> 4fb79728
+  5 sevenz-browse   448078ba2f6c0a9abf50e9ce77f4f2f8ab09a4bc -> 397dde80 (branches off an older main, bc3d0d34)
+
+CONFLICTS (both sides kept):
+- 4 vm-diffs-3 / window/tests/tabs.rs: two new tests at the same place, review3's the_open_tabs_are_saved_while_the_window_is_open and vm-diffs-3's tab-strip scroll-arrow helpers and tests; both kept, one after the other.
+  .pot regenerated with native/tools/i18n.py extract; markdown.json with tools/sync-docs.py.
+- 5 sevenz-browse / parity/features.toml, the Compress note: main's "Missing: password-protected ZIP (no AES encoder is linked)" wording (sevenz-browse's older base still listed .7z) plus sevenz-browse's new sentence on writing the folders of a 7z as plain folders. markdown.json regenerated.
+No glue was needed.
+
+CHECKS on 397dde80:
+- native/tools/check.py: inventories, parity, i18n and tool tests pass; it then stops at clippy on duration_suboptimal_units in ox-core files no branch touches (same on main). I ran its remaining steps with that lint (and map_unwrap_or, decimal_bitwise_operands) allowed: no drawn icons, rustfmt clean, clippy clean, every test binary plus doctests with OX_PYTHON_APP set.
+- parity/check.py, i18n check, sync-docs --check pass; cargo-sources.json matches a fresh run; the deb has rust-crates/sevenz-rust2-0.20.2.
+- Tests: 4852 passed, 25 failed.
+FAILURES by name, against main 6b877562 and each branch alone (run one revision at a time):
+  Also fail on main (environment: root, sandbox, Python fixtures, display scale), 23: the same 23 as decks 34-37.
+  Fails on the branch alone, 1: settings_page::tests::escape_leaves_the_search_and_shows_every_row_again, review3-bugs-b's (f377135c fails it alone; main and the other four pass): its new Appearance row "Language" is not in the test's list of rows.
+  Flaky, 1: window::tests::home_page::home_has_no_band_under_the_titles_and_its_tiles_do_not_touch ("the column headers" not found). It passes on main and on each branch alone, and on the merge it passed 3 of 3 alone and the whole home_page module passed 2 of 2; it failed only once, inside the full run. No branch touches Home's list.
+  Merge-only: none.
+
+ONE UNIQUE STRING PER BRANCH IN THE BUILT BINARY (/opt/openxplorer/bin/openxplorer, grep -caF; credited to the first branch in merge order holding the commit that adds it; none in main 6b877562's sources):
+  1 review3-bugs-a: "OpenXplorer can’t find ‘" (its address-bar message)
+  2 review3-bugs-b: "Alt+drag"
+  3 submenu-hover:  "rest_pointer_on_menu_row" (function symbol of its snapshot step; it adds no translatable string, and its hover helpers are inlined)
+  4 vm-diffs-3:     "Scroll tab list forward"
+  5 sevenz-browse:  "This 7z archive is damaged or incomplete. Use an archive manager."
+POLKIT: record /var/lib/openxplorer/install-updates-without-password = "off" before install -> /etc/polkit-1/rules.d empty after install, record still "off". Purge left neither.
+IDENTITY: all 120 new commits (branches and merges) and the deb commit are addition-official <239187859+addition-official@users.noreply.github.com> with no trailers; no other author, committer or personal name. The only address in the added lines is the zh_CN translator credit "Clansty <clansty@users.noreply.github.com>", which is already in main's zh_CN.po; review3-bugs-b's translation commit (4893316d) only reorders that header. In the deb, AKolenda appears only in the upstream repository and update-check URLs; the other addresses are the same third-party set as before.
