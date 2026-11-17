@@ -1,7 +1,7 @@
-STATUS: WORKING
+STATUS: DONE
 HEAD: submenu-hover f895cedf
 QUESTION: none
-NOTE: Fix pushed. rustfmt, clippy and parity check pass. check.py stopped at an environmental ox-core failure (location_fixture_drift, system Python urllib), so every test binary is now running isolated.
+NOTE: One fix in the shared menu code: GTK 4.14 sent the command bar's grab-less menus a fake pointer "leave" while they open, which cancelled hover (fails on main, real XTEST tests). Also added a safe triangle for diagonal moves and an over-the-menu fallback when a submenu fits on neither side.
 
 INVENTORY (hover on unchanged main -> with the fix; tested = real XTEST pointer on Xvfb)
 Command bar Sort > More                 main: NO, intermittent (fails when the pointer comes to rest as the menu opens) -> yes (tested)
@@ -21,3 +21,116 @@ Home Quick access tile: Compress to     main: yes -> yes (tested)
 Tab menu, column header menu, crumb/address menus, Collection, Settings and dialog drop-downs: no submenus (no MenuItem::submenu; address entry's own GTK menu has two plain items)
 All menus: slow diagonal move towards an open submenu   main: closes/switches it -> keeps it (tested)
 All menus: submenu with no room on either side          main: GTK closes it (hover and click) -> opens over the menu (tested)
+
+CHECKLIST (real XTEST pointer and keys; "click" = real primary click; light = default theme, dark = dark theme with animations off)
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Home tile > Compress to: Escape closes it to its row, the menu stays
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Home tile > Compress to: Right opens, Left closes to its row
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Home tile > Compress to: click opens at once
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Home tile > Compress to: hover on another row closes
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Home tile > Compress to: hover opens
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Sort > Group by: Escape closes it to its row, the menu stays
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Sort > Group by: Right opens, Left closes to its row
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Sort > Group by: click opens at once
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Sort > Group by: hover on another row closes
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Sort > Group by: hover opens
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Sort > More: Escape closes it to its row, the menu stays
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Sort > More: Right opens, Left closes to its row
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Sort > More: click opens at once
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Sort > More: hover on another row closes
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | View > Show: Escape closes it to its row, the menu stays
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | View > Show: Right opens, Left closes to its row
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | View > Show: click opens at once
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | View > Show: hover on another row closes
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | View > Show: hover opens
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win10 menu of Notes 2.txt > Send to: Escape closes it to its row, the menu stays
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win10 menu of Notes 2.txt > Send to: Right opens, Left closes to its row
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win10 menu of Notes 2.txt > Send to: click opens at once
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win10 menu of Notes 2.txt > Send to: hover on another row closes
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win10 menu of Notes 2.txt > Send to: hover opens
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win10 menu of blank space > Group by: Escape closes it to its row, the menu stays
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win10 menu of blank space > Group by: Right opens, Left closes to its row
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win10 menu of blank space > Group by: click opens at once
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win10 menu of blank space > Group by: hover on another row closes
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win10 menu of blank space > Group by: hover opens
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win10 menu of blank space > New: Escape closes it to its row, the menu stays
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win10 menu of blank space > New: Right opens, Left closes to its row
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win10 menu of blank space > New: click opens at once
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win10 menu of blank space > New: hover on another row closes
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win10 menu of blank space > New: hover opens
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win10 menu of blank space > Sort by: Escape closes it to its row, the menu stays
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win10 menu of blank space > Sort by: Right opens, Left closes to its row
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win10 menu of blank space > Sort by: click opens at once
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win10 menu of blank space > Sort by: hover on another row closes
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win10 menu of blank space > Sort by: hover opens
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win10 menu of blank space > View: Escape closes it to its row, the menu stays
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win10 menu of blank space > View: Right opens, Left closes to its row
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win10 menu of blank space > View: click opens at once
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win10 menu of blank space > View: hover on another row closes
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win10 menu of blank space > View: hover opens
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of Notes 2.txt > Compress to: Escape closes it to its row, the menu stays
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of Notes 2.txt > Compress to: Right opens, Left closes to its row
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of Notes 2.txt > Compress to: click opens at once
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of Notes 2.txt > Compress to: hover on another row closes
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of Notes 2.txt > Compress to: hover opens
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of Notes 2.txt > Open with: Escape closes it to its row, the menu stays
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of Notes 2.txt > Open with: Right opens, Left closes to its row
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of Notes 2.txt > Open with: click opens at once
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of Notes 2.txt > Open with: hover on another row closes
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of blank space > Group by: Escape closes it to its row, the menu stays
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of blank space > Group by: Right opens, Left closes to its row
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of blank space > Group by: click opens at once
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of blank space > Group by: hover on another row closes
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of blank space > Group by: hover opens
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of blank space > New: Escape closes it to its row, the menu stays
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of blank space > New: Right opens, Left closes to its row
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of blank space > New: click opens at once
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of blank space > New: hover on another row closes
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of blank space > New: hover opens
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of blank space > Sort by: Escape closes it to its row, the menu stays
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of blank space > Sort by: Right opens, Left closes to its row
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of blank space > Sort by: click opens at once
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of blank space > Sort by: hover on another row closes
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of blank space > Sort by: hover opens
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of blank space > View: Escape closes it to its row, the menu stays
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of blank space > View: Right opens, Left closes to its row
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of blank space > View: click opens at once
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of blank space > View: hover on another row closes
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | Win11 menu of blank space > View: hover opens
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | navigation pane pin > Compress to: Escape closes it to its row, the menu stays
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | navigation pane pin > Compress to: Right opens, Left closes to its row
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | navigation pane pin > Compress to: click opens at once
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | navigation pane pin > Compress to: hover on another row closes
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | navigation pane pin > New: Escape closes it to its row, the menu stays
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | navigation pane pin > New: Right opens, Left closes to its row
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | navigation pane pin > New: click opens at once
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | navigation pane pin > New: hover on another row closes
+PASS X11 1x light | PASS X11 2x light | PASS Wayland(Weston) 1x light | navigation pane pin > New: hover opens
+PASS X11 1x dark | PASS X11 2x dark | PASS Wayland(Weston) 1x dark | View > Show: Escape closes it to its row, the menu stays
+PASS X11 1x dark | PASS X11 2x dark | PASS Wayland(Weston) 1x dark | View > Show: Right opens, Left closes to its row
+PASS X11 1x dark | PASS X11 2x dark | PASS Wayland(Weston) 1x dark | View > Show: click opens at once
+PASS X11 1x dark | PASS X11 2x dark | PASS Wayland(Weston) 1x dark | View > Show: hover on another row closes
+PASS X11 1x dark | PASS X11 2x dark | PASS Wayland(Weston) 1x dark | Win11 file menu > Compress to: Escape closes it to its row, the menu stays
+PASS X11 1x dark | PASS X11 2x dark | PASS Wayland(Weston) 1x dark | Win11 file menu > Compress to: Right opens, Left closes to its row
+PASS X11 1x dark | PASS X11 2x dark | PASS Wayland(Weston) 1x dark | Win11 file menu > Compress to: click opens at once
+PASS X11 1x dark | PASS X11 2x dark | PASS Wayland(Weston) 1x dark | Win11 file menu > Compress to: hover on another row closes
+PASS X11 1x dark | PASS X11 2x dark | PASS Wayland(Weston) 1x dark | Win11 file menu > Compress to: hover opens
+PASS X11 1x dark | PASS X11 2x dark | PASS Wayland(Weston) 1x dark | Win11 file menu > Open with: Escape closes it to its row, the menu stays
+PASS X11 1x dark | PASS X11 2x dark | PASS Wayland(Weston) 1x dark | Win11 file menu > Open with: Right opens, Left closes to its row
+PASS X11 1x dark | PASS X11 2x dark | PASS Wayland(Weston) 1x dark | Win11 file menu > Open with: click opens at once
+PASS X11 1x dark | PASS X11 2x dark | PASS Wayland(Weston) 1x dark | Win11 file menu > Open with: hover on another row closes
+PASS X11 1x dark | PASS X11 2x dark | PASS Wayland(Weston) 1x dark | Win11 file menu > Open with: hover opens
+
+OTHER TESTS (same runs)
+PASS X11 1x | PASS X11 2x | PASS Wayland 1x | View > Show opens when the pointer comes to rest on it as View opens (FAIL on main, 4/4 attempts)
+PASS X11 1x | PASS X11 2x | PASS Wayland 1x | slow diagonal move across Sort by into View's open submenu keeps it (FAIL on main)
+PASS X11 1x | PASS X11 2x | PASS Wayland 1x | moving away closes after the delay; leaving all menus keeps the menu open
+PASS X11 1x | PASS X11 2x | PASS Wayland 1x | submenu with no room on either side opens over the menu (FAIL on main)
+NOT VALIDATED: Wayland (Weston nested in Xvfb) at 2x: the test pointer cannot reliably find windows and menus there. Touch/tap: no touch test run (tap activates the row like a click).
+X11 2x was run on a 2880x2000 Xvfb screen (1440x1000 logical); on check.py's 1440x1000 screen at 2x the window is larger than the screen.
+No crash; check.py runs with G_DEBUG=fatal-criticals, so no GTK criticals; tests close every menu they open.
+
+CHECKS
+python3 native/parity/check.py: pass. check.py: parity, driver tests, drawn-icon guard, rustfmt, clippy pass; tests stopped at an environmental ox-core failure, so all 85 test executables + doctests were run isolated: 4764 passed, 55 distinct failed, all 55 also fail on unchanged main (compared by name; ox-core Python interop/keyring/admin/snapshot tests and 2 ox-app thumbnail sandbox tests).
+Unchanged main with the new tests (X11 1x): 4 fail (the 3 marked above + the command bar test, View > Show hover); with the fix all 8 pass, 3 runs in a row.
+
+CAPTURES (tools/native_capture.py, fictional demo tree, new hover= scene step): submenu-hover-<1x|2x>-<light|dark>-<view-show|context-compress>.png. The snapshot hook composes submenus over or left of their menu; unchanged main does the same with submenu=, so that is the picture pipeline, not this change. Public-data audit: no issues.
