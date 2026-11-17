@@ -1,8 +1,9 @@
 STATUS: DONE
-HEAD: sevenz-browse 448078ba2f6c0a9abf50e9ce77f4f2f8ab09a4bc
+HEAD: sevenz-browse 36cf872c906112c95a9abb24d0fbcaf19ea81c4f
 QUESTION: none
-NOTE: Merged upstream main bc3d0d34 (#336, #348 in); writer fix 3461f307 is part of this PR. aes256 and deflate not enabled, as answered; bzip2 on (nothing added to the build); Deflate and PPMd 7z refused plainly, listed under Limits in the PR text. Archive errors show "This archive can't be opened" with an archive icon, no selection, no Try again (all formats).
+NOTE: Merged upstream main 6b877562 (2.0.19), no rebase: kept main's Compress note ("Missing: password-protected ZIP (no AES encoder is linked)") and added the plain-folders sentence; markdown.json regenerated. aes256 and deflate not enabled; bzip2 on; Deflate and PPMd 7z refused plainly (PR Limits).
 
+PASS after the 2.0.19 merge: check.py (parity, icons, rustfmt, clippy -D warnings, then 35 test binaries incl. archive_seven_zip 17/17) until location_fixture_drift, which fails on main too; parity/check.py, i18n check, sync-docs --check pass; seven_zip_folder 4/5 in a filtered run (a_7z_follows_the_zip_settings times out only in filtered runs, passed in the full run); spelling and identity greps clean
 PASS core tests: 17 in native/crates/ox-core/tests/archive_seven_zip.rs; 14 failed before the reader, the BZip2 test failed before the feature (SevenZipMethod); all pass now
 PASS writer fix: a_7z_keeps_its_empty_folders_for_every_reader failed before (folders written as anti-items), passes after
 PASS app tests: 5 in native/crates/ox-app/src/window/tests/seven_zip_folder.rs, all failed before the reader; the archive-page checks failed before that fix ("This location is unavailable"); all pass in the full run
