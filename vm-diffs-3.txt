@@ -1,4 +1,4 @@
 STATUS: WORKING
-HEAD: vm-diffs-3 5bf9af3d5ef2d86039347c9d80e09cd284c96352
+HEAD: vm-diffs-3 44f35ba2c306be35c8e61f14eae5dffecbd3ef47
 QUESTION: none
-NOTE: Branch cut from upstream main; writing failing tests for Replace default, Properties name without extension and tab overflow arrows.
+NOTE: Branch cut from upstream main defb8d06. All three changes are in; tests that fail on main are committed first. Running the full check and the hands-on cases with xdotool now.
