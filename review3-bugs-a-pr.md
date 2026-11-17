@@ -15,7 +15,7 @@ Seven things a person coming from Windows would notice early:
 - **The Preview pane showed an RTF file's markup.** It now shows the document's text: paragraphs and line breaks, tabs, accented and Unicode characters, without the font table, colors or other hidden groups. Bold, italics and fonts are not drawn. No dependency was added.
 - **This PC said "Ready" and "This PC (0 items)" beside a yellow folder.** The status bar now counts the tiles ("1 item", "1 item selected"), and the Details pane shows This PC's own icon with "This PC (1 item)", or a selected drive's icon, name and space.
 - **At 200% text, columns and the navigation pane kept their 100% widths**, so dates, types and folder names were cut short. Default column widths and the navigation pane's default width now grow with the text size and shrink back with it. Widths a person set stay as they are. Name keeps room for names, and the list scrolls sideways when the window is too narrow.
-- **"Reopen my tabs" lost tabs when the app was ended by a signal**, for example SIGTERM at logout: tabs were saved only when the last window closed. The window in front now saves its tabs every 3 seconds when they changed, off the main thread, and at once when the session manager says the session is ending (GtkApplication's `query-end`). A signal loses at most the last 3 seconds.
+- **"Reopen my tabs" lost tabs when the app was ended by a signal**, for example SIGTERM at logout: tabs were saved only when the last window closed. The window in front now saves its tabs every 3 seconds when they changed, off the main thread, and at once when the desktop says it is logging out or shutting down (GtkApplication's `query-end`). A signal loses at most the last 3 seconds.
 - **A Chinese sentence had English in the middle** ("ZIP 打开使用 the desktop choice，…"). The sentence for "the desktop choice" is now one whole message, and its Chinese translation reuses the catalog's own wording; a translator should still review it.
 
 "Use the desktop font" was also reported as springing back off. That is already fixed on main by 0176e963; it was checked again with real clicks and `desktopFont` reaches settings.json.
@@ -42,19 +42,20 @@ Seven things a person coming from Windows would notice early:
   - `the_open_tabs_are_saved_while_the_window_is_open`
   - `test_the_zip_line_without_a_handler_is_one_whole_chinese_sentence`
 - New unit tests: `rtf_markup_becomes_its_text`, `unicode_fallbacks_and_escapes_are_read_as_characters`, `a_new_rich_text_document_has_one_empty_paragraph` and `default_widths_grow_with_the_text`.
-- CHECK_RESULTS
+- `python3 native/tools/check.py` with Python 3.12 (the container's Python 3.13.18 splits `smb://[V1.x]/` differently from the committed fixture, so `location_fixture_drift` fails there on main as well): the parity inventory, the driver's 124 tests, the drawn-icon guard, rustfmt and Clippy pass. The ox-app tests ran 2,537: two sandboxed-thumbnailer tests fail, and fail the same way on unchanged main, because this container cannot apply the sandbox's limits. The ox-core unit tests fail nine `admin_copy` tests, which also fail on unchanged main because of this container's temporary folder. Every other test executable and the doctests pass. Three existing tests that asserted the old behavior were updated: the two in `ops_create.rs` that expected 0600, and the status bar test that expected "Ready" on This PC.
+- `python3 native/parity/check.py` and `python3 native/tools/i18n.py check` pass.
 - Real input with xdotool on the release build, in a private Xvfb display and in Weston nested in Xvfb, with fictional files:
   - X11 at 1x light, 1x dark, and 2x dark in Compact view.
   - Weston at 1x light, and 2x dark in Compact view.
   - Checked there: the address message, New with every template (`ls -l` gave 0664 under umask 0002, the folder 0775), the RTF preview, This PC with and without a selected drive, Ctrl+plus to 200% in Music, "Use the desktop font", the Chinese ZIP line, and `kill -TERM` with "Reopen my tabs" on, after which the next start reopened both tabs.
   - No crash and no Gtk-CRITICAL.
 - Pictures of the address message, This PC, 200% text and the RTF preview were taken with the repository's capture library at 1x and 2x, light and dark.
-- Not checked: a real logout through a session manager (`query-end`), and Orca.
+- Not checked: a real desktop logout (`query-end`), and Orca.
 
 ## Compatibility and release impact
 
 - No persisted format changes. `session.json` is written while the app runs when "Reopen my tabs" is on, in the same format.
-- The app now registers with the session manager to hear `query-end`. It does not ask to delay logout.
+- The app now registers with the desktop (GtkApplication `register-session`) to hear `query-end`. It does not ask to delay logout.
 - No new dependencies.
 - One new translatable message for the ZIP line, and two more for the address message and the drive's "Space" row, are in the template. The Chinese catalog gains one translation.
 - Examples and pictures use only fictional files and paths (`docs/PRIVACY.md`).

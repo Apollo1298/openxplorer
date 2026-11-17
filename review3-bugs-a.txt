@@ -1,5 +1,5 @@
-STATUS: WORKING
-HEAD: review3-bugs-a fb440441443b7381955a55c0aa62955b0c8965db
+STATUS: DONE
+HEAD: review3-bugs-a b8a5c8f938d54408aadf04966fff62bdbacef642
 QUESTION: Item 7: an immediate save on SIGTERM/SIGINT needs either unsafe code (denied by the workspace lints) or async-signal as a new direct ox-app dependency (already in Cargo.lock through zbus). Add it? Without it the open tabs are saved every 3 s when they change (off the main thread) and at logout through GtkApplication query-end; a SIGTERM loses at most the last 3 s.
 NOTE: Item 1 was already fixed on main in 0176e963 (#352), confirmed with real clicks. Items 2-8 fixed on review3-bugs-a (cut from upstream main defb8d06); every new test failed on unchanged main first. PR text: review3-bugs-a-pr.md.
 
@@ -16,7 +16,7 @@ PASS captures with the repo capture library (tools/native_capture.py, fictional 
 PASS python3 native/parity/check.py
 PASS python3 native/tools/i18n.py check; tools unit tests (124) pass inside check.py
 PASS rustfmt (cargo fmt --all --check), clippy -D warnings (workspace, all targets)
-(running) python3 native/tools/check.py: full run in progress
+PASS python3 native/tools/check.py (Python 3.12 on PATH; the container's 3.13.18 fails location_fixture_drift on main too): inventories, driver tests, icon guard, rustfmt, clippy pass; ox-app 2537 tests: 2 fail (a_sandboxed_thumbnailer_runs_within_its_limits, a_sandboxed_thumbnailer_sees_only_its_item), same 2 fail on unchanged main; ox-core lib: 9 admin_copy tests fail, same 9 fail on unchanged main; all other executables and doctests pass. Updated old-behavior tests: ops_create.rs (0600 -> umask mode), environment.rs status bar ("Ready" on This PC -> tile count).
 PASS public-data audit (tools/audit-public-data.py): no issues
 
 CHANGED OWNER DECISIONS
