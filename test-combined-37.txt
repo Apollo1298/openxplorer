@@ -1,0 +1,74 @@
+STATUS: DONE
+HEAD: test-combined-37 5b130846 (the deb was built from exactly this tree; cargo clean before the release build; guard on HEAD and a clean tree before and after)
+DEB: claude/test-combined-37-deb ba079395
+  openxplorer_2.0.18+test37_all.deb (io.winspace.Development)
+  SHA256: 8343ffa92a93640427ba172256f2dea4c3419f4573a792aa88e390c0fa96e1a3
+BASE: upstream main 7f70b0ac (2.0.18; includes the owner's #339 Ctrl+A rename fix, #340 release, #341)
+
+MERGED HEADS, in this order (all descend from main; changed since deb 36 marked *):
+   1  more-bugs              9fc13864c5848b514286adcbbf014c4c088d0afa -> 9562a33f (clean)
+   2  windows-differences-2  c44eb603917bfa8a47855a164ba65f61de68be2c -> c7b2c97a
+   3  network-thumbnails     61728ed60bb097a0336bac4fe27179a6594c7e89 -> 2e7bf8d7
+   4  supere-uninstall       068fc3aa6d9703d71737145ce0b9c357bd92da82 -> e07eb84c
+   5* top-bugs               9cc469653bec8be7a5f15fc37ef589623a86de67 -> 0a967a84 (has merged 2.0.18)
+   6  network-deep           38adcc25234a0bc17d35a966a24ac9e5be622554 -> 603de9e8
+   7  big-folders            190a8d49f42eff564f4834480899e7b9f77c238c -> 63c82b27 (clean)
+   8* open-save-dialogs      0c4a40ad34cdd39a9cfca818e069cba1728100d0 -> 64a8264b
+   9* gallery-match          88d10d659875791e2fc748493e2ff5bef574bfb5 -> ad8c235f (has merged 2.0.18)
+  10  dnd-pass               6118de5acf8e36dc1dd4682160951389d4ea3957 -> d6dc7de4
+  11  archives-pass          c0bf75234caf2cec9c2132359dc62f4f6cd01850 -> 2c1e2a0b
+  12* search-pass            a4c3625b8fc3fb66da151e56bdfbf8d3149dc579 -> f28a6830 (has merged 2.0.18)
+  13  recycle-pass           abda37dad02371312d7c4a267ccca789b1f8eb10 -> f7f2f73d
+  14  properties-pass        f7003d2b5d88cb3aad620d068435e3b3248891f6 -> 15b8f777
+  15  settings-pass          356b73d63197004b9a19426ad8865e2fc07b8612 -> 52241722
+  16  keyboard-pass          f5d8ecdd8fcc1dcb4f3d542b8a5ec0e06fc8b69b -> 392b758d
+  glue                       71b3ad52, 5b130846
+
+CTRL+A RENAME (main's #339 kept): window/file_ops/inline_rename.rs in the merged tree is byte-identical to main 7f70b0ac, so top-bugs' older keep_select_all_in_field (carried by search-pass, recycle-pass, properties-pass, settings-pass and keyboard-pass) is not in it; main's test renaming.rs ctrl_a_selects_the_whole_name_being_edited is the one there. The one text collision was parity OPS-010 (below).
+
+CONFLICTS (deb 36's resolutions reused where the same; new ones marked NEW):
+- docs and markdown.json regenerated with tools/sync-docs.py at every conflict; the .pot regenerated with native/tools/i18n.py extract where it conflicted (gallery-match) or went stale after an auto-merge (network-deep). Final i18n check, sync-docs --check and parity/check.py pass.
+- 2 windows-differences-2: BACKLOG both; location_view.rs imports KnownFolder and Storage without the shown_name import more-bugs removed.
+  NEW parity OPS-010 (rename): windows-differences-2's Rename File message box text, with main's #339 sentence "Ctrl+A selects the whole name in the field, its extension included, and leaves the items' selection alone." inserted where main has it.
+- 3 network-thumbnails: BACKLOG both.
+- 5 top-bugs: pane_content.rs, more-bugs' typed EntryError plus top-bugs' searching flag (as deb 36); parity HOME fold note both sentences, Search from Home entry kept.
+- 6 network-deep: window/tests.rs both modules.
+- 9 gallery-match: empty_page.rs Unavailable { .. } plus NoPhotos.
+- 11 archives-pass: BACKLOG Archives and three parity notes as in decks 35-36.
+- 12 search-pass: BACKLOG both; parity OPS-010: HEAD's (windows-differences-2's box text plus main's Ctrl+A sentence; search-pass's side was main's older wording). The newest search-pass, having merged 2.0.18, no longer conflicts in folder-views.css, model.rs, enumerate.rs, tests/home_page.rs or tests/tooltips.rs.
+- 13 recycle-pass: BACKLOG Archives, HEAD's (a superset).
+- 14 properties-pass: BACKLOG Archives with "for browsing and extraction"; "Missing: password-protected ZIP" only.
+- 15 settings-pass: HEAD for tests/tooltips.rs, BACKLOG and parity (as deb 36).
+- 16 keyboard-pass: BACKLOG both; tests/tooltips.rs keeps top-bugs' newer keep_keyboard_in and "the column menu to close" lines.
+GLUE:
+- 71b3ad52 (cherry-pick of deb 36's ef765af1; properties-pass's own clippy::too_many_lines in open_item_properties, unchanged on f7003d2b): Apply and keeping the pages until the window closes move into keep_pages.
+- 5b130846 (merge-only parity mismatch): top-bugs (9cc46965) still names Search from Home HOME-017, which is Gallery's row in this tree; its big-home test and pane_content.rs now say HOME-033.
+No longer needed from deb 36: the wildcard_matches glue (search-pass a4c3625b makes it pub(crate) itself) and the HOME-033/HOME-035 renumbering (gallery-match 88d10d65 numbers its sharp-photos entry HOME-035 itself).
+
+CHECKS on 5b130846:
+- native/tools/check.py: inventories, parity, i18n and tool tests pass; it then stops at clippy on duration_suboptimal_units in ox-core files no branch touches (same on main). I ran its remaining steps with that lint (and map_unwrap_or, decimal_bitwise_operands) allowed: no drawn icons, rustfmt clean, clippy clean, every test binary plus doctests with OX_PYTHON_APP set.
+- parity/check.py, i18n check, sync-docs --check pass; cargo-sources.json matches a fresh run; the deb has rust-crates/sevenz-rust2-0.20.2.
+- Tests: 4795 passed, 23 failed. All 23 also fail on main 7f70b0ac (rerun there by name; environment: root permissions, sandbox, Python fixtures, display scale), the same 23 as decks 34-36. No branch-only and no merge-only test failure. The search_history test that failed once in deb 36 passed.
+- The container restarted once during the first full run; nothing committed was lost, test-combined-37 was pushed as a backup, and the full run above was redone from a clean target.
+
+ONE UNIQUE STRING PER BRANCH IN THE BUILT BINARY (/opt/openxplorer/bin/openxplorer, grep -caF; credited to the first branch in merge order holding the commit that adds it; none in main 7f70b0ac's sources):
+   1 more-bugs:             "Couldn't check for updates (HTTP"
+   2 windows-differences-2: "7z File"
+   3 network-thumbnails:    "Show thumbnails in network folders"
+   4 supere-uninstall:      "forget_removed_launch_shortcut_apps" (function symbol)
+   5 top-bugs:              "GtkTooltipWindow"
+   6 network-deep:          "confirm_undo_without_recycle_bin" (function symbol)
+   7 big-folders:           "snapshot@GMT-"
+   8 open-save-dialogs:     "Save as _type:"
+   9 gallery-match:         "Choose which folders to see in Gallery"
+  10 dnd-pass:              "carries_archive_items" (function symbol)
+  11 archives-pass:         "Show extracted files when complete"
+  12 search-pass:           "add_match_function" (function symbol)
+  13 recycle-pass:          "empty_recycle_bin_reporting" (function symbol)
+  14 properties-pass:       "Type the target the shortcut opens."
+  15 settings-pass:         "Apply to F_olders"
+  16 keyboard-pass:         "Collapse the folder, or go to the folder it is in (navigation pane)"
+  (each found in the binary)
+POLKIT: record /var/lib/openxplorer/install-updates-without-password = "off" before install -> /etc/polkit-1/rules.d empty after install, record still "off". Purge left neither.
+IDENTITY: all 340 new commits (branches, merges, glue) and the deb commit are addition-official <239187859+addition-official@users.noreply.github.com> with no trailers; the owner's commits (#339-#341) are in main, not new here. No other author, committer or personal name. The only address in the added lines is network-thumbnails' fictional sftp://demo@server.example. In the deb, AKolenda appears only in the upstream repository and update-check URLs; the other addresses are the same third-party set as before.
+NOTE: older test-combined branches left for the PC manager to delete, as asked.
