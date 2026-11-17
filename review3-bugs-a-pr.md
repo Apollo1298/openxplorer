@@ -16,7 +16,7 @@ Seven things a person coming from Windows would notice early:
 - **This PC said "Ready" and "This PC (0 items)" beside a yellow folder.** The status bar now counts the tiles ("1 item", "1 item selected"), and the Details pane shows This PC's own icon with "This PC (1 item)", or a selected drive's icon, name and space.
 - **At 200% text, columns and the navigation pane kept their 100% widths**, so dates, types and folder names were cut short. Default column widths and the navigation pane's default width now grow with the text size and shrink back with it. Widths a person set stay as they are. Name keeps room for names, and the list scrolls sideways when the window is too narrow.
 - **"Reopen my tabs" lost tabs when the app was ended by a signal**, for example SIGTERM at logout: tabs were saved only when the last window closed. The window in front now saves its tabs every 3 seconds when they changed, off the main thread, and at once when the desktop says it is logging out or shutting down (GtkApplication's `query-end`). A signal loses at most the last 3 seconds.
-- **A Chinese sentence had English in the middle** ("ZIP 打开使用 the desktop choice，…"). The sentence for "the desktop choice" is now one whole message, and its Chinese translation reuses the catalog's own wording; a translator should still review it.
+- **A Chinese sentence had English in the middle** ("ZIP 打开使用 the desktop choice，…"). The sentence for "the desktop choice" is now one whole message, and its Chinese translation reuses the catalog's own wording; a translator should still check it.
 
 "Use the desktop font" was also reported as springing back off. That is already fixed on main by 0176e963; it was checked again with real clicks and `desktopFont` reaches settings.json.
 
