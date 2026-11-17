@@ -1,0 +1,4 @@
+STATUS: WORKING
+HEAD: sevenz-browse 92952b7a20e38f36a8a90c45aaa5d75a4ad7549d
+QUESTION: Encrypted 7z needs sevenz-rust2's "aes256" feature. It adds no new packages to Cargo.lock (aes 0.8.4, cbc 0.1.2, sha2 0.10.9, getrandom 0.4.3 already ship through oo7), only new links from sevenz-rust2 to them. May I enable it? Same question for its "bzip2" and "deflate" features (also no new packages: bzip2 0.6.1 and flate2 already ship). PPMd would add a new crate (ppmd-rust), so I leave PPMd unsupported unless told otherwise. Until answered, encrypted 7z (and BZip2/Deflate/PPMd 7z) say plainly that they aren't supported.
+NOTE: Branch made from archives-pass, merged windows-differences-2 and upstream main (86df362b), conflicts resolved keeping both sides. Now writing failing tests for 7z browsing.
