@@ -1,0 +1,4 @@
+STATUS: WORKING
+HEAD: review3-bugs-b defb8d06
+QUESTION: none
+NOTE: Cut from upstream main defb8d06. Re-checking each item on today's main, then test-first fixes.
