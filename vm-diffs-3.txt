@@ -1,7 +1,7 @@
 STATUS: DONE
-HEAD: vm-diffs-3 b48b3677a39677f2325edc190754583bdb59f469
+HEAD: vm-diffs-3 5ec9bdfbf123282a3cd15aaf51f22133f8d5e3e8
 QUESTION: none
-NOTE: Branch cut from upstream main defb8d06, pushed to the fork; no PR, no deb. Replace overwrites by default (setting kept, now off) and Undo says it can't bring the old file back; Properties leaves a hidden extension out of the name box and title; overflowing tabs keep about three letters and get scroll arrows at both ends.
+NOTE: Fixed the empty space in narrow tabs from the deb 38 test: an inactive tab kept invisible room for its close button, so "Home" was cut to "Ho…". The close button now takes no room unless the tab is in front, hovered, focused or dragged, so the title fills to the tab's end; arrows and the minimum width kept.
 
 TESTS FIRST (each failed on unchanged main, run on main with only the test files copied in)
 FAIL (main) -> PASS: settings_page::tests::the_replaced_files_switch_is_off_by_default_and_saves_only_its_turning_on (main: "off by default, as in Windows")
@@ -46,6 +46,15 @@ PASS Tab skips the arrows (not focusable; test)
 PASS 2x at 3840 px with 40 busy tabs: arrows and the front tab still update (on main the front tab is not scrolled into view there)
 FAIL weston real input: no Xwayland in this container, so xdotool cannot drive the app on weston; the 7 new window/settings tests ran natively on headless weston (Wayland) instead and pass
 PASS no crash, no GTK criticals (G_DEBUG=fatal-criticals) in any hands-on run
+
+TAB TITLE ROOM (deb 38 report: "Ho…" and about 60% of each tab empty with 15+ tabs)
+NOTE: I could not reproduce the cut "Ho…" here (X11 and Wayland, 1x and 2x, 100% and 150% text, and the combined test-combined-38 build all show "Home"); with the fonts here "Home" fits. The empty part was the inactive tab's hidden close button (opacity 0, still 22 px plus spacing), so with a wider font the title was cut before it
+FAIL (b48b3677) -> PASS: tabs::a_tab_at_its_narrowest_gives_its_title_all_the_room_after_its_icon (at 40 tabs, 1366 px: a tab behind has no close button and its title reaches the tab's end; hovered, the X shows and the title ends before it; the front tab's title fills up to its X; a wider tab gives the title more room). On b48b3677: "a tab behind shows no close button"
+PASS chrome::tabs_are_separated_flared_and_show_close_as_in_windows_11 (updated: a tab behind has no visible close button; hovered it shows one)
+PASS window::tests::tab* (63), chrome (14), focus (19), accessibility (14), narrow_windows (5), look (13) on Xvfb; rustfmt, Clippy -D warnings, parity/check.py, i18n check
+PASS captures at 1x, light and dark, with 1, 6 and 25 tabs of the demo folders: vm-diffs-3-1x-{light,dark}-tabs-{1,6,25}.png; at 25 tabs the titles read "Launch pl…", "Holiday 2…", "Documents", "Downloads" to the tab's end
+NOT TESTED: a fade at the title's edge as Windows draws it (the title ends in an ellipsis instead); the full test sweep was not run again for this commit
+NOT CONFIRMED: whether Windows 11 shows the X on a hovered tab behind (it does here, and the title shortens while the pointer is on it)
 
 CHECKS
 PASS cargo fmt --check, cargo clippy -D warnings with the workspace lints (Rust 1.92)
