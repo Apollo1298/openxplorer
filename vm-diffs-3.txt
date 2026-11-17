@@ -1,4 +1,4 @@
 STATUS: WORKING
-HEAD: vm-diffs-3 44f35ba2c306be35c8e61f14eae5dffecbd3ef47
+HEAD: vm-diffs-3 ffc3a44a33769b83e646cd06be383c80ffcd6cc6
 QUESTION: none
-NOTE: Branch cut from upstream main defb8d06. All three changes are in; tests that fail on main are committed first. Running the full check and the hands-on cases with xdotool now.
+NOTE: Changes done and pushed; hands-on cases pass with real input (Xvfb). Captures pushed. Full check.py on the branch and on unchanged main still running for the by-name comparison.
