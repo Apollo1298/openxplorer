@@ -1,4 +1,69 @@
-STATUS: WORKING
-HEAD: vm-diffs-3 ffc3a44a33769b83e646cd06be383c80ffcd6cc6
+STATUS: DONE
+HEAD: vm-diffs-3 b48b3677a39677f2325edc190754583bdb59f469
 QUESTION: none
-NOTE: Changes, captures and hands-on cases done. Full test sweep of every test binary on the branch and on unchanged main running for the by-name comparison.
+NOTE: Branch cut from upstream main defb8d06, pushed to the fork; no PR, no deb. Replace overwrites by default (setting kept, now off) and Undo says it can't bring the old file back; Properties leaves a hidden extension out of the name box and title; overflowing tabs keep about three letters and get scroll arrows at both ends.
+
+TESTS FIRST (each failed on unchanged main, run on main with only the test files copied in)
+FAIL (main) -> PASS: settings_page::tests::the_replaced_files_switch_is_off_by_default_and_saves_only_its_turning_on (main: "off by default, as in Windows")
+FAIL (main) -> PASS: name_conflicts::a_pasted_replace_overwrites_the_old_file_by_default_and_undo_says_so (main: "the switch is off by default")
+FAIL (main) -> PASS: name_conflicts::undo_after_replacing_several_files_takes_back_only_the_new_copies (main: timed out waiting for the Undo notice)
+FAIL (main) -> PASS: ops_name_conflicts::replace_overwrites_the_old_file_by_default (main: RecycleBin != Overwrite)
+FAIL (main) -> PASS: item_dialogs::properties_leave_out_a_hidden_extension_and_a_rename_keeps_it (main: timed out waiting for "Notes 2 Properties")
+FAIL (main) -> PASS: tabs::overflowing_tabs_keep_a_few_letters_and_scroll_with_arrows_at_both_ends (main: "the strip has its two scroll arrows: []")
+PASS (main and branch, guard): item_dialogs::properties_show_the_whole_name_while_extensions_are_shown
+
+REPLACE (real input, xdotool, Xvfb; fictional files report-a/b/c.txt)
+PASS single file, setting off (default), 1x light: overwritten ("new a"), nothing in the Recycle Bin, no .winspace temporary file left
+PASS single file, setting off, 2x dark Compact: same
+PASS 3 files + 1 new file, setting off: all 3 overwritten, nothing recycled, no temporary file
+PASS Undo after Replace, one file: message box "Undo Copy" / "“report-a.txt” was replaced, so Undo can't bring back the old file." with OK; the replacement stays; the step is used up (1x light and 2x dark)
+PASS Undo after Replace with a new file too: "3 files were replaced, so Undo can't bring back the old files. Undo the rest anyway?"; Esc keeps the step; Enter (Undo) moves only fresh.txt to the Recycle Bin, the 3 replacements stay
+PASS setting on, single file: old file in the Recycle Bin; Ctrl+Z brings "old a" back
+PASS setting on, 3 files: 3 old files recycled; Ctrl+Z brings all 3 back and recycles the new copy
+PASS failed copy, read-only destination folder: "Destination Folder Access Denied"; Cancel; old file intact, nothing left behind
+PASS failed copy, disk full (2 MiB tmpfs): "There is not enough space on Local Disk." before writing; old file intact
+PASS failed copy during the write (tmpfs with no inodes left, so creating the temporary file fails): "There is not enough space" question; Cancel; old file intact, no temporary file
+PASS settings row: Settings > Files & folders > Copying and moving, switch off by default; on is saved as recycleReplacedFiles (test)
+
+PROPERTIES (real input; Alt+Enter after type-ahead)
+PASS extensions hidden, file: "notes Properties", box "notes" (1x light; 2x dark Compact)
+PASS extensions hidden, "extra_3.txt": "extra_3 Properties", box "extra_3" (1x light; 2x dark Compact)
+PASS folder "Projects", no-extension "README", dotfile ".profile-demo": whole names in box and title
+PASS rename from the box, extensions hidden: typed "harbor notes" -> harbor notes.txt (1x), "tide log" -> tide log.txt (2x dark Compact); Ctrl+Z renamed it back
+PASS extensions shown: "extra_3.txt Properties" / "notes.txt Properties"; typed "harbor log.txt" -> harbor log.txt
+PASS several items: "Projects, .profile-demo, ... Properties" (unchanged), "4 Files, 1 Folders"
+PASS fixed Properties size: 388 x 528 for file, folder, no extension, dotfile and several items
+
+TABS (real input; Ctrl+T, clicks, wheel, Ctrl+Tab, Ctrl+W, drag)
+PASS 5 / 20 / 40 tabs at 1366 and 1920 px, 1x and 2x, light and dark, normal and Compact (48 frames): arrows only at 20 and 40 tabs; "+" right after the strip; front tab in view; titles show "Home" at the narrowest
+PASS 25 tabs at 1920 px: about 11 tabs shown, ◀ ▶ at the ends
+PASS click ◀ three times: strip scrolls back, ▶ becomes active; ◀ dims at the start
+PASS wheel over the strip scrolls it
+PASS Ctrl+Tab from the last tab wraps to the first, which scrolls into view
+PASS Ctrl+W from 25 to 5 tabs: arrows hidden again
+PASS drag a tab in a 40-tab strip: "Doc…" moved from 2nd to 8th place
+PASS Tab skips the arrows (not focusable; test)
+PASS 2x at 3840 px with 40 busy tabs: arrows and the front tab still update (on main the front tab is not scrolled into view there)
+FAIL weston real input: no Xwayland in this container, so xdotool cannot drive the app on weston; the 7 new window/settings tests ran natively on headless weston (Wayland) instead and pass
+PASS no crash, no GTK criticals (G_DEBUG=fatal-criticals) in any hands-on run
+
+CHECKS
+PASS cargo fmt --check, cargo clippy -D warnings with the workspace lints (Rust 1.92)
+PASS python3 native/parity/check.py; native/tools/i18n.py check; tools/sync-docs.py --check; tools/audit-public-data.py
+FAIL python3 native/tools/check.py: stops at location_fixture_drift, which fails on unchanged main too; so every test binary was run to the end with check.py's own isolation instead
+PASS full run, every test binary, branch vs unchanged main: branch 4,790 passed / 33 failed, main 4,784 / 34; no failure is branch-only. The 33 all fail on main too: Python-compatibility tests that need check.py's extraction of the old app (location_fixture_drift, network_python, network_keyring_python, session_python, settings_interop, update_python, versions_*, places_composition, 4 settings_page tests, reset_returns_every_windows_sidebar_to_its_default_width, ox_core clipboard fingerprint) and 2 sandboxed thumbnailer tests; main's extra failure is a_pinned_folder_menu_copies_compresses_and_creates_in_that_folder (timeout). An earlier branch run had 2 more ox_app failures whose names my filter lost; they did not come back in two later runs
+NOTE: the first branch run found 2 branch-only failures, both fixed: the motion guard (accessibility::animations_stay_off_when_the_desktop_turns_them_off) flagged a tick callback, now an after-paint handler; and shortcut_tab expected "Example Editor.desktop Properties"
+
+CAPTURES (tools/native_capture.py, isolated session, fictional demo tree; 2x at 780 x 680 because the capture display is 1600 x 1400)
+vm-diffs-3-{1x,2x}-{light,dark}-tab-overflow-arrows.png, -properties-extension-hidden.png ("Meeting notes Properties"), -settings-replace-row.png
+
+NOT CONFIRMED (check in the VM)
+- What Windows' Undo does after Replace (here: says it can't bring the old file back)
+- Whether Windows' tab scroll arrows take keyboard focus, their glyph (chevrons here) and how far one click scrolls (one tab here)
+- Windows' title for several items' Properties and for the Permissions window while extensions are hidden (both unchanged here)
+- Whether a launcher (.desktop, like a .lnk) Properties title drops the extension even with extensions shown
+
+CHANGED OWNER DECISIONS
+- OPS-028: Replace overwrites by default; "When replacing a file, move the old one to the Recycle Bin" is off by default and stored only when on (an installation that never touched it changes from recycling to overwriting)
+- PROP-005: the Properties name box and title follow "Hide extensions for known file types", and a typed name keeps the hidden extension
+- TAB-019: a tab's title keeps five average characters at its narrowest; an overflowing strip has scroll arrows at both ends
