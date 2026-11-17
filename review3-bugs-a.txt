@@ -1,4 +1,26 @@
-STATUS: WORKING
-HEAD: review3-bugs-a (not pushed yet; cut from upstream main defb8d06)
-QUESTION: Item 7: an immediate save on SIGTERM/SIGINT needs either unsafe code (denied by the workspace lints) or async-signal as a new direct ox-app dependency (already in Cargo.lock through zbus). Add it? Until answered, the open tabs are saved every 3 s when they change (off the main thread) and at logout through GtkApplication query-end.
-NOTE: Item 1 (desktop font switch) already fixed on main in 0176e963 (#352); to be confirmed with real input. Items 2-8 fixed in code; tests being checked against unchanged main.
+STATUS: STATUS_PLACEHOLDER
+HEAD: review3-bugs-a HEAD_PLACEHOLDER
+QUESTION: Item 7: an immediate save on SIGTERM/SIGINT needs either unsafe code (denied by the workspace lints) or async-signal as a new direct ox-app dependency (already in Cargo.lock through zbus). Add it? Without it the open tabs are saved every 3 s when they change (off the main thread) and at logout through GtkApplication query-end; a SIGTERM loses at most the last 3 s.
+NOTE: Item 1 was already fixed on main in 0176e963 (#352), confirmed with real clicks. Items 2-8 fixed on review3-bugs-a (cut from upstream main defb8d06); every new test failed on unchanged main first. PR text: review3-bugs-a-pr.md.
+
+PASS 1 "Use the desktop font": already fixed on main (0176e963, #352). Real click on X11 1x light with desktop font Cantarell 11: switch stays on, settings.json gets "desktopFont": true. Test the_desktop_font_switch_stays_on_and_saves_the_choice passes.
+PASS 2 mistyped address: Alt+D, typed .../Documnets, Enter -> "OpenXplorer can't find "<typed>". Make sure you typed the name correctly, and then try again." (X11 1x light/dark, X11 2x dark Compact, Weston 1x light, Weston 2x dark Compact). Wording follows Windows' message as Microsoft Q&A threads quote it (https://learn.microsoft.com/en-us/answers/questions/2409658/windows-cant-find-photo-make-sure-you-typed-the-na); no official Microsoft docs page found: NOT CONFIRMED there. Test fails on main, passes now.
+PASS 3 New files mode: real clicks New > Text Document, Bitmap image, Rich Text Document, Compressed (zipped) Folder, Folder; ls -l under umask 0002: files -rw-rw-r-- (0664), folder 0775 (was 0600). User templates too (test). Unit test fails on main (0600), passes now; ops_create.rs tests updated from 0600 to the umask mode.
+PASS 4 RTF preview: Alt+P and a real click on an RTF letter shows its text ("Harbor survey, phase two / ... café ... € 2,400 ..."), a new empty RTF shows nothing; no dependency added (built-in RTF-to-text reader, details_pane/rich_text.rs). All 5 real-input combinations. GTK test fails on main, passes now.
+PASS 5 This PC: status bar "1 item" / "1 item selected"; Details pane "This PC (1 item)" with This PC's own icon, a selected drive with its icon, name and "Space 22.4 GB free of 252 GB". Real input in all 5 combinations; Select none from the ... menu. GTK test fails on main, passes now.
+PASS 6 200% text: Ctrl+plus x5 in Music: columns 282 (dates) / 270 (type), navigation pane 420, Name keeps 280 and the list scrolls sideways; Ctrl+0 returns to 176/135/210; widths the user set stay. Real input X11 1x light, X11 2x dark Compact, Weston 2x dark Compact, Weston 1x light, X11 1x dark. GTK test fails on main, passes now. Command bar icons stay 16 px (BACKLOG).
+PASS 7 tabs after SIGTERM: "Reopen my tabs" on, two tabs (Documents, Pictures), kill -TERM 4 s later, restart reopens both with Pictures in front (X11 1x light). Saved every 3 s when changed, off the main thread, and on GtkApplication query-end (real logout NOT tested). GTK test fails on main, passes now. See QUESTION for an immediate SIGTERM handler.
+PASS 8 zh_CN ZIP line: LANGUAGE=zh_CN, Settings > ZIP & archives shows "ZIP 打开使用桌面环境的默认应用。打开下载的文件不属于"在文件夹中显示"。" (no English). The translation reuses the catalog's own wording; needs a translator's review. Python test fails on main, passes now.
+PASS no crash, no Gtk-CRITICAL in any real-input session (X11 1x light, X11 1x dark, X11 2x dark Compact, Weston 1x light, Weston 2x dark Compact)
+PASS captures with the repo capture library (tools/native_capture.py, fictional demo tree, bwrap, Xvfb; 2x on a 3200x2800 screen): review3-bugs-a-{1x,2x}-{light,dark}-{address-error,this-pc-details,this-pc-drive-selected,text-200,text-200-compact,rtf-preview}.png (24)
+PASS python3 native/parity/check.py
+PASS python3 native/tools/i18n.py check; tools unit tests (124) pass inside check.py
+PASS rustfmt (cargo fmt --all --check), clippy -D warnings (workspace, all targets)
+CHECK_PLACEHOLDER
+PASS public-data audit (tools/audit-public-data.py): no issues
+
+CHANGED OWNER DECISIONS
+- This PC's status bar no longer says "Ready": it counts the tiles as items (HOME-001; the This PC layout of the owner decision of 2026-11-06 is unchanged).
+- New files are published with 0666 less the umask instead of 0600; the private hidden stage, no-overwrite publish and never copying a template's mode stay (OPS-048; the Python app made them 0600).
+- The 1.x defaults for column widths (176/330/135/90) and the 210 px navigation pane now apply at 100% text only; larger text widens them (VIEW-028, ACC-012).
+- The app registers with the session manager (GtkApplication register-session) to save tabs at logout; it never inhibits logout for this (TAB-053).
