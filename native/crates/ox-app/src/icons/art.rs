@@ -34,6 +34,9 @@ pub(crate) enum Art {
     TintedGlyph(Icon, Tint),
     /// The yellow folder.
     Folder,
+    /// Local Disk, the drive the system runs from: the drive glyph, which
+    /// a Windows icon file can draw as the Windows drive (LOOK-029).
+    SystemDrive,
     /// A ZIP archive: the folder with the zip badge in its corner.
     ZipFolder,
     /// A file, in the colour icon of its type.
