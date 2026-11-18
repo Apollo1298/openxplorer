@@ -1,0 +1,4 @@
+STATUS: DONE
+HEAD: 05831ab6
+QUESTION: none
+NOTE: Report-only review of upstream main 05831ab6 (2.0.20) in overnight-review-4-report.md. Bugs 14, Unlike Windows (Microsoft-confirmed) 0, Unlike Windows (VM-confirmed 2026-11-18) 9, Not sure 8, Still broken from earlier reviews 2, Worked well 17. Parity check passed; cargo tests not run.
