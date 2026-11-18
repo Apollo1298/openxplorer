@@ -1,7 +1,7 @@
 STATUS: DONE
-HEAD: vm-diffs-3 b610fde37a68a3b8e3614de3aa5a3e9f71cba1e7
+HEAD: vm-diffs-3 6260c78a
 QUESTION: none
-NOTE: Merged upstream main 6b877562 (2.0.19) into vm-diffs-3 (merge commit, no rebase or force-push). The only conflict was the generated apps/web/public/assets/markdown.json, regenerated with tools/sync-docs.py; the .pot needed nothing new. Deb 41 had passed every item on c9c07534.
+NOTE: Fixed the 3 review findings on PR #362 test-first (commit b5c24b71, plus a parity note fix 6260c78a); all 3 were real. The PR text is unchanged (no behavior it describes changed); its Model line still holds the placeholder, since this session does not write model identifiers into pushed files.
 
 TESTS FIRST (each failed on unchanged main, run on main with only the test files copied in)
 FAIL (main) -> PASS: settings_page::tests::the_replaced_files_switch_is_off_by_default_and_saves_only_its_turning_on (main: "off by default, as in Windows")
@@ -81,6 +81,15 @@ PASS merge: only apps/web/public/assets/markdown.json conflicted; regenerated wi
 PASS tools/sync-docs.py --check, native/tools/i18n.py check, native/parity/check.py
 FAIL native/tools/check.py: its parity, i18n and tool tests, the drawn-icon guard, rustfmt and Clippy pass; it then stops at location_fixture_drift (python_fixture_matches_desktop_core_py), which fails on unchanged upstream 6b877562 too. So every test binary was run to the end with check.py's isolation instead
 PASS full run, every test binary: merge 4,790 passed / 34 failed, unchanged upstream 6b877562 4,785 / 33. The merge's extra failure, search_history::a_tab_on_results_keeps_its_selection_and_scroll_position, is flaky on both: run alone 6 times each with nothing else running, it passed 6 of 6 on the merge and 5 of 6 on upstream (and failed once in 3 on the merge earlier, while upstream was building). Every other failure fails on upstream too by the same name
+
+REVIEW FINDINGS (PR #362, on b610fde3)
+FIXED 1 (resolved_transfer.rs:638, Replace Undo without a Recycle Bin): correct. removed_by_undo now includes a Replace record's nested steps, so Delete's question lists them, and the Replace reversal deletes the agreed ones permanently and sends the others to the Recycle Bin (undo_apply.rs: remove_deleting, used by undo_replace); Redo brings back only what went to the Recycle Bin. Test ops_undo::undoing_a_replacing_copy_deletes_the_agreed_copies_that_have_no_recycle_bin fails on b610fde3 (nothing listed for the question), passes now
+FIXED 2 (tab_layout.rs:402, arrow step past a wide snapshot tab): correct. An arrow now scrolls to the next tab's real edge (the first tab not wholly shown ends at the right edge, or the last starts at the left edge), whatever its width; tab_step is gone. The same test found two older layout bugs with a Previous Versions tab, also fixed: its own minimum made every other tab as wide (231 px instead of 127 at 1366 px), and the even share ignored its extra 115 px, so the row was narrower than its tabs and the last tab could not be reached. Test tabs::an_arrow_scrolls_one_whole_tab_also_past_a_wide_snapshot_tab fails on b610fde3 ("click 0: a tab ends at the right edge 1294"), passes now (3 runs of all window::tests::tab*, 64 each)
+FIXED 3 (item_dialogs.rs:258, folder link opened by address): correct. A symbolic link is queried again with links followed, and a link to a folder is named whole, as the name box names it. Test item_dialogs::a_folder_links_properties_opened_by_address_keep_its_whole_name fails on b610fde3 (timed out waiting for "Docs.txt Properties"; the title was "Docs Properties"), passes now
+PASS window::tests::tab* (64), window::tab_layout (7), window::tab_strip (3), window::tab_moves (22), item_dialogs (64), chrome (14), narrow_windows (5), name_conflicts (17), restore_conflicts (8), look (13); ops_undo, ops_name_conflicts, ops_restore_conflicts
+PASS rustfmt, Clippy -D warnings with the workspace lints, parity/check.py, i18n check
+FAIL native/tools/check.py: stops at location_fixture_drift (python_fixture_matches_desktop_core_py), as on unchanged upstream 6b877562; everything before it passes
+PASS full run of every test binary with check.py's isolation: 4,794 passed / 33 failed; the 33 are exactly upstream 6b877562's 33 failures by name
 
 CHECKS
 PASS cargo fmt --check, cargo clippy -D warnings with the workspace lints (Rust 1.92)
