@@ -1,0 +1,326 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+//! Icons from the Windows icon files the user chose (LOOK-029).
+//!
+//! Off by default. Once "Icons from Windows icon files" is on in Settings
+//! and files are chosen, [`follow_preferences`] has them read off the main
+//! thread by [`ox_core::windows_icons::load_icons`], which keeps their
+//! images as PNG files in the user's cache folder. Until that finishes,
+//! and for every role the files do not draw, the app's own icons stay.
+//!
+//! An [`ArtImage`] asks [`texture_for`] before it composes its own icon:
+//! the [`Art`]s that stand for a place or item a Windows file draws
+//! ([`role_of`]) get the image whose edge best fits the icon's size at the
+//! widget's scale, so the navigation pane draws the 16 or 20 pixel image,
+//! the lists the 32 or 48 pixel one and the large views the 256 pixel
+//! one, the smallest at least as large as the device pixels to fill. An
+//! image that cannot be loaded is remembered as missing and the app's own
+//! icon shown in its place. Every `ArtImage` and role image is redrawn
+//! when the files are read, turned off or changed, and when its scale
+//! changes.
+
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::path::PathBuf;
+use std::rc::Rc;
+
+use gtk::prelude::*;
+use gtk::{gdk, glib};
+use ox_core::places::KnownFolder;
+use ox_core::settings::Preferences;
+use ox_core::windows_icons::{IconRole, LoadedIcons};
+
+use super::{Art, ArtImage, FileType, Icon, Tint};
+
+/// Where the icons from the chosen files stand.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Status {
+    /// Off, or on without any file: the app's own icons.
+    Off,
+    /// The chosen files are being read.
+    Reading,
+    /// The chosen files were read and draw `found` of the roles.
+    Ready {
+        /// How many of [`IconRole::ALL`] they draw.
+        found: usize,
+    },
+}
+
+/// A plain image showing a role's icon, or `fallback` when the files do
+/// not draw it, such as a drive's tile in This PC.
+struct RoleImage {
+    image: glib::WeakRef<gtk::Image>,
+    role: IconRole,
+    fallback: Icon,
+    size: i32,
+}
+
+/// A follower of the [`Status`]; it returns false once it is gone.
+type StatusFollower = Box<dyn Fn(Status) -> bool>;
+
+/// The icons of the chosen files, on the main thread.
+struct State {
+    /// The files to read while the setting is on; `None` while off.
+    wanted: Option<Vec<PathBuf>>,
+    /// Counts every change of [`Self::wanted`], so a read that finishes
+    /// after another change is dropped.
+    generation: u64,
+    /// The images the files gave.
+    loaded: Option<Rc<LoadedIcons>>,
+    /// The textures loaded so far, by cached file; `None` for one that
+    /// could not be loaded.
+    textures: HashMap<PathBuf, Option<gdk::Texture>>,
+    /// Every art image made, to redraw.
+    art_images: Vec<glib::WeakRef<ArtImage>>,
+    /// Art images made since the dead ones were last dropped.
+    added_since_pruning: usize,
+    /// Every plain role image, to redraw.
+    role_images: Vec<RoleImage>,
+    status: Status,
+    status_followers: Vec<StatusFollower>,
+}
+
+impl Default for State {
+    fn default() -> Self {
+        Self {
+            wanted: None,
+            generation: 0,
+            loaded: None,
+            textures: HashMap::new(),
+            art_images: Vec::new(),
+            added_since_pruning: 0,
+            role_images: Vec::new(),
+            status: Status::Off,
+            status_followers: Vec::new(),
+        }
+    }
+}
+
+thread_local! {
+    static STATE: RefCell<State> = RefCell::new(State::default());
+}
+
+/// The role `art` stands for, when a Windows icon file can draw it: the
+/// folder, a ZIP archive, a text file and a file of a type without its
+/// own icon, a drive and Local Disk, the Recycle Bin empty (its plain
+/// glyph) and full (its tinted one), Home, Gallery, This PC and the six
+/// standard folders. Network locations and every other glyph keep the
+/// app's own icons.
+pub(crate) fn role_of(art: Art) -> Option<IconRole> {
+    let role = match art {
+        Art::Folder => IconRole::Folder,
+        Art::ZipFolder => IconRole::ZipFolder,
+        Art::File(FileType::Text) => IconRole::TextFile,
+        Art::File(FileType::Document) => IconRole::GenericFile,
+        Art::SystemDrive => IconRole::SystemDrive,
+        Art::Glyph(Icon::HardDrive) => IconRole::Drive,
+        Art::Glyph(Icon::Delete) => IconRole::RecycleBinEmpty,
+        Art::TintedGlyph(Icon::Delete, _) => IconRole::RecycleBinFull,
+        Art::Glyph(Icon::Home) | Art::TintedGlyph(Icon::Home, _) => IconRole::Home,
+        Art::TintedGlyph(Icon::Image, Tint::Home) => IconRole::Gallery,
+        Art::TintedGlyph(Icon::Laptop, Tint::ThisPc) => IconRole::ThisPc,
+        Art::TintedGlyph(_, Tint::KnownFolder(folder)) => known_folder_role(folder)?,
+        _ => return None,
+    };
+    Some(role)
+}
+
+/// The role of a standard folder with an icon of its own.
+const fn known_folder_role(folder: KnownFolder) -> Option<IconRole> {
+    match folder {
+        KnownFolder::Desktop => Some(IconRole::Desktop),
+        KnownFolder::Downloads => Some(IconRole::Downloads),
+        KnownFolder::Documents => Some(IconRole::Documents),
+        KnownFolder::Pictures => Some(IconRole::Pictures),
+        KnownFolder::Music => Some(IconRole::Music),
+        KnownFolder::Videos => Some(IconRole::Videos),
+        KnownFolder::Templates | KnownFolder::Public => None,
+    }
+}
+
+/// Reads the chosen files when the setting is on and the files changed,
+/// or goes back to the app's own icons when it is turned off. Called at
+/// startup and whenever the settings change; nothing happens when the
+/// choice is the same.
+pub(crate) fn follow_preferences(preferences: &Preferences) {
+    let wanted = (preferences.use_icon_files && !preferences.icon_files.is_empty()).then(|| {
+        preferences
+            .icon_files
+            .iter()
+            .map(PathBuf::from)
+            .collect::<Vec<_>>()
+    });
+    let generation = STATE.with_borrow_mut(|state| {
+        if state.wanted == wanted {
+            return None;
+        }
+        state.wanted.clone_from(&wanted);
+        state.generation += 1;
+        state.loaded = None;
+        state.textures.clear();
+        state.status = if wanted.is_some() {
+            Status::Reading
+        } else {
+            Status::Off
+        };
+        Some(state.generation)
+    });
+    let Some(generation) = generation else {
+        return;
+    };
+    redraw_all();
+    let Some(files) = wanted else {
+        return;
+    };
+    let cache = ox_core::windows_icons::cache_folder();
+    glib::spawn_future_local(async move {
+        let read = gio::spawn_blocking(move || ox_core::windows_icons::load_icons(&files, &cache)).await;
+        let loaded = read.unwrap_or_default();
+        use_loaded(generation, loaded);
+    });
+}
+
+/// Takes the icons a read gave, unless the choice changed since.
+fn use_loaded(generation: u64, loaded: LoadedIcons) {
+    let current = STATE.with_borrow_mut(|state| {
+        if state.generation != generation {
+            return false;
+        }
+        state.status = Status::Ready {
+            found: loaded.found(),
+        };
+        state.loaded = Some(Rc::new(loaded));
+        state.textures.clear();
+        true
+    });
+    if current {
+        redraw_all();
+    }
+}
+
+/// Where the icons from the chosen files stand now.
+pub(crate) fn status() -> Status {
+    STATE.with_borrow(|state| state.status)
+}
+
+/// Calls `follower` with the status now and whenever it changes, until it
+/// returns false.
+pub(crate) fn follow_status(follower: impl Fn(Status) -> bool + 'static) {
+    if follower(status()) {
+        STATE.with_borrow_mut(|state| state.status_followers.push(Box::new(follower)));
+    }
+}
+
+/// The texture of `role`'s image that best fills `size` logical pixels at
+/// `scale`; `None` when the files do not draw the role, while they are
+/// read, or when the setting is off.
+pub(crate) fn texture_of(role: IconRole, size: i32, scale: i32) -> Option<gdk::Texture> {
+    let pixels = u32::try_from(size.max(1).saturating_mul(scale.max(1))).unwrap_or(1);
+    STATE.with_borrow_mut(|state| {
+        let path = state.loaded.as_ref()?.best(role, pixels)?.path.clone();
+        state
+            .textures
+            .entry(path)
+            .or_insert_with_key(|path| match gdk::Texture::from_filename(path) {
+                Ok(texture) => Some(texture),
+                Err(error) => {
+                    glib::g_warning!(
+                        ox_core::LOG_DOMAIN,
+                        "A cached Windows icon could not be loaded, so the built-in one is shown: {error}"
+                    );
+                    None
+                }
+            })
+            .clone()
+    })
+}
+
+/// The texture to show for `art` at `size` logical pixels and `scale`, as
+/// [`texture_of`] gives it for the art's role.
+pub(crate) fn texture_for(art: Art, size: i32, scale: i32) -> Option<gdk::Texture> {
+    texture_of(role_of(art)?, size, scale)
+}
+
+/// Remembers `image`, so it is redrawn when the icons change.
+pub(super) fn register(image: &ArtImage) {
+    STATE.with_borrow_mut(|state| {
+        state.added_since_pruning += 1;
+        if state.added_since_pruning > state.art_images.len().max(64) {
+            state.art_images.retain(|image| image.upgrade().is_some());
+            state.added_since_pruning = 0;
+        }
+        state.art_images.push(image.downgrade());
+    });
+}
+
+/// A new image showing `role`'s icon from the chosen files at `size`
+/// logical pixels, or the app's `fallback` glyph, and following the
+/// choice as an [`ArtImage`] does.
+pub(crate) fn role_image(role: IconRole, fallback: Icon, size: i32) -> gtk::Image {
+    let image = super::image(fallback, size);
+    show_role(&image, role, fallback, size);
+    image.connect_scale_factor_notify(move |image| show_role(image, role, fallback, size));
+    STATE.with_borrow_mut(|state| {
+        state.role_images.retain(|kept| kept.image.upgrade().is_some());
+        state.role_images.push(RoleImage {
+            image: image.downgrade(),
+            role,
+            fallback,
+            size,
+        });
+    });
+    image
+}
+
+/// Shows `role` in `image`, or `fallback` when there is no texture for it.
+fn show_role(image: &gtk::Image, role: IconRole, fallback: Icon, size: i32) {
+    match texture_of(role, size, image.scale_factor()) {
+        Some(texture) => {
+            image.set_paintable(Some(&texture));
+            image.set_pixel_size(size);
+        }
+        None => super::set_icon(image, fallback, size),
+    }
+}
+
+/// Redraws every image after a change, and tells the status followers.
+fn redraw_all() {
+    let (art_images, role_images, status) = STATE.with_borrow(|state| {
+        let art_images: Vec<ArtImage> = state
+            .art_images
+            .iter()
+            .filter_map(glib::WeakRef::upgrade)
+            .collect();
+        let role_images: Vec<(gtk::Image, IconRole, Icon, i32)> = state
+            .role_images
+            .iter()
+            .filter_map(|kept| Some((kept.image.upgrade()?, kept.role, kept.fallback, kept.size)))
+            .collect();
+        (art_images, role_images, state.status)
+    });
+    for image in art_images {
+        image.redraw();
+    }
+    for (image, role, fallback, size) in role_images {
+        show_role(&image, role, fallback, size);
+    }
+    let followers = STATE.with_borrow_mut(|state| std::mem::take(&mut state.status_followers));
+    let kept: Vec<StatusFollower> = followers
+        .into_iter()
+        .filter(|follower| follower(status))
+        .collect();
+    STATE.with_borrow_mut(|state| {
+        let added = std::mem::replace(&mut state.status_followers, kept);
+        state.status_followers.extend(added);
+    });
+}
+
+/// Waits until the chosen files were read, for tests.
+#[cfg(test)]
+pub(crate) fn wait_until_read() {
+    crate::test_support::harness::wait_until("the Windows icon files to be read", || {
+        !matches!(status(), Status::Reading)
+    });
+}
+
+#[cfg(test)]
+mod tests;

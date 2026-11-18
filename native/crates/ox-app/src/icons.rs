@@ -39,6 +39,7 @@ mod emblem;
 mod file_type;
 mod icon;
 mod tint;
+pub(crate) mod user_icons;
 
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};

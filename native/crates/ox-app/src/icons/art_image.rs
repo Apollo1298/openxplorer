@@ -14,6 +14,11 @@
 //! every icon, an `ArtImage` is hidden from assistive technology (see
 //! [`crate::icons`]).
 //!
+//! When the user chose Windows icon files (LOOK-029), an art they draw is
+//! one picture of theirs instead, and the image is drawn again when the
+//! files are read or turned off, or its scale changes
+//! ([`super::user_icons`]).
+//!
 //! [`compose`]: super::composition::compose
 
 use gtk::glib;
@@ -26,6 +31,9 @@ use super::emblem::{EmblemPieces, Emblems};
 
 /// The CSS name of the widget, for the skin's rules about icons.
 const CSS_NAME: &str = "art";
+
+/// The CSS class of a picture from a Windows icon file the user chose.
+const USER_ICON_CLASS: &str = "user-icon";
 
 /// What an image shows, so showing the same again is free.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -200,6 +208,8 @@ mod imp {
             self.overlay.set_valign(gtk::Align::Center);
             self.overlay.set_child(Some(&self.column));
             self.overlay.set_parent(&*art);
+            super::super::user_icons::register(&art);
+            art.connect_scale_factor_notify(super::ArtImage::redraw);
         }
 
         fn dispose(&self) {
@@ -276,10 +286,53 @@ impl ArtImage {
             return;
         }
         imp.shown.set(Some(wanted));
+        self.draw(art, size);
+    }
+
+    /// Draws what the image shows again, for a change of the Windows icon
+    /// files or of the image's scale.
+    pub(super) fn redraw(&self) {
+        if let Some(shown) = self.imp().shown.get() {
+            self.draw(shown.art, shown.size);
+        }
+    }
+
+    /// Draws `art` at `size`: the user's picture for it from a Windows
+    /// icon file, alone, else the app's own pieces.
+    fn draw(&self, art: Art, size: i32) {
+        if let Some(texture) = super::user_icons::texture_for(art, size, self.scale_factor()) {
+            let image = &self.imp().picture;
+            image.set_paintable(Some(&texture));
+            image.set_pixel_size(size);
+            image.set_css_classes(&[USER_ICON_CLASS]);
+            self.show_network_bar(None, size);
+            self.show_badge(None);
+            return;
+        }
         let composition = compose(art, size);
         self.show_picture(&composition.picture);
         self.show_network_bar(composition.network_bar, size);
         self.show_badge(composition.badge);
+    }
+
+    /// Whether the image shows a picture from a Windows icon file, for
+    /// tests.
+    #[cfg(test)]
+    pub(crate) fn shows_user_icon(&self) -> bool {
+        self.imp().picture.has_css_class(USER_ICON_CLASS)
+    }
+
+    /// Whether the badge shows, once one was made; `None` before, for
+    /// tests.
+    #[cfg(test)]
+    pub(crate) fn badge_pieces_if_made(&self) -> Option<bool> {
+        self.imp().badge.get().map(|pieces| pieces.badge.is_visible())
+    }
+
+    /// The main picture, for tests.
+    #[cfg(test)]
+    pub(crate) fn picture(&self) -> gtk::Image {
+        self.imp().picture.clone()
     }
 
     /// Shows `emblems` over the art, `size` logical pixels square, or

@@ -290,7 +290,7 @@ fn local_disk_entry(locations: &LocationContext) -> SidebarEntry {
         section: Section::ThisPc,
         level: RowLevel::Child,
         label: ox_core::i18n::gettext("Local Disk"),
-        icon: Art::Glyph(Icon::HardDrive),
+        icon: Art::SystemDrive,
         target: RowTarget::Location(root.to_owned()),
         tooltip: locations.display_location(root),
         pinned: false,
@@ -676,7 +676,7 @@ mod tests {
             icon_of("Network"),
             Some(Art::TintedGlyph(Icon::Organization, Tint::Network))
         );
-        assert_eq!(icon_of("Local Disk"), Some(Art::Glyph(Icon::HardDrive)));
+        assert_eq!(icon_of("Local Disk"), Some(Art::SystemDrive));
     }
 
     /// parity: SIDE-006

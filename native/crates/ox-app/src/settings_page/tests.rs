@@ -548,7 +548,9 @@ fn escape_leaves_the_search_and_shows_every_row_again() {
             "Right-click menu",
             "Buttons in the right-click menu",
             "Shift+F10 opens the classic menu",
-            "Sidebar and column widths"
+            "Sidebar and column widths",
+            "Icons from Windows icon files",
+            "Windows icon files"
         ]
     );
 }
@@ -622,8 +624,10 @@ fn every_setting_of_the_python_page_has_a_row() {
 
 /// Rows that work but disable their button while there is nothing for it
 /// to do, as Restore previous with no handler recorded (INT-030), or the
-/// Super+E switch outside KDE Plasma (INT-033).
-const ROWS_FOLLOWING_THEIR_STATE: [&str; 4] = [
+/// Super+E switch outside KDE Plasma (INT-033), or Clear while no Windows
+/// icon file is chosen (LOOK-029).
+const ROWS_FOLLOWING_THEIR_STATE: [&str; 5] = [
+    "Windows icon files",
     "Restore the previous file handlers",
     "Give ZIP files back to the previous app",
     "Open ZIP files from other apps with OpenXplorer",
@@ -1432,4 +1436,80 @@ fn the_dragging_help_says_alt_creates_shortcuts() {
     assert!(text.contains("Shift to move"), "{text}");
     assert!(text.contains("Ctrl to copy"), "{text}");
     assert!(!text.contains("Alt to choose"), "{text}");
+}
+
+/// "Icons from Windows icon files" is off by default with no file chosen;
+/// turned on with chosen files, it saves both, says how many icons the
+/// files gave, and the navigation pane draws them. The files are
+/// synthetic, built in the test; the file dialog itself is GTK's and is
+/// not driven, so the chosen paths are saved as its answer would be.
+///
+/// parity: LOOK-029
+#[gtk::test]
+fn icons_from_windows_icon_files_are_off_until_chosen() {
+    use ox_core::windows_icons::synthetic::SyntheticIconFile;
+    use ox_core::windows_icons::IconRole;
+
+    use crate::icons::{user_icons, Art, ArtImage};
+
+    let settings = SettingsTest::open();
+    let row = settings.row("Icons from Windows icon files");
+    let switch = switch_of(&row);
+    assert!(!switch.is_active(), "off by default");
+    assert_eq!(row.shown_description(), "Off: OpenXplorer's own icons");
+    let files_row = settings.row("Windows icon files");
+    assert_eq!(files_row.shown_description(), "No files chosen");
+    let clear = files_row
+        .controls()
+        .into_iter()
+        .filter_map(|control| control.downcast::<gtk::Button>().ok())
+        .find(|button| button.label().as_deref() == Some("Clear"))
+        .expect("a Clear button");
+    assert!(!clear.is_sensitive(), "nothing to clear");
+    assert!(!settings.saved_preferences().use_icon_files);
+
+    let folder = tempfile::tempdir().expect("a temporary folder");
+    let imageres = folder.path().join("imageres.dll.mun");
+    std::fs::write(&imageres, SyntheticIconFile::with_groups(&[3, 36]).build()).expect("written");
+    switch.set_active(true);
+    wait_until("the switch to be saved", || {
+        settings.saved_preferences().use_icon_files
+    });
+    assert_eq!(row.shown_description(), "On, but no file is chosen yet");
+    settings
+        .page
+        .save_preferences(ox_core::settings::PreferencesUpdate {
+            icon_files: Some(vec![imageres.display().to_string()]),
+            ..ox_core::settings::PreferencesUpdate::default()
+        });
+    wait_until("the files to be saved", || {
+        !settings.saved_preferences().icon_files.is_empty()
+    });
+    wait_until("the files to be read", || {
+        user_icons::status() == user_icons::Status::Ready { found: 2 }
+    });
+    wait_until("the row to say so", || {
+        row.shown_description() == format!("2 of {} icons come from the chosen files", IconRole::ALL.len())
+    });
+    assert_eq!(files_row.shown_description(), "imageres.dll.mun");
+    assert!(clear.is_sensitive());
+    let sidebar_drive = descendants::<ArtImage>(&settings.test.window)
+        .into_iter()
+        .find(|image| image.art() == Some(Art::SystemDrive))
+        .expect("the navigation pane shows Local Disk");
+    wait_until("Local Disk to show the file's icon", || {
+        sidebar_drive.shows_user_icon()
+    });
+
+    clear.emit_clicked();
+    wait_until("the files to be forgotten", || {
+        settings.saved_preferences().icon_files.is_empty()
+    });
+    wait_until("the app's own icons to return", || {
+        !sidebar_drive.shows_user_icon()
+    });
+    switch.set_active(false);
+    wait_until("the switch to be saved off", || {
+        !settings.saved_preferences().use_icon_files
+    });
 }
