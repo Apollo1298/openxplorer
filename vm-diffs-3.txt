@@ -1,7 +1,7 @@
 STATUS: DONE
-HEAD: vm-diffs-3 c9c07534106e125b94ed8099d99af185b860b64d
+HEAD: vm-diffs-3 b610fde37a68a3b8e3614de3aa5a3e9f71cba1e7
 QUESTION: none
-NOTE: Deb 40 follow-up: the tab strip was capped at 70% of the window (TabStrip::cap_width, from the old web app's .tabs{max-width:70%}); now it grows with its "+" up to the window buttons, leaving only the 48 px drag area, and the arrows show only once every tab is at its narrowest.
+NOTE: Merged upstream main 6b877562 (2.0.19) into vm-diffs-3 (merge commit, no rebase or force-push). The only conflict was the generated apps/web/public/assets/markdown.json, regenerated with tools/sync-docs.py; the .pot needed nothing new. Deb 41 had passed every item on c9c07534.
 
 TESTS FIRST (each failed on unchanged main, run on main with only the test files copied in)
 FAIL (main) -> PASS: settings_page::tests::the_replaced_files_switch_is_off_by_default_and_saves_only_its_turning_on (main: "off by default, as in Windows")
@@ -75,6 +75,12 @@ PASS captures, 1x light, 1, 6, 15 and 30 Home tabs at 2000 and 1000 px: vm-diffs
 PASS window::tests::tab* (63), window::tab_strip (3), window::tab_moves (22), chrome (14), focus (19), accessibility (14), narrow_windows (5), look (13), drag tests (28), drop_on_zip (1), title_bar (3), panes_layout (10); rustfmt, Clippy -D warnings, parity/check.py
 PASS full ox_app run (every test, check.py's isolation): 2,526 passed, 7 failed; all 7 fail on unchanged main too (Python-app compatibility tests, 2 sandboxed thumbnailer tests)
 CHANGED OWNER DECISION: TAB-019, the strip is no longer capped at 70% of the window (ui-spec and features.toml updated)
+
+MERGE OF UPSTREAM 6b877562 (2.0.19), head b610fde3
+PASS merge: only apps/web/public/assets/markdown.json conflicted; regenerated with tools/sync-docs.py (it keeps both sides: the upstream guides and the Replace wording of this branch); native/tools/i18n.py extract made no change beyond the merge
+PASS tools/sync-docs.py --check, native/tools/i18n.py check, native/parity/check.py
+FAIL native/tools/check.py: its parity, i18n and tool tests, the drawn-icon guard, rustfmt and Clippy pass; it then stops at location_fixture_drift (python_fixture_matches_desktop_core_py), which fails on unchanged upstream 6b877562 too. So every test binary was run to the end with check.py's isolation instead
+PASS full run, every test binary: merge 4,790 passed / 34 failed, unchanged upstream 6b877562 4,785 / 33. The merge's extra failure, search_history::a_tab_on_results_keeps_its_selection_and_scroll_position, is flaky on both: run alone 6 times each with nothing else running, it passed 6 of 6 on the merge and 5 of 6 on upstream (and failed once in 3 on the merge earlier, while upstream was building). Every other failure fails on upstream too by the same name
 
 CHECKS
 PASS cargo fmt --check, cargo clippy -D warnings with the workspace lints (Rust 1.92)
