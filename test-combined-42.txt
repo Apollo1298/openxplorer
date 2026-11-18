@@ -1,0 +1,38 @@
+STATUS: DONE (with one finding: zh_CN.po is NOT byte-identical to main's, see ZH_CN)
+HEAD: test-combined-42 35015400 (the deb was built from exactly this tree; cargo clean before the release build; guard on HEAD and a clean tree before and after)
+DEB: claude/test-combined-42-deb c1f608ad
+  openxplorer_2.0.19+test42_all.deb (io.winspace.Development)
+  SHA256: a87113b5bb34538e50ef893170c619bb3dcd02885fc8cb41b384a5434231df99
+BASE: upstream main 6b877562 (2.0.19); upstream main is still 6b877562 (checked when pushing: 6b877562).
+
+MERGED HEADS, in this order (each the branch's tip, all descend from main):
+  1 review3-bugs-a  ff42eeca56e273eee87ba54a1f968c3d1a87c496 -> 960c860e (clean)
+  2 review3-bugs-b  4128a1a07e5451cc809614c2cf9d08a851f5164f -> 6a1243c2 (clean)
+  3 submenu-hover   cf0f13e782dc2068a28e7bc2ac791e646cab17d6 -> 85867062 (clean)
+  4 vm-diffs-3      6260c78ad02189318952c35afc6c8dffcb15220b -> 2cbcd465
+  5 sevenz-browse   c501dd24c1794008e368b7fedcc44f79c7d9c0a2 -> 35015400
+
+ZH_CN: native/po/zh_CN.po in the merge is NOT byte-identical to main 6b877562's (cmp: first difference at line 1243). review3-bugs-b (4128a1a0) is identical to main: its two machine-translation commits are reverted (7b7f671c, 168f51aa). The one difference comes from review3-bugs-a (ff42eeca), whose commit 19085cc1 "Fix seven review findings in the address bar, New, the panes, This PC, large text, tab saving and Chinese" adds one entry:
+  #: crates/ox-app/src/integration/status.rs
+  msgid "ZIP opening uses the desktop choice. Opening a download is not Show in folder."
+  msgstr "ZIP 打开使用桌面环境的默认应用。打开下载的文件不属于“在文件夹中显示”。"
+  (4 added lines; nothing else differs). review3-bugs-b no longer contains 19085cc1, so nothing reverts it in the merge. I did not edit a branch's content to force the match; if zh_CN must equal main's, that entry has to be dropped from review3-bugs-a (or reverted in a glue commit on request), and the deb rebuilt.
+
+CONFLICTS (as in decks 39-41):
+- 4 vm-diffs-3 / window/tests/tabs.rs: review3's the_open_tabs_are_saved_while_the_window_is_open and vm-diffs-3's tab-strip scroll-arrow helpers and tests, both kept; .pot regenerated with native/tools/i18n.py extract.
+- 5 sevenz-browse: only markdown.json (regenerated with tools/sync-docs.py).
+No glue was needed.
+
+CHECKS on 35015400:
+- native/tools/check.py: inventories, parity, i18n and tool tests pass; it then stops at clippy on duration_suboptimal_units in ox-core files no branch touches (same on main). I ran its remaining steps with that lint (and map_unwrap_or, decimal_bitwise_operands) allowed: no drawn icons, rustfmt clean, clippy clean, every test binary plus doctests with OX_PYTHON_APP set.
+- parity/check.py, i18n check, sync-docs --check pass; cargo-sources.json matches a fresh run; the deb has rust-crates/sevenz-rust2-0.20.2.
+- Tests: 4871 passed, 23 failed: the same 23 as decks 39-41, which all fail on main 6b877562 (rerun there for deb 38; environment: root, sandbox, Python fixtures, display scale). No branch-only, merge-only or flaky failure.
+
+ONE UNIQUE STRING PER BRANCH IN THE BUILT BINARY (/opt/openxplorer/bin/openxplorer, grep -caF; each in its branch head and none in main 6b877562's sources):
+  1 review3-bugs-a: "OpenXplorer can’t find ‘"
+  2 review3-bugs-b: "Alt+drag"
+  3 submenu-hover:  "rest_pointer_on_menu_row" (function symbol; it adds no translatable string)
+  4 vm-diffs-3:     "Scroll tab list forward"
+  5 sevenz-browse:  "This 7z archive is damaged or incomplete. Use an archive manager."
+POLKIT: record /var/lib/openxplorer/install-updates-without-password = "off" before install -> /etc/polkit-1/rules.d empty after install, record still "off". Purge left neither.
+IDENTITY: all 146 new commits (branches and merges) and the deb commit are addition-official <239187859+addition-official@users.noreply.github.com> with no trailers; no other author, committer or personal name. The added lines contain no email address (the zh_CN translator header is no longer touched). In the deb, AKolenda appears only in the upstream repository and update-check URLs; the other addresses are the same third-party set as before.
