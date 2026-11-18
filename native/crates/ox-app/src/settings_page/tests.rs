@@ -548,7 +548,9 @@ fn escape_leaves_the_search_and_shows_every_row_again() {
             "Right-click menu",
             "Buttons in the right-click menu",
             "Shift+F10 opens the classic menu",
-            "Sidebar and column widths"
+            "Sidebar and column widths",
+            "Icons from Windows icon files",
+            "Windows icon files"
         ]
     );
 }
@@ -622,8 +624,10 @@ fn every_setting_of_the_python_page_has_a_row() {
 
 /// Rows that work but disable their button while there is nothing for it
 /// to do, as Restore previous with no handler recorded (INT-030), or the
-/// Super+E switch outside KDE Plasma (INT-033).
-const ROWS_FOLLOWING_THEIR_STATE: [&str; 4] = [
+/// Super+E switch outside KDE Plasma (INT-033), or Clear while no Windows
+/// icon file is chosen (LOOK-029).
+const ROWS_FOLLOWING_THEIR_STATE: [&str; 5] = [
+    "Windows icon files",
     "Restore the previous file handlers",
     "Give ZIP files back to the previous app",
     "Open ZIP files from other apps with OpenXplorer",
