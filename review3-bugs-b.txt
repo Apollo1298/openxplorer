@@ -1,7 +1,7 @@
 STATUS: DONE
-HEAD: review3-bugs-b d2faf386
+HEAD: review3-bugs-b bd59bbb1
 QUESTION: none
-NOTE: Cut from upstream main defb8d06; every item still needed work (parts already fixed on main noted below), each fixed test-first. zh_CN is its own droppable commit 4893316d (only the later refactor f377135c follows it and does not touch the catalog): 599 messages filled, 18 left in English; confidence high for UI strings, medium for long manual paragraphs. native/tools/i18n.py says "Machine translations are not accepted", so the owner may prefer to drop it.
+NOTE: Cut from upstream main defb8d06; every item still needed work (parts already fixed on main noted below), each fixed test-first. zh_CN is in two droppable commits, 4893316d and bd59bbb1, to drop together (no other commit touches the catalog): 599 messages filled, 18 left in English; confidence high for UI strings, medium for long manual paragraphs. native/tools/i18n.py says "Machine translations are not accepted", so the owner may prefer to drop it.
 
 ITEMS (each re-checked on main defb8d06 first)
 PASS 1 drive capacity: This PC rounded (27.6 GB free of 252 GB) while Properties truncated (251 GB). Now one source (volumes::space_of) and one formatter (format::free_of_text). Test landing.rs a_drive_tile_and_its_properties_write_the_same_sizes fails on main with exactly those numbers. Commit f86ccae3
@@ -29,3 +29,9 @@ PASS no crash and 0 GTK criticals in all 16 runs (one Gtk-WARNING "GtkGizmo (pro
 
 CAPTURES (tools/native_capture.py, bwrap sandbox, demo tree; the driver widens its Xvfb screen for 2x)
 review3-bugs-b-{1x,2x}-{light,dark}-{shortcuts,shortcuts-search,new-bitmap,split-view,settings-search,settings-language}.png
+
+PR REVIEW (Codex, 2 findings on d2faf386)
+PASS 1 Language row status (appearance.rs): valid. The row printed the first language asked for, so LANGUAGE=fr_FR read "fr_FR" while the window was English, and fr_FR:zh_CN read "fr_FR" while it was Chinese. Catalog::find now records the language it was found for (ox_core::i18n::interface_language); the row names it, or says "English: no translation for fr_FR is installed". The row text now says it is English when no translation is installed. Tests i18n.rs a_catalogue_names_the_language_it_was_found_for and appearance.rs the_language_row_names_the_language_the_interface_is_in failed before the fix (None vs Some("pl"); "fr_FR" vs "zh_CN") and pass. Commit 0b6be531
+PASS 2 Alt+drag help (general.rs): valid. The help said "Ctrl+Shift to create links or Alt to choose"; DropAction::with_keys runs Alt as a shortcut, Shift as a move and Ctrl as a copy for the app's own items, and a right-button drag asks. Text now: Shift moves, Ctrl copies, Alt creates shortcuts, right-drag chooses; a plain drag moves within a drive and copies to another. zh_CN updated (bd59bbb1). Test settings_page/tests.rs the_dragging_help_says_alt_creates_shortcuts failed before the fix and passes. Commit 8e2258ad
+PASS checks after the fixes: parity/check.py, i18n.py check, fmt, clippy; all 117 settings_page tests; full run with check.py isolation: the same 13 environment failures as main, plus launch::a_folder_named_like_shell_code_stays_a_name once (passed 3 of 3 alone; terminal-launch code not touched here); doctests passed
+NOTE spelling: commit messages, status and PR text use American spelling; new code comments in i18n.rs say "catalogue" to match that file's existing wording
