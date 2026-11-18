@@ -14,10 +14,9 @@ Several small things disagreed with what Windows shows, or with the app itself:
 - **"1 bytes".** Sizes spelled out in bytes now pick their form through ngettext, so the File Conflict window says "1 byte".
 - **Keyboard shortcuts window.** It used GTK's spelling ("Shift+Ctrl+N", "Shift+Alt+P", "Escape", "Space", "Left"). It now writes keys as Microsoft's list and the app's menus do: "Ctrl+Shift+N", "Alt+Shift+P", "Esc", "Spacebar", "Alt+Left arrow". It also lists the rest of Microsoft's File Explorer keys that work: Ctrl+arrow keys then Ctrl+Spacebar, Page Up, Page Down, Enter, Shift+right-click, and Ctrl, Shift or Alt with a drag. Source: https://support.microsoft.com/en-us/accessibility/windows/keyboard-shortcuts-in-windows ("File Explorer keyboard shortcuts").
 - **New Bitmap image.** The new picture is 1x1 white, so its thumbnail made the row look iconless in the light theme. A picture too small to see as a thumbnail now keeps its type icon.
-- **Settings search.** "hidden files" also found How sizes are counted, and "language" found nothing. A Language row on Appearance now names the language the window is in, or says it is in English because no translation for the desktop's language is installed. Rows with nothing to change read as help: Calculate folder sizes joined How sizes are counted, and the Dragging tabs and files rows show their text under their titles. That help now says Shift moves, Ctrl copies and Alt creates shortcuts, as a drop does, where it said "Alt to choose".
+- **Settings search.** "hidden files" also found How sizes are counted, and "language" found nothing. A Language row on Appearance now names the language the window is in, or says English, naming the desktop's language when no translation for it is installed. Rows with nothing to change read as help: Calculate folder sizes joined How sizes are counted, and the Dragging tabs and files rows show their text under their titles. That help now says Shift moves, Ctrl copies and Alt creates shortcuts, as a drop does, where it said "Alt to choose".
 - **Screen-reader names.** The Details button had no name. The search box was named "Search filenames and paths" while it shows "Search Documents". Every tab was described as "Close tab", and the row of column titles repeated its hint once per column. Rows were named with the extension the list hides. Worst, the column titles were paired with their columns in build order, not shown order, so the Date modified title was announced as "Date deleted", and Enter on it sorted by Date deleted. All of these now match what the window shows.
 - **Split view at 1366 pixels.** With the details pane open, each pane cut Type off mid-word and hid Size. The only way to reach them was a scroll bar that shows only under the pointer. A horizontal scroll bar now stays shown over the list's bottom edge while the columns are wider than the pane. The bar never changes the list's height, so a pane scrolled while hidden keeps its place.
-- **Simplified Chinese.** The catalog is merged with the current template, and the messages shown in English are translated, in two commits of their own that can be dropped together. Eighteen photo and audio property values whose Windows wording is not known with confidence stay in English.
 
 | | Before | After |
 |---|---|---|
@@ -32,7 +31,6 @@ Several small things disagreed with what Windows shows, or with the app itself:
 | Screen reader: Date modified title | "Date deleted", Enter sorted by Date deleted | "Date modified", Enter sorts by Date modified |
 | Screen reader: a row | "Budget 2026.txt" | "Budget 2026", as shown |
 | Split view at 1366 px with the details pane | Type cut off, Size hidden, no scroll bar | Scroll bar shown; every column reachable |
-| Simplified Chinese | About 590 messages in English | 18 in English |
 
 ## Validation
 
@@ -49,7 +47,7 @@ Several small things disagreed with what Windows shows, or with the app itself:
   - `python3 native/tools/i18n.py check`: passed.
   - `cargo fmt --check` and Clippy with the workspace lints: passed.
   - `python3 native/tools/check.py`: the inventory, icon, format and lint steps passed. It stops at the first failing test executable, so every test executable and the doctests were then run one by one with check.py's own isolation functions.
-  - The doctests passed. Thirteen tests fail in this container on unchanged main too, the same by name: nine `admin_copy` tests, two sandboxed-thumbnailer tests, `python_fixture_matches_desktop_core_py` and `fuse_export_paths_match_native_opening_py`. Two more failed once each in a full run and passed every time they were run on their own: `search_history::a_tab_on_results_keeps_its_selection_and_scroll_position` (2 of 2) and `launch::a_folder_named_like_shell_code_stays_a_name` (3 of 3). Everything else passed.
+  - The doctests passed. Thirteen tests fail in this container on unchanged main too, the same by name: nine `admin_copy` tests, two sandboxed-thumbnailer tests, `python_fixture_matches_desktop_core_py` and `fuse_export_paths_match_native_opening_py`. Three more failed once each in a full run and passed every time they were run on their own: `search_history::a_tab_on_results_keeps_its_selection_and_scroll_position` (2 of 2), `launch::a_folder_named_like_shell_code_stays_a_name` (3 of 3) and `renaming::the_name_fields_own_menu_keeps_the_rename_going` (3 of 3). Everything else passed.
 - **Real input, X11.**
   - xdotool key presses on a private Xvfb display with openbox, its own private D-Bus bus and a fictional home. What the app showed was read through AT-SPI.
   - 23 checks in each of 8 combinations (1x and 2x, light and dark, normal and Compact view): all passed.
@@ -64,7 +62,7 @@ Several small things disagreed with what Windows shows, or with the app itself:
 ## Compatibility and release impact
 
 - No persisted data, desktop integration, dependency or license changes.
-- The message template gains the new strings. zh_CN is merged with the template in its own commit.
+- The message template gains the new strings.
 - The pictures use only the fictional demo tree (docs/PRIVACY.md).
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
