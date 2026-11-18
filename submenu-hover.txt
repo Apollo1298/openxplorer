@@ -1,7 +1,7 @@
 STATUS: DONE
-HEAD: submenu-hover f895cedf
+HEAD: submenu-hover 2ec22314
 QUESTION: none
-NOTE: One fix in the shared menu code: GTK 4.14 sent the command bar's grab-less menus a fake pointer "leave" while they open, which canceled hover (fails on main, real XTEST tests). Also added a safe triangle for diagonal moves and an over-the-menu fallback when a submenu fits on neither side.
+NOTE: Review point (tall submenu in the over-menu fallback, menu_popover/height.rs) confirmed and fixed test-first: the 1-pixel over-menu anchor was taken for a context-menu point and the submenu moved back beside the menu. Other notes below.
 
 INVENTORY (hover on unchanged main -> with the fix; tested = real XTEST pointer on Xvfb)
 Command bar Sort > More                 main: NO, intermittent (fails when the pointer comes to rest as the menu opens) -> yes (tested)
@@ -124,13 +124,19 @@ OTHER TESTS (same runs)
 PASS X11 1x | PASS X11 2x | PASS Wayland 1x | View > Show opens when the pointer comes to rest on it as View opens (FAIL on main, 4/4 attempts)
 PASS X11 1x | PASS X11 2x | PASS Wayland 1x | slow diagonal move across Sort by into View's open submenu keeps it (FAIL on main)
 PASS X11 1x | PASS X11 2x | PASS Wayland 1x | moving away closes after the delay; leaving all menus keeps the menu open
-PASS X11 1x | PASS X11 2x | PASS Wayland 1x | submenu with no room on either side opens over the menu (FAIL on main)
+PASS X11 1x | PASS X11 2x | FAIL Wayland 1x | submenu with no room on either side opens over the menu, below its row's end (FAIL on main). Weston leaves popups unconstrained: the submenu shows at full size beside its menu, off the screen, so GTK never squeezes it and the fallback cannot engage; not a regression, compositor limitation
+PASS X11 1x | PASS X11 2x | FAIL Wayland 1x | tall submenu (40 rows) with no room on either side stays below its row's end with its frame within the monitor (FAIL before 2ec22314: it went back to Right, partly off screen, 1030 px tall on a 1000 px monitor); same Weston limitation
 NOT VALIDATED: Wayland (Weston nested in Xvfb) at 2x: the test pointer cannot reliably find windows and menus there. Touch/tap: no touch test run (tap activates the row like a click).
 X11 2x was run on a 2880x2000 Xvfb screen (1440x1000 logical); on check.py's 1440x1000 screen at 2x the window is larger than the screen.
 No crash; check.py runs with G_DEBUG=fatal-criticals, so no GTK criticals; tests close every menu they open.
 
 CHECKS
-python3 native/parity/check.py: pass. check.py: parity, driver tests, drawn-icon guard, rustfmt, clippy pass; tests stopped at an environmental ox-core failure, so all 85 test executables + doctests were run isolated: 4764 passed, 55 distinct failed, all 55 also fail on unchanged main (compared by name; ox-core Python interop/keyring/admin/snapshot tests and 2 ox-app thumbnail sandbox tests).
+python3 native/parity/check.py: pass. check.py: parity, driver tests, drawn-icon guard, rustfmt, clippy pass; tests stopped at an environmental ox-core failure, so all 85 test executables + doctests were run isolated: 4766 passed, 55 distinct failed, the same 55 as the previous run, all 55 also fail on unchanged main (compared by name; ox-core Python interop/keyring/admin/snapshot tests and 2 ox-app thumbnail sandbox tests).
 Unchanged main with the new tests (X11 1x): 4 fail (the 3 marked above + the command bar test, View > Show hover); with the fix all 8 pass, 3 runs in a row.
 
 CAPTURES (tools/native_capture.py, fictional demo tree, new hover= scene step): submenu-hover-<1x|2x>-<light|dark>-<view-show|context-compress>.png. The snapshot hook composes submenus over or left of their menu; unchanged main does the same with submenu=, so that is the picture pipeline, not this change. Public-data audit: no issues.
+
+REVIEW FIX (2ec22314)
+ce09a09d test(menus): Check a tall submenu with no room beside its menu  -> failed before the fix (position Right instead of Bottom)
+2ec22314 fix(menus): Keep a tall submenu over its menu when there is no room beside it  -> fit_to_monitor_height still applies the height limit, but leaves a submenu that opens over its menu at Bottom
+After the fix: submenu_hover 9/9 pass on X11 1x (twice) and X11 2x; menu_popover unit tests 20/20; parity/check.py pass; check.py: parity, rustfmt, clippy pass, tests then run isolated as above (same 55 failures as main, no new ones). Spelling grep clean.
