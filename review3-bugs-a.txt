@@ -1,5 +1,5 @@
 STATUS: DONE
-HEAD: review3-bugs-a 6a14b305271608f949148a556e24ca7885bf3ab0
+HEAD: review3-bugs-a ff42eeca56e273eee87ba54a1f968c3d1a87c496
 QUESTION: none
 NOTE: Item 7: glib's signal source can't be used without a new dependency: in glib-rs 0.22 unix_signal_add_local was moved out of glib into the separate glib-unix crate (not in Cargo.lock; it also needs glib-unix-sys and new Flatpak cargo sources), and unsafe is denied, so tabs stay saved every 3 s plus at query-end (a SIGTERM loses at most 3 s). Item 2 now uses the compact message box (OpenXplorer, error icon dismiss_circle_32_color from the pinned Fluent 1.1.343, OK). Item 1 was already fixed on main in 0176e963 (#352).
 
@@ -24,3 +24,10 @@ CHANGED OWNER DECISIONS
 - New files are published with 0666 less the umask instead of 0600; the private hidden stage, no-overwrite publish and never copying a template's mode stay (OPS-048; the Python app made them 0600).
 - The 1.x defaults for column widths (176/330/135/90) and the 210 px navigation pane now apply at 100% text only; larger text widens them (VIEW-028, ACC-012).
 - The app registers with the session manager (GtkApplication register-session) to save tabs at logout; it never inhibits logout for this (TAB-053).
+
+REVIEW FINDINGS (PR #358, on 6a14b305)
+FIXED 1 (P1, new_from_template.rs chmod by name): a local stage is now created with O_CREAT|O_EXCL|O_NOFOLLOW (0600), written in 64 KiB blocks and given its final mode with fchmod on the open file (std File::set_permissions) before it is closed; the pathname chmod is gone. Non-local stages (phones, GVfs) keep the gio path and their backend's mode. Test a_stage_gets_its_mode_through_the_open_file_not_its_name failed before (0600 after writing), passes now; a link planted at the stage name is refused and its target keeps its content and 0600. The gio descriptor could not be used: borrowing its raw fd needs unsafe.
+FIXED 2 (P2, preferences.rs sidebar at window creation): apply_preferences now starts a sidebar without a saved width at the scaled default (the text size is drawn first). Test a_window_opened_at_large_text_starts_with_wide_defaults failed before (210), passes now (420; columns 282/270).
+FIXED 3 (P2, rich_text.rs surrogate pairs): a \uN high surrogate waits for the next \uN low one and they become one character; a lone half is U+FFFD. Test surrogate_pairs_are_read_as_one_character (emoji U+1F600, CJK U+20019, lone halves) failed before, passes now.
+FIXED 4 (P2, session_restore.rs cache before success): the remembered text is cleared when the background save fails, so the next 3 s tick retries. Test a_failed_save_of_the_open_tabs_is_tried_again (a folder at session.json's path, then removed) failed before (timed out), passes now.
+PASS after the fixes: python3 native/tools/check.py (Python 3.12): fmt, clippy, parity, driver tests pass; ox-app 2540 tests, 2 fail (sandboxed thumbnailer, same as main); remaining executables and doctests pass except the 9 admin_copy tests, same as main. python3 native/parity/check.py passes. PR text unchanged (the behavior it describes is the same).
