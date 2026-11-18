@@ -1,0 +1,22 @@
+STATUS: DONE
+HEAD: review4-bugs 04fa7ff92b91fdcb1a1f8db7eca49c0db19c5b44
+QUESTION: none
+NOTE: All 13 items fixed test-first on review4-bugs from upstream main 05831ab6 (16 commits, as addition-official, no trailers). Each new or changed test failed before its fix. UI items proved with xdotool on the release build as an unprivileged user on a private 1366x768 Xvfb at 1x (Openbox, xcompmgr, fictional files); item 10 in Weston (x11 backend, default panel) nested in a private Xvfb; items 9 and 13 read through AT-SPI. Two items needed a second fix after real-input checks: item 9 (GTK drops names on the generic role, so the scroller is now a group) and item 10 (assuming the window starts at the screen's top was not enough; on Wayland a menu now fits its window's bottom edge unless the window is maximized). No PR opened.
+
+PASS 1  Alt+D, Alt+D, typing goes into the address (list selection unchanged); Ctrl+L while editing selects all ("Sub" replaced "Notes"); review sequence ~/Documnets, Enter, Enter, Alt+D, Notes, Enter -> "can't find 'Notes'", no file opened. NAV-028 (Dolphin toggle) marked n-a.
+PASS 2  Extract all of Report.zip and Report.7z via the context menu: files -rw-r--r-- dated 2026-11-14 20:36 as in the archive, folders drwxr-xr-x (umask 022). Core tests for ZIP and 7z through GioExtractionOutput.
+PASS 3  200% text, Documents, Budget 2026: pane 524 px, "Text Document" and dates on one line, names column fits "Date modified"; back to 262 px at 100%.
+PASS 4  200%, open Documents, Ctrl+0: Date modified, Type and Size back at their 100% positions (Size was the column left at its 200% width).
+PASS 5  This PC opened and Details pane toggled: no Gtk-WARNING in the app's stderr; new test records GTK warnings.
+PASS 6  This PC opens with Local Disk focused (ring), not selected, "1 item", Details pane shows This PC.
+PASS 7  Local Disk in the Details pane: "8.68 GB free of" / "251 GB", number and unit never split (no-break space after translation; patterns unchanged).
+PASS 8  "hidden files" no longer shows Indexed folders; "status bar" shows Folder Options and not the Update button row; description-only words still find their setting.
+PASS 9  AT-SPI: Tab from the file list lands on "scroll pane 'Details pane'".
+PASS 10 Weston, window resized and moved lower but fully on screen: 2.0.20's View menu runs off the screen; fixed build ends at the window's bottom and scrolls to "Reset text size". X11 unchanged.
+PASS 11 Recycle Bin menu reads Hide section "Recent files and Recycle Bin" in full; menus grow to their longest row, up to 560 px.
+PASS 12 Shortcuts window: "Browser Back key", "Browser Forward key", "Browser Home key".
+PASS 13 AT-SPI: file list is "tree table 'Items View'" with the hint as its description.
+PASS checks (Rust 1.92.0 as CI pins): rustfmt, clippy -D warnings, parity/check.py, i18n check, sync-docs --check, audit-public-data.
+PASS full run, every test binary in check.py's isolation without stopping: 4,781 passed / 135 failed; all 135 fail on unchanged 05831ab6 too (89 picker private-bus, root-only permission tests, D-Bus service/portal tests, location_fixture_drift, launches refused as root).
+FAIL check.py itself: stops at display_scale, which fails on unchanged main too (the app refuses to run as root; the container has no other way to run it).
+NOT TESTED: 2x captures (user tests at 1x); translations; Wayland compositors other than Weston.
