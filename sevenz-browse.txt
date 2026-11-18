@@ -1,8 +1,13 @@
 STATUS: DONE
-HEAD: sevenz-browse 36cf872c906112c95a9abb24d0fbcaf19ea81c4f
+HEAD: sevenz-browse c501dd24c1794008e368b7fedcc44f79c7d9c0a2
 QUESTION: none
-NOTE: Merged upstream main 6b877562 (2.0.19), no rebase: kept main's Compress note ("Missing: password-protected ZIP (no AES encoder is linked)") and added the plain-folders sentence; markdown.json regenerated. aes256 and deflate not enabled; bzip2 on; Deflate and PPMd 7z refused plainly (PR Limits).
+NOTE: Fixed the four Codex findings on PR #360 test-first (each new test failed before its fix). check.py passes up to location_fixture_drift (fails on main too); parity, i18n, spelling and identity checks pass.
 
+PASS finding 1 (decode.rs:253, bytes decoded before a solid member): the bytes decoded before the wanted file now count; past 1 MiB they must be within the per-member size limit and from a block within the 1000:1 ratio limit, else MemberTooLarge before decoding; test a_late_file_behind_a_huge_compressed_stream_is_refused_without_decoding_it (64 MiB of zeros before notes.txt: preview and selected copy refused in under 2 s)
+PASS finding 2 (decode.rs:207, reopened stream): the decoder checks the reopened archive has the same length and first 32 bytes (start header with the last header's checksum) and refuses a changed one (new message "This 7z archive changed while it was read"); the crate now only reads the header the app checked, never the archive's own; test an_archive_replaced_between_reading_and_decoding_is_refused
+PASS finding 3 (header.rs:627, missing SubStreamsInfo): one file per block of the block's size; the checked header handed to the crate gets an empty record, since the crate itself needs it; test a_7z_without_a_substreams_record_lists_and_extracts
+PASS finding 4 (empty_page.rs:68, missing member): NotFound and NotDirectory keep the normal location page; the archive page is only for archives that cannot be read; test a_folder_missing_from_a_healthy_7z_is_not_reported_as_a_broken_archive
+PASS after the fixes: check.py (parity, icons, rustfmt, clippy -D warnings, then 35 test binaries incl. archive_seven_zip 20/20) until location_fixture_drift, which fails on main too; seven_zip_folder 5/6 in a filtered run (a_7z_follows_the_zip_settings times out only in filtered runs, passed in the last full run)
 PASS after the 2.0.19 merge: check.py (parity, icons, rustfmt, clippy -D warnings, then 35 test binaries incl. archive_seven_zip 17/17) until location_fixture_drift, which fails on main too; parity/check.py, i18n check, sync-docs --check pass; seven_zip_folder 4/5 in a filtered run (a_7z_follows_the_zip_settings times out only in filtered runs, passed in the full run); spelling and identity greps clean
 PASS core tests: 17 in native/crates/ox-core/tests/archive_seven_zip.rs; 14 failed before the reader, the BZip2 test failed before the feature (SevenZipMethod); all pass now
 PASS writer fix: a_7z_keeps_its_empty_folders_for_every_reader failed before (folders written as anti-items), passes after
