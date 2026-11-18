@@ -1,0 +1,16 @@
+STATUS: DONE
+HEAD: user-icon-files 42950b6ac3f6e85a05a770a7605f612d571b3ad6
+QUESTION: none
+NOTE: Opt-in Settings > Appearance > Icons row "Icons from Windows icon files" (off by default) plus "Windows icon files" (Choose files... / Clear). Only paths are stored (useIconFiles, iconFiles). ox_core::windows_icons reads RT_GROUP_ICON/RT_ICON from the chosen PE files with bounds-checked preads and caps, decodes PNG and 1/4/8/24/32-bit bitmap entries, and caches PNGs only in ~/.cache/winspace/windows-icons. imageres.dll(.mun) and shell32.dll(.mun) are matched by file name; 17 roles map to the group IDs from the brief. ArtImage asks one function (user_icons::texture_for) before drawing its own icon; This PC's drive tiles use user_icons::role_image. Best size per place and scale (smallest image >= device pixels). Missing, unreadable or broken files fall back to the built-in icon. No crate added (flate2 and crc32fast were already dependencies), so cargo-sources.json is unchanged. No Microsoft file or icon anywhere: tests and the chat captures use synthetic PE files with test patterns built in the test. LOOK-029 added to parity (done). .pot regenerated; no .po touched. Upstream main was still 05831ab6 before pushing (no icon-override work from upstream issue 357 to build on yet).
+
+PASS python3 native/parity/check.py
+PASS native/tools/check.py stages run with Rust 1.92.0: parity and driver unit tests, i18n check, drawn-icon guard, rustfmt, clippy -D warnings, doctests
+PASS ox-core windows_icons tests (12) and settings tests (2): parser bounds, every truncation, 3,000 seeded mutations, header bytes at extremes, caps, name matching, role table, cache reuse and pruning, fallback
+PASS ox-app user_icons tests (5) and Settings page test icons_from_windows_icon_files_are_off_until_chosen; whole settings_page suite 169/169 with OX_PYTHON_APP set
+PASS ox_app lib 2565 others passed in the full run before the settings-test update; the 21 failures there were 7 Settings tests counting the new rows (fixed in 42950b6a, rerun green) and root or Python-environment failures
+NOTE check.py itself cannot finish green in this container: it runs as root, so the app refuses to start (display_scale, launch) and permission tests are bypassed. Those executables and tests passed when rerun as user nobody under the same isolation. Two Python-fixture tests (python_fixture_matches_desktop_core_py, fuse_export_paths_match_native_opening_py) fail here because the container's Python 3.13 cannot import the system gi module and its ipaddress answers differently; unrelated to this change.
+PASS display_scale (2 tests, real run as nobody, 6.2 s)
+PASS public-data audit: no issues
+PASS chat-only captures (not committed): synthetic icon files, 1x and 2x, navigation pane, Details list, Settings rows ("17 of 17 icons come from the chosen files")
+NOT RUN GTK file dialog itself (portal); the test saves the chosen paths as the dialog's answer would
+NOT RUN real Windows imageres.dll.mun / shell32.dll.mun: by design no Microsoft file is in this environment
