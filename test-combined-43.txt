@@ -1,0 +1,30 @@
+STATUS: DONE
+HEAD: test-combined-43 71ba457b (the deb was built from exactly this tree; cargo clean before the release build; guard on HEAD and a clean tree before and after)
+DEB: claude/test-combined-43-deb 56629add
+  openxplorer_2.0.20+test43_all.deb (io.winspace.Development)
+  SHA256: c8bc0ba2997143db4d8e6e911a8223d91ae64c0c25e4567adf13eb32f480e5d6
+BASE: upstream main a77936a7 (2.0.20 plus the CONTRIBUTING / contributor licence change #365); upstream main is still a77936a7 (checked when pushing: a77936a7).
+
+MERGED HEAD:
+  user-icon-files 42950b6ac3f6e85a05a770a7605f612d571b3ad6 (the branch tip; 2 commits, 14e149a9 and 42950b6a, on 05831ab6 = 2.0.20) -> 71ba457b, clean. Main's #365 (CLA.md, CONTRIBUTING.md, README.md, .github) is kept as in main: the merge leaves those files identical to a77936a7.
+No conflicts, no glue. .pot, markdown.json and docs were already current (i18n check and sync-docs --check pass without regenerating).
+
+ZH_CN: native/po/zh_CN.po in the merge is byte-identical to main a77936a7's (cmp).
+
+WINDOWS ICON DATA: none in the deb.
+- The deb holds 382 files (every file is listed in test-combined-43-files.txt on this branch: mode, size, path).
+- No file named .dll, .mun, .ico, .exe, .cur or .res.
+- No file starts with a PE "MZ" header or an ICO/CUR header (checked by content on every file), and file(1) reports no MS Windows / PE32 / icon resource type.
+- The branch adds no binary file to the repository (all 9 new files are Rust sources; ox-core's windows_icons/synthetic.rs builds its test icons in code).
+- "imageres" / "shell32" (any case) occur in one file only, /opt/openxplorer/bin/openxplorer, as: the Settings row's search keywords and help text ("windows icons icon files choose browse imageres shell32 dll mun exe clear remove", "...imageres.dll.mun and shell32.dll.mun from a Windows installation...") and the file-name matching of IconLibrary::from_file_name in windows_icons/roles.rs ("imageres.dll", "shell32.dll"). No RT_GROUP_ICON or other resource data is embedded. The locale .mo files, docs and data files do not mention them.
+
+CHECKS on 71ba457b:
+- native/tools/check.py: inventories, parity, i18n and tool tests pass; it then stops at clippy on duration_suboptimal_units in ox-core files no branch touches (same on main). I ran its remaining steps with that lint (and map_unwrap_or, decimal_bitwise_operands) allowed: no drawn icons, rustfmt clean, clippy clean, every test binary plus doctests with OX_PYTHON_APP set.
+- parity/check.py, i18n check, sync-docs --check pass; cargo-sources.json matches a fresh run; the deb has rust-crates/sevenz-rust2-0.20.2.
+- Tests: 4900 passed, 23 failed. All 23 also fail on main a77936a7 (rerun there by name; environment: root, sandbox, Python fixtures, display scale), the same 23 as before. No branch-only, merge-only or flaky failure; every test the branch adds (ox-core windows_icons tests, ox-app user_icons tests, the Settings rows) passes.
+
+UNIQUE STRINGS IN THE BUILT BINARY (/opt/openxplorer/bin/openxplorer, grep -caF; none in main a77936a7's sources):
+  "Icons from Windows icon files" = 1 (the Settings row)
+  "load_icons" = 1 (ox_core::windows_icons::load_icons, function symbol; its error messages are not all kept as plain strings, e.g. "the file is not a Windows program or library" = 0, but "an icon is small", "decode_bitmap" and "read_rva" from the same module are present)
+POLKIT: record /var/lib/openxplorer/install-updates-without-password = "off" before install -> /etc/polkit-1/rules.d empty after install, record still "off". Purge left neither.
+IDENTITY: the 3 new commits (2 on the branch, 1 merge) and the deb commit are addition-official <239187859+addition-official@users.noreply.github.com> with no trailers; the owner's #363/#365 are in main, not new here. The added lines contain no email address and no other personal name. In the deb, AKolenda appears only in the upstream repository and update-check URLs; the other addresses are the same third-party set as before.
