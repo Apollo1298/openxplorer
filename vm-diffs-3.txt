@@ -1,7 +1,7 @@
 STATUS: DONE
-HEAD: vm-diffs-3 6260c78a
+HEAD: vm-diffs-3 c30ee80d4851254f293b2e52d9b9546daf565394
 QUESTION: none
-NOTE: Fixed the 3 review findings on PR #362 test-first (commit b5c24b71, plus a parity note fix 6260c78a); all 3 were real. The PR text is unchanged (no behavior it describes changed); its Model line still holds the placeholder, since this session does not write model identifiers into pushed files.
+NOTE: Fixed the 3 findings of the second review of PR #362 (on 6260c78a) test-first in c30ee80d; all 3 were real. No .po file was edited; only the .pot was regenerated. The PR text is unchanged (no behavior it describes changed); its Model line still holds the placeholder, since this session does not write model identifiers into pushed files.
 
 TESTS FIRST (each failed on unchanged main, run on main with only the test files copied in)
 FAIL (main) -> PASS: settings_page::tests::the_replaced_files_switch_is_off_by_default_and_saves_only_its_turning_on (main: "off by default, as in Windows")
@@ -90,6 +90,15 @@ PASS window::tests::tab* (64), window::tab_layout (7), window::tab_strip (3), wi
 PASS rustfmt, Clippy -D warnings with the workspace lints, parity/check.py, i18n check
 FAIL native/tools/check.py: stops at location_fixture_drift (python_fixture_matches_desktop_core_py), as on unchanged upstream 6b877562; everything before it passes
 PASS full run of every test binary with check.py's isolation: 4,794 passed / 33 failed; the 33 are exactly upstream 6b877562's 33 failures by name
+
+SECOND REVIEW (PR #362, on 6260c78a)
+FIXED 1 (resolved_transfer.rs:636, overwrite marker): correct. commit_replace now reports whether the name was taken when it committed (overwritten or merged into), and the engine lists only those destinations in a new TransferResult::overwritten; Replace's Undo record uses it. A conflict another program removed before the answered copy ran is published as any copy and undone as one; a merged folder still counts, so Undo never sends a merged folder to the Recycle Bin. Test ops_name_conflicts::a_conflict_gone_before_its_replace_is_undone_as_a_plain_copy fails on 6260c78a (the record said the file was overwritten), passes now. Not changed: a Recycle Bin restore's own overwrite path (restore_over) checks the item in the way just before its one rename, as before
+FIXED 2 (general_tab.rs:426, renamed link): correct. Properties keeps the window's extension setting and forces a whole name only for a folder or a link to a folder; any other name, a link's included, is shown as the view shows it, again after each rename. Test item_dialogs::a_link_renamed_in_properties_to_a_known_type_hides_its_extension_after (note-link renamed to note.txt reads "note" and "note Properties", then "memo" renames to memo.txt) fails on 6260c78a ("timed out waiting for the title to leave out .txt"), passes now
+FIXED 3 (journal.rs:143, plural): correct. The count goes through ngettext ("{count} file was replaced, ..." / "{count} files were replaced, ..."); only native/po/openxplorer.pot was regenerated, no .po file changed. Test journal::tests::the_count_of_replaced_files_has_plural_forms (the template has the msgid_plural) fails on 6260c78a, passes now
+PASS ops_name_conflicts (25), ops_undo (13), ops_restore_conflicts (16), ops_partial_failures (12), ops_transfer (13), ops_tab_transfer (20), transfer cases (137 + 137), ox_core transfer unit tests (37); window item_dialogs (65), name_conflicts (17), restore_conflicts (8), drag_and_drop (23), file_operations (30)
+PASS rustfmt, Clippy -D warnings with the workspace lints, parity/check.py, i18n check
+FAIL native/tools/check.py: first run stopped at integration_terminal (launch::a_folder_named_like_shell_code_stays_a_name: "JSON: EOF while parsing", reading the file the fake terminal writes), which then passed in the full sweep and 10 of 10 runs alone on both this branch and unchanged upstream; the second run got past it and stopped at location_fixture_drift, as on unchanged upstream 6b877562
+PASS full run of every test binary with check.py's isolation: 4,797 passed / 33 failed; the 33 are exactly upstream 6b877562's 33 failures by name
 
 CHECKS
 PASS cargo fmt --check, cargo clippy -D warnings with the workspace lints (Rust 1.92)
