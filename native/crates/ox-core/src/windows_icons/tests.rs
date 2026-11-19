@@ -8,14 +8,24 @@ use super::synthetic::{palette_bitmap, rgba_bitmap, test_pattern, SyntheticIconF
 use super::*;
 use crate::test_support::temporary_folder;
 
-/// The group IDs of `library`'s roles.
-fn groups_of(library: IconLibrary) -> Vec<u16> {
+/// The roles `library` draws.
+fn roles_of(library: IconLibrary) -> Vec<IconRole> {
     IconRole::ALL
         .into_iter()
-        .map(IconRole::source)
-        .filter(|(source, _)| *source == library)
-        .map(|(_, group)| group)
+        .filter(|role| role.source().0 == library)
         .collect()
+}
+
+/// The group IDs of `library`'s roles, each once: several roles may share
+/// a group.
+fn groups_of(library: IconLibrary) -> Vec<u16> {
+    let mut groups: Vec<u16> = roles_of(library)
+        .into_iter()
+        .map(|role| role.source().1)
+        .collect();
+    groups.sort_unstable();
+    groups.dedup();
+    groups
 }
 
 /// Writes a synthetic file called `name` with every group of `library`
@@ -288,29 +298,52 @@ fn files_are_recognized_by_name_with_or_without_mun() {
 #[test]
 fn every_role_has_its_windows_group() {
     use IconLibrary::{Imageres, Shell32};
+    use Provenance::{BestMatch, Verified};
+    // The special folders are the flat tiles of Windows 11 build 26200's
+    // known-folder DefaultIcon values, not the yellow 1001 to 1005 ones;
+    // every fixed drive, Local Disk included, is the plain drive (32).
     let expected = [
-        (IconRole::Folder, Imageres, 3),
-        (IconRole::Desktop, Imageres, 183),
-        (IconRole::Downloads, Imageres, 184),
-        (IconRole::Documents, Imageres, 1002),
-        (IconRole::Pictures, Imageres, 1003),
-        (IconRole::Music, Imageres, 1004),
-        (IconRole::Videos, Imageres, 1005),
-        (IconRole::Home, Shell32, 51380),
-        (IconRole::Gallery, Shell32, 51586),
-        (IconRole::ThisPc, Imageres, 109),
-        (IconRole::Drive, Imageres, 32),
-        (IconRole::SystemDrive, Imageres, 36),
-        (IconRole::RecycleBinEmpty, Imageres, 55),
-        (IconRole::RecycleBinFull, Imageres, 54),
-        (IconRole::ZipFolder, Imageres, 175),
-        (IconRole::TextFile, Imageres, 102),
-        (IconRole::GenericFile, Imageres, 2),
+        (IconRole::Folder, Imageres, 3, Verified),
+        (IconRole::Desktop, Imageres, 183, Verified),
+        (IconRole::Downloads, Imageres, 184, Verified),
+        (IconRole::Documents, Imageres, 112, Verified),
+        (IconRole::Pictures, Imageres, 113, Verified),
+        (IconRole::Music, Imageres, 108, Verified),
+        (IconRole::Videos, Imageres, 189, Verified),
+        (IconRole::Home, Shell32, 51380, Verified),
+        (IconRole::Gallery, Shell32, 51586, Verified),
+        (IconRole::ThisPc, Imageres, 109, Verified),
+        (IconRole::Network, Imageres, 25, Verified),
+        (IconRole::NetworkComputer, Imageres, 104, BestMatch),
+        (IconRole::NetworkShare, Imageres, 28, BestMatch),
+        (IconRole::NetworkDrive, Imageres, 33, BestMatch),
+        (IconRole::NetworkDriveDisconnected, Imageres, 31, BestMatch),
+        (IconRole::Drive, Imageres, 32, Verified),
+        (IconRole::RemovableDrive, Imageres, 30, BestMatch),
+        (IconRole::OpticalDrive, Imageres, 56, BestMatch),
+        (IconRole::RecycleBinEmpty, Imageres, 55, Verified),
+        (IconRole::RecycleBinFull, Imageres, 54, Verified),
+        (IconRole::ZipFolder, Imageres, 175, Verified),
+        (IconRole::TextFile, Imageres, 102, Verified),
+        (IconRole::ImageFile, Imageres, 72, BestMatch),
+        (IconRole::AudioFile, Imageres, 125, BestMatch),
+        (IconRole::VideoFile, Imageres, 127, BestMatch),
+        (IconRole::Executable, Imageres, 15, BestMatch),
+        (IconRole::Script, Imageres, 68, BestMatch),
+        (IconRole::Shortcut, Imageres, 15, BestMatch),
+        (IconRole::GenericFile, Imageres, 2, Verified),
+        (IconRole::Settings, Shell32, 16826, BestMatch),
     ];
     assert_eq!(expected.len(), IconRole::ALL.len());
-    for (role, library, group) in expected {
-        assert_eq!(role.source(), (library, group), "{role:?}");
+    for (role, library, group, provenance) in expected {
+        assert_eq!(role.source(), (library, group, provenance), "{role:?}");
         assert_eq!(IconRole::from_key(role.key()), Some(role));
+    }
+    for old in [1002, 1003, 1004, 1005, 36] {
+        assert!(
+            IconRole::ALL.iter().all(|role| role.source().1 != old),
+            "group {old} is no longer used"
+        );
     }
 }
 
@@ -384,7 +417,7 @@ fn files_that_give_nothing_leave_the_built_in_icons() {
 
     let real = write_library(folder.path(), "imageres.dll.mun", IconLibrary::Imageres);
     let after_stub = load_icons(&[stub, damaged, real], &cache);
-    assert_eq!(after_stub.found(), groups_of(IconLibrary::Imageres).len());
+    assert_eq!(after_stub.found(), roles_of(IconLibrary::Imageres).len());
     assert!(
         after_stub.images(IconRole::Home).is_empty(),
         "shell32 was damaged"
@@ -408,7 +441,11 @@ fn the_cache_follows_the_chosen_files() {
         found.sort();
         found
     };
-    assert_eq!(load_icons(std::slice::from_ref(&imageres), &cache).found(), 15);
+    let imageres_roles = roles_of(IconLibrary::Imageres).len();
+    assert_eq!(
+        load_icons(std::slice::from_ref(&imageres), &cache).found(),
+        imageres_roles
+    );
     let first = folders();
     assert_eq!(first.len(), 1);
 

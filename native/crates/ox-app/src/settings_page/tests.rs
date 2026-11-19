@@ -1470,7 +1470,7 @@ fn icons_from_windows_icon_files_are_off_until_chosen() {
 
     let folder = tempfile::tempdir().expect("a temporary folder");
     let imageres = folder.path().join("imageres.dll.mun");
-    std::fs::write(&imageres, SyntheticIconFile::with_groups(&[3, 36]).build()).expect("written");
+    std::fs::write(&imageres, SyntheticIconFile::with_groups(&[3, 32]).build()).expect("written");
     switch.set_active(true);
     wait_until("the switch to be saved", || {
         settings.saved_preferences().use_icon_files
@@ -1495,7 +1495,7 @@ fn icons_from_windows_icon_files_are_off_until_chosen() {
     assert!(clear.is_sensitive());
     let sidebar_drive = descendants::<ArtImage>(&settings.test.window)
         .into_iter()
-        .find(|image| image.art() == Some(Art::SystemDrive))
+        .find(|image| image.art() == Some(Art::Glyph(crate::icons::Icon::HardDrive)))
         .expect("the navigation pane shows Local Disk");
     wait_until("Local Disk to show the file's icon", || {
         sidebar_drive.shows_user_icon()

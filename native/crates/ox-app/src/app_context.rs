@@ -551,10 +551,12 @@ impl AppContext {
     /// Draws the icons of the Windows icon files the user chose, when that
     /// is on, now and whenever the settings change (LOOK-029).
     fn follow_icon_files(&self) {
+        crate::icons::user_icons::remember_standard_folders(&self.known_folders());
         crate::icons::user_icons::follow_preferences(&self.settings_data().preferences);
         let context = self.downgrade();
         self.connect_places_changed(move || {
             if let Some(context) = context.upgrade() {
+                crate::icons::user_icons::remember_standard_folders(&context.known_folders());
                 crate::icons::user_icons::follow_preferences(&context.settings_data().preferences);
             }
         });

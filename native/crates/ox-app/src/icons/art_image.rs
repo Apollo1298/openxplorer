@@ -43,6 +43,15 @@ struct ShownArt {
     size: i32,
 }
 
+/// A function [`ArtImage::connect_drawn`] calls after each drawing.
+struct DrawnHook(Box<dyn Fn(&ArtImage)>);
+
+impl std::fmt::Debug for DrawnHook {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("DrawnHook")
+    }
+}
+
 /// The two boxes of the Windows-style network bar: a short stem under the
 /// picture and a bar as wide as the icon.
 #[derive(Debug)]
@@ -134,13 +143,13 @@ fn decorative_box(class: &str) -> gtk::Box {
 }
 
 mod imp {
-    use std::cell::{Cell, OnceCell};
+    use std::cell::{Cell, OnceCell, RefCell};
 
     use gtk::glib;
     use gtk::prelude::*;
     use gtk::subclass::prelude::*;
 
-    use super::{BadgePieces, EmblemPieces, NetworkBarPieces, ShownArt};
+    use super::{BadgePieces, DrawnHook, EmblemPieces, NetworkBarPieces, ShownArt};
 
     /// Private state of [`super::ArtImage`]: the picture in a column that
     /// holds the stem and the bar under it once they are needed, in an
@@ -161,6 +170,9 @@ mod imp {
         pub(super) emblems: OnceCell<EmblemPieces>,
         /// What is shown now, if anything.
         pub(super) shown: Cell<Option<ShownArt>>,
+        /// Called after every drawing, for what depends on whether a
+        /// Windows icon file's picture shows.
+        pub(super) drawn_hooks: RefCell<Vec<DrawnHook>>,
     }
 
     impl Default for ArtImage {
@@ -178,6 +190,7 @@ mod imp {
                 badge: OnceCell::new(),
                 emblems: OnceCell::new(),
                 shown: Cell::new(None),
+                drawn_hooks: RefCell::new(Vec::new()),
             }
         }
     }
@@ -307,17 +320,29 @@ impl ArtImage {
             image.set_css_classes(&[USER_ICON_CLASS]);
             self.show_network_bar(None, size);
             self.show_badge(None);
-            return;
+        } else {
+            let composition = compose(art, size);
+            self.show_picture(&composition.picture);
+            self.show_network_bar(composition.network_bar, size);
+            self.show_badge(composition.badge);
         }
-        let composition = compose(art, size);
-        self.show_picture(&composition.picture);
-        self.show_network_bar(composition.network_bar, size);
-        self.show_badge(composition.badge);
+        for hook in self.imp().drawn_hooks.borrow().iter() {
+            (hook.0)(self);
+        }
     }
 
-    /// Whether the image shows a picture from a Windows icon file, for
-    /// tests.
-    #[cfg(test)]
+    /// Calls `hook` now and after every drawing, such as a Home tile
+    /// hiding its standard folder's glyph while a Windows icon file draws
+    /// the whole folder.
+    pub(crate) fn connect_drawn(&self, hook: impl Fn(&Self) + 'static) {
+        hook(self);
+        self.imp()
+            .drawn_hooks
+            .borrow_mut()
+            .push(DrawnHook(Box::new(hook)));
+    }
+
+    /// Whether the image shows a picture from a Windows icon file.
     pub(crate) fn shows_user_icon(&self) -> bool {
         self.imp().picture.has_css_class(USER_ICON_CLASS)
     }

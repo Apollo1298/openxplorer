@@ -192,10 +192,6 @@ fn saved_search_entry(search: &SavedSearch, locations: &LocationContext) -> Side
 }
 
 fn drive_entry(row: &VolumeRow, locations: &LocationContext) -> SidebarEntry {
-    let glyph = match row.kind {
-        VolumeKind::Device => Icon::Phone,
-        VolumeKind::Drive => Icon::HardDrive,
-    };
     let (target, tooltip) = match &row.state {
         VolumeState::Mounted { uri, .. } => {
             (RowTarget::Location(uri.clone()), locations.display_location(uri))
@@ -206,7 +202,7 @@ fn drive_entry(row: &VolumeRow, locations: &LocationContext) -> SidebarEntry {
         section: Section::ThisPc,
         level: RowLevel::Child,
         label: row.label.clone(),
-        icon: Art::Glyph(glyph),
+        icon: row.art(),
         target,
         tooltip,
         pinned: false,
@@ -290,7 +286,7 @@ fn local_disk_entry(locations: &LocationContext) -> SidebarEntry {
         section: Section::ThisPc,
         level: RowLevel::Child,
         label: ox_core::i18n::gettext("Local Disk"),
-        icon: Art::SystemDrive,
+        icon: Art::Glyph(Icon::HardDrive),
         target: RowTarget::Location(root.to_owned()),
         tooltip: locations.display_location(root),
         pinned: false,
@@ -631,6 +627,7 @@ mod tests {
                     can_stop: true,
                     can_open_in_disks: false,
                     can_format: false,
+                    is_optical: false,
                 },
             },
         };
@@ -676,7 +673,7 @@ mod tests {
             icon_of("Network"),
             Some(Art::TintedGlyph(Icon::Organization, Tint::Network))
         );
-        assert_eq!(icon_of("Local Disk"), Some(Art::SystemDrive));
+        assert_eq!(icon_of("Local Disk"), Some(Art::Glyph(Icon::HardDrive)));
     }
 
     /// parity: SIDE-006

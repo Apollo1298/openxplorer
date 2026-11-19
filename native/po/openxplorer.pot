@@ -3074,7 +3074,7 @@ msgid "Show more items in the tab menu"
 msgstr ""
 
 #: crates/ox-app/src/settings_page/appearance.rs
-msgid "Shows folders, drives, Home, Gallery, This PC, the Recycle Bin, the standard folders and some file types with the icons of Windows icon files you choose, such as imageres.dll.mun and shell32.dll.mun from a Windows installation. OpenXplorer includes no Windows icons: it reads the files you choose while it runs and keeps their pictures only in your cache folder. Anything the files do not have keeps OpenXplorer's own icon."
+msgid "Shows folders, the standard folders, drives, Home, Gallery, This PC, Network, the Recycle Bin, Settings and common file types with the icons of Windows icon files you choose, such as imageres.dll.mun and shell32.dll.mun from a Windows installation. OpenXplorer includes no Windows icons: it reads the files you choose while it runs and keeps their pictures only in your cache folder. Anything the files do not have keeps OpenXplorer's own icon."
 msgstr ""
 
 #: crates/ox-app/src/settings_page/appearance.rs

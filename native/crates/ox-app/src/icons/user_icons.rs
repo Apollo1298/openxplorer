@@ -29,7 +29,8 @@ use ox_core::places::KnownFolder;
 use ox_core::settings::Preferences;
 use ox_core::windows_icons::{IconRole, LoadedIcons};
 
-use super::{Art, ArtImage, FileType, Icon, Tint};
+use super::art::{NetworkArt, NetworkPlace};
+use super::{Art, ArtImage, Connection, FileType, Icon, Medium, Tint};
 
 /// Where the icons from the chosen files stand.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -46,10 +47,11 @@ pub(crate) enum Status {
 }
 
 /// A plain image showing a role's icon, or `fallback` when the files do
-/// not draw it, such as a drive's tile in This PC.
+/// not draw it, such as a drive's tile in This PC or the address bar's
+/// icon; no role shows `fallback` alone.
 struct RoleImage {
     image: glib::WeakRef<gtk::Image>,
-    role: IconRole,
+    role: Option<IconRole>,
     fallback: Icon,
     size: i32,
 }
@@ -97,31 +99,68 @@ impl Default for State {
 
 thread_local! {
     static STATE: RefCell<State> = RefCell::new(State::default());
+    /// Where the standard folders are, by location.
+    static STANDARD_FOLDERS: RefCell<Vec<(String, KnownFolder)>> = const { RefCell::new(Vec::new()) };
 }
 
 /// The role `art` stands for, when a Windows icon file can draw it: the
-/// folder, a ZIP archive, a text file and a file of a type without its
-/// own icon, a drive and Local Disk, the Recycle Bin empty (its plain
-/// glyph) and full (its tinted one), Home, Gallery, This PC and the six
-/// standard folders. Network locations and every other glyph keep the
-/// app's own icons.
+/// folders, standard folders (as places, as listed items and on the
+/// network), drives by their medium, the Recycle Bin empty (its plain
+/// glyph) and full (its tinted one), Home, Gallery, This PC, Network and
+/// the places in it, the Settings tab, and files by kind. A disconnected
+/// share and every other glyph keep the app's own icons.
 pub(crate) fn role_of(art: Art) -> Option<IconRole> {
     let role = match art {
         Art::Folder => IconRole::Folder,
-        Art::ZipFolder => IconRole::ZipFolder,
-        Art::File(FileType::Text) => IconRole::TextFile,
-        Art::File(FileType::Document) => IconRole::GenericFile,
-        Art::SystemDrive => IconRole::SystemDrive,
+        Art::StandardFolder(folder) => known_folder_role(folder).unwrap_or(IconRole::Folder),
+        Art::ZipFolder | Art::File(FileType::Archive) => IconRole::ZipFolder,
+        Art::File(file_type) => file_role(file_type),
         Art::Glyph(Icon::HardDrive) => IconRole::Drive,
+        Art::RemovableDrive(Medium::Disk) => IconRole::RemovableDrive,
+        Art::RemovableDrive(Medium::Optical) => IconRole::OpticalDrive,
         Art::Glyph(Icon::Delete) => IconRole::RecycleBinEmpty,
         Art::TintedGlyph(Icon::Delete, _) => IconRole::RecycleBinFull,
         Art::Glyph(Icon::Home) | Art::TintedGlyph(Icon::Home, _) => IconRole::Home,
         Art::TintedGlyph(Icon::Image, Tint::Home) => IconRole::Gallery,
-        Art::TintedGlyph(Icon::Laptop, Tint::ThisPc) => IconRole::ThisPc,
+        Art::Glyph(Icon::Laptop) | Art::TintedGlyph(Icon::Laptop, Tint::ThisPc) => IconRole::ThisPc,
+        Art::Glyph(Icon::Organization) | Art::TintedGlyph(Icon::Organization, _) => IconRole::Network,
+        Art::Glyph(Icon::Settings) => IconRole::Settings,
         Art::TintedGlyph(_, Tint::KnownFolder(folder)) => known_folder_role(folder)?,
-        _ => return None,
+        Art::Network(network) => network_role(network)?,
+        Art::Glyph(_) | Art::TintedGlyph(..) => return None,
     };
     Some(role)
+}
+
+/// The role of a file of `file_type`: its own for text, pictures, audio,
+/// video, programs, scripts and shortcuts; the blank page Windows shows
+/// for a file no installed app claims for every other kind.
+const fn file_role(file_type: FileType) -> IconRole {
+    match file_type {
+        FileType::Text => IconRole::TextFile,
+        FileType::Image => IconRole::ImageFile,
+        FileType::Audio => IconRole::AudioFile,
+        FileType::Video => IconRole::VideoFile,
+        FileType::Executable => IconRole::Executable,
+        FileType::Script => IconRole::Script,
+        FileType::Shortcut => IconRole::Shortcut,
+        FileType::Archive => IconRole::ZipFolder,
+        FileType::Document | FileType::Pdf | FileType::Spreadsheet | FileType::Code => IconRole::GenericFile,
+    }
+}
+
+/// The role of a network location: a server's computer, a share, a mapped
+/// drive connected or not, and a standard folder moved onto the network
+/// as that folder. A disconnected share keeps the app's red cross.
+fn network_role(network: NetworkArt) -> Option<IconRole> {
+    let connected = network.connection == Connection::Connected;
+    match network.place {
+        NetworkPlace::Server => Some(IconRole::NetworkComputer),
+        NetworkPlace::Share => connected.then_some(IconRole::NetworkShare),
+        NetworkPlace::MappedDrive if connected => Some(IconRole::NetworkDrive),
+        NetworkPlace::MappedDrive => Some(IconRole::NetworkDriveDisconnected),
+        NetworkPlace::KnownFolder(folder) => known_folder_role(folder),
+    }
 }
 
 /// The role of a standard folder with an icon of its own.
@@ -257,29 +296,85 @@ pub(super) fn register(image: &ArtImage) {
 /// choice as an [`ArtImage`] does.
 pub(crate) fn role_image(role: IconRole, fallback: Icon, size: i32) -> gtk::Image {
     let image = super::image(fallback, size);
-    show_role(&image, role, fallback, size);
-    image.connect_scale_factor_notify(move |image| show_role(image, role, fallback, size));
-    STATE.with_borrow_mut(|state| {
+    show_icon(&image, Some(role), fallback, size);
+    image
+}
+
+/// Shows `role`'s icon from the chosen files in `image` at `size` logical
+/// pixels, or `fallback` when there is no role or no picture for it, and
+/// keeps doing so when the files or the image's scale change. Showing
+/// another role in the same image replaces the first.
+pub(crate) fn show_icon(image: &gtk::Image, role: Option<IconRole>, fallback: Icon, size: i32) {
+    let is_new = STATE.with_borrow_mut(|state| {
         state.role_images.retain(|kept| kept.image.upgrade().is_some());
+        let kept = state
+            .role_images
+            .iter_mut()
+            .find(|kept| kept.image.upgrade().as_ref() == Some(image));
+        if let Some(kept) = kept {
+            kept.role = role;
+            kept.fallback = fallback;
+            kept.size = size;
+            return false;
+        }
         state.role_images.push(RoleImage {
             image: image.downgrade(),
             role,
             fallback,
             size,
         });
+        true
     });
-    image
+    if is_new {
+        image.connect_scale_factor_notify(redraw_role_image);
+    }
+    show_role(image, role, fallback, size);
+}
+
+/// Draws `image` again with the role it was last given.
+fn redraw_role_image(image: &gtk::Image) {
+    let shown = STATE.with_borrow(|state| {
+        state
+            .role_images
+            .iter()
+            .find(|kept| kept.image.upgrade().as_ref() == Some(image))
+            .map(|kept| (kept.role, kept.fallback, kept.size))
+    });
+    if let Some((role, fallback, size)) = shown {
+        show_role(image, role, fallback, size);
+    }
 }
 
 /// Shows `role` in `image`, or `fallback` when there is no texture for it.
-fn show_role(image: &gtk::Image, role: IconRole, fallback: Icon, size: i32) {
-    match texture_of(role, size, image.scale_factor()) {
+fn show_role(image: &gtk::Image, role: Option<IconRole>, fallback: Icon, size: i32) {
+    match role.and_then(|role| texture_of(role, size, image.scale_factor())) {
         Some(texture) => {
             image.set_paintable(Some(&texture));
             image.set_pixel_size(size);
         }
         None => super::set_icon(image, fallback, size),
     }
+}
+
+/// Remembers where the standard folders are, so a listed folder there is
+/// [`Art::StandardFolder`]; the app context calls it whenever they move.
+pub(crate) fn remember_standard_folders(places: &[ox_core::places::Place]) {
+    let folders: Vec<(String, KnownFolder)> = places
+        .iter()
+        .filter_map(|place| Some((place.uri.clone(), place.known_folder?)))
+        .filter(|(_, folder)| KnownFolder::QUICK_ACCESS.contains(folder))
+        .collect();
+    STANDARD_FOLDERS.with_borrow_mut(|known| *known = folders);
+}
+
+/// The standard folder at `uri`, if one is there.
+pub(crate) fn standard_folder_at(uri: &str) -> Option<KnownFolder> {
+    STANDARD_FOLDERS.with_borrow(|known| {
+        known
+            .iter()
+            .find(|(place, _)| ox_core::location::same_location(place, uri))
+            .map(|(_, folder)| *folder)
+    })
 }
 
 /// Redraws every image after a change, and tells the status followers.
@@ -290,7 +385,7 @@ fn redraw_all() {
             .iter()
             .filter_map(glib::WeakRef::upgrade)
             .collect();
-        let role_images: Vec<(gtk::Image, IconRole, Icon, i32)> = state
+        let role_images: Vec<(gtk::Image, Option<IconRole>, Icon, i32)> = state
             .role_images
             .iter()
             .filter_map(|kept| Some((kept.image.upgrade()?, kept.role, kept.fallback, kept.size)))

@@ -108,8 +108,8 @@ const MORE_TAB_MENU_ITEMS: RowText = RowText {
 
 const ICON_FILES: RowText = RowText {
     title: "Icons from Windows icon files",
-    description: "Shows folders, drives, Home, Gallery, This PC, the Recycle Bin, the standard folders \
-                  and some file types with the icons of Windows icon files you choose, such as \
+    description: "Shows folders, the standard folders, drives, Home, Gallery, This PC, Network, the \
+                  Recycle Bin, Settings and common file types with the icons of Windows icon files you choose, such as \
                   imageres.dll.mun and shell32.dll.mun from a Windows installation. OpenXplorer includes \
                   no Windows icons: it reads the files you choose while it runs and keeps their pictures \
                   only in your cache folder. Anything the files do not have keeps OpenXplorer's own icon.",

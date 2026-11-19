@@ -13,7 +13,7 @@ use ox_core::windows_icons::{IconLibrary, IconRole};
 
 use super::*;
 use crate::icons::art::{NetworkArt, NetworkPlace};
-use crate::icons::Connection;
+use crate::icons::{Connection, Medium};
 
 /// Turns the icons off again when a test ends, also when it fails, so the
 /// next test starts with the app's own icons.
@@ -34,12 +34,14 @@ fn write_both_libraries(folder: &Path) -> Vec<PathBuf> {
     ]
     .into_iter()
     .map(|(name, library)| {
-        let groups: Vec<u16> = IconRole::ALL
+        let mut groups: Vec<u16> = IconRole::ALL
             .into_iter()
             .map(IconRole::source)
-            .filter(|(source, _)| *source == library)
-            .map(|(_, group)| group)
+            .filter(|(source, _, _)| *source == library)
+            .map(|(_, group, _)| group)
             .collect();
+        groups.sort_unstable();
+        groups.dedup();
         let path = folder.join(name);
         std::fs::write(&path, SyntheticIconFile::with_groups(&groups).build()).expect("written");
         path
@@ -61,16 +63,38 @@ fn texture_edge(role: IconRole, size: i32, scale: i32) -> Option<i32> {
     texture_of(role, size, scale).map(|texture| texture.width())
 }
 
+/// A network location on the bar, as the art of a sidebar row shows it.
+fn network(place: NetworkPlace, connection: Connection) -> Art {
+    Art::Network(NetworkArt { place, connection })
+}
+
+/// Every role has the art that shows it, wherever that art is drawn: the
+/// standard folders as places, as listed items and on the network; the
+/// drives by their medium; the network's places; the file kinds; and the
+/// Settings tab.
+///
 /// parity: LOOK-029
 #[test]
 fn every_role_has_the_art_that_shows_it() {
+    use Connection::{Connected, Disconnected};
     let cases = [
         (Art::Folder, IconRole::Folder),
         (Art::ZipFolder, IconRole::ZipFolder),
+        (Art::File(FileType::Archive), IconRole::ZipFolder),
         (Art::File(FileType::Text), IconRole::TextFile),
+        (Art::File(FileType::Image), IconRole::ImageFile),
+        (Art::File(FileType::Audio), IconRole::AudioFile),
+        (Art::File(FileType::Video), IconRole::VideoFile),
+        (Art::File(FileType::Executable), IconRole::Executable),
+        (Art::File(FileType::Script), IconRole::Script),
+        (Art::File(FileType::Shortcut), IconRole::Shortcut),
         (Art::File(FileType::Document), IconRole::GenericFile),
+        (Art::File(FileType::Pdf), IconRole::GenericFile),
+        (Art::File(FileType::Spreadsheet), IconRole::GenericFile),
+        (Art::File(FileType::Code), IconRole::GenericFile),
         (Art::Glyph(Icon::HardDrive), IconRole::Drive),
-        (Art::SystemDrive, IconRole::SystemDrive),
+        (Art::RemovableDrive(Medium::Disk), IconRole::RemovableDrive),
+        (Art::RemovableDrive(Medium::Optical), IconRole::OpticalDrive),
         (Art::Glyph(Icon::Delete), IconRole::RecycleBinEmpty),
         (
             Art::TintedGlyph(Icon::Delete, Tint::Home),
@@ -80,6 +104,31 @@ fn every_role_has_the_art_that_shows_it() {
         (Art::Glyph(Icon::Home), IconRole::Home),
         (Art::TintedGlyph(Icon::Image, Tint::Home), IconRole::Gallery),
         (Art::TintedGlyph(Icon::Laptop, Tint::ThisPc), IconRole::ThisPc),
+        (Art::Glyph(Icon::Laptop), IconRole::ThisPc),
+        (
+            Art::TintedGlyph(Icon::Organization, Tint::Network),
+            IconRole::Network,
+        ),
+        (Art::Glyph(Icon::Organization), IconRole::Network),
+        (
+            network(NetworkPlace::Server, Connected),
+            IconRole::NetworkComputer,
+        ),
+        (network(NetworkPlace::Share, Connected), IconRole::NetworkShare),
+        (
+            network(NetworkPlace::MappedDrive, Connected),
+            IconRole::NetworkDrive,
+        ),
+        (
+            network(NetworkPlace::MappedDrive, Disconnected),
+            IconRole::NetworkDriveDisconnected,
+        ),
+        (
+            network(NetworkPlace::KnownFolder(KnownFolder::Music), Connected),
+            IconRole::Music,
+        ),
+        (Art::Glyph(Icon::Settings), IconRole::Settings),
+        (Art::StandardFolder(KnownFolder::Templates), IconRole::Folder),
     ];
     for (art, role) in cases {
         assert_eq!(role_of(art), Some(role), "{art:?}");
@@ -93,16 +142,46 @@ fn every_role_has_the_art_that_shows_it() {
         (KnownFolder::Videos, IconRole::Videos),
     ];
     for (folder, role) in folders {
-        assert_eq!(role_of(Art::for_known_folder(folder)), Some(role), "{folder:?}");
+        assert_eq!(
+            role_of(Art::for_known_folder(folder)),
+            Some(role),
+            "{folder:?} as a place"
+        );
+        assert_eq!(
+            role_of(Art::StandardFolder(folder)),
+            Some(role),
+            "{folder:?} as an item"
+        );
     }
-    let share = Art::Network(NetworkArt {
-        place: NetworkPlace::Share,
-        connection: Connection::Connected,
-    });
+    // Every role is reached by some art.
+    let reached: Vec<IconRole> = cases
+        .iter()
+        .chain(
+            folders
+                .iter()
+                .map(|(folder, role)| (Art::StandardFolder(*folder), *role))
+                .collect::<Vec<_>>()
+                .iter(),
+        )
+        .map(|(_, role)| *role)
+        .collect();
+    for role in IconRole::ALL {
+        assert!(reached.contains(&role), "{role:?} is drawn somewhere");
+    }
+}
+
+/// A disconnected share keeps the app's red cross, and the glyphs no
+/// Windows icon file draws keep the app's own.
+///
+/// parity: LOOK-029
+#[test]
+fn other_art_keeps_the_app_icons() {
+    use Connection::Disconnected;
     let others = [
-        share,
-        Art::File(FileType::Image),
+        network(NetworkPlace::Share, Disconnected),
         Art::Glyph(Icon::History),
+        Art::Glyph(Icon::Clock),
+        Art::Glyph(Icon::Phone),
         Art::Glyph(Icon::Image),
         Art::for_known_folder(KnownFolder::Templates),
     ];
@@ -143,7 +222,13 @@ fn chosen_files_draw_their_roles_at_the_best_size() {
     let files = write_both_libraries(folder.path());
     let folder_image = ArtImage::new(Art::Folder, 16);
     let zip = ArtImage::new(Art::ZipFolder, 48);
-    let share = ArtImage::new(Art::SHARE, 16);
+    let share = ArtImage::new(
+        Art::Network(NetworkArt {
+            place: NetworkPlace::Share,
+            connection: Connection::Disconnected,
+        }),
+        16,
+    );
 
     follow_preferences(&chosen(&files));
     wait_until_read();
@@ -174,7 +259,7 @@ fn chosen_files_draw_their_roles_at_the_best_size() {
     );
     assert!(
         !share.shows_user_icon(),
-        "a network location keeps the app's icon"
+        "a disconnected share keeps the app's red cross"
     );
     let new_image = ArtImage::new(Art::Glyph(Icon::HardDrive), 16);
     assert!(new_image.shows_user_icon(), "a new image starts with it");
@@ -234,7 +319,7 @@ fn a_role_image_shows_the_file_icon_or_its_glyph() {
     let _reset = Reset;
     let folder = tempfile::tempdir().expect("a temporary folder");
     let files = write_both_libraries(folder.path());
-    let tile = role_image(IconRole::SystemDrive, Icon::HardDrive, 48);
+    let tile = role_image(IconRole::RemovableDrive, Icon::HardDrive, 48);
     assert_eq!(tile.icon_name().as_deref(), Some(Icon::HardDrive.name()));
 
     follow_preferences(&chosen(&files));

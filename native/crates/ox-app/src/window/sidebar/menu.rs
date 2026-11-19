@@ -491,8 +491,10 @@ impl Sidebar {
             section = Some(entry.section);
             let glyph = match entry.icon {
                 Art::Glyph(icon) | Art::TintedGlyph(icon, _) => icon,
-                Art::SystemDrive => Icon::HardDrive,
-                Art::Folder | Art::ZipFolder | Art::File(_) | Art::Network(_) => Icon::Folder,
+                Art::RemovableDrive(_) => Icon::HardDrive,
+                Art::Folder | Art::StandardFolder(_) | Art::ZipFolder | Art::File(_) | Art::Network(_) => {
+                    Icon::Folder
+                }
             };
             menu.push(MenuItem::with_text_target(&entry.label, glyph, WindowAction::GoTo, uri).into());
         }

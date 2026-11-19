@@ -28,7 +28,7 @@ use super::{IconLibrary, IconRole};
 
 /// Changes whenever the reader would decode a file differently, so the
 /// cache of an earlier version is not used.
-const READER_VERSION: u32 = 1;
+const READER_VERSION: u32 = 2;
 
 /// The name of a cache folder's list of images.
 const INDEX: &str = "index";
@@ -122,8 +122,8 @@ pub fn load_icons(files: &[PathBuf], cache: &Path) -> LoadedIcons {
 }
 
 /// The name of the cache folder of `path`: a 64-bit FNV-1a hash of the
-/// reader's version and the file's path, size, modification time and
-/// inode, in hexadecimal.
+/// reader's version, the role table and the file's path, size,
+/// modification time and inode, in hexadecimal.
 fn cache_key(path: &Path, metadata: &fs::Metadata) -> String {
     let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
     let mut add = |bytes: &[u8]| {
@@ -133,6 +133,12 @@ fn cache_key(path: &Path, metadata: &fs::Metadata) -> String {
         }
     };
     add(&READER_VERSION.to_le_bytes());
+    // The role table too, so a change of a role's group reads afresh.
+    for role in IconRole::ALL {
+        let (_, group, _) = role.source();
+        add(role.key().as_bytes());
+        add(&group.to_le_bytes());
+    }
     add(path.as_os_str().as_bytes());
     add(&[0]);
     add(&metadata.len().to_le_bytes());
@@ -206,7 +212,7 @@ fn decode_file(path: &Path, library: IconLibrary) -> BTreeMap<(IconRole, u32), V
         return pictures;
     };
     for role in IconRole::ALL {
-        let (source, group) = role.source();
+        let (source, group, _) = role.source();
         if source != library {
             continue;
         }

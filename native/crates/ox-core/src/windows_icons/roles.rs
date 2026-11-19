@@ -56,25 +56,64 @@ pub enum IconRole {
     Gallery,
     /// This PC.
     ThisPc,
-    /// A drive.
+    /// Network, in the navigation pane and as a page.
+    Network,
+    /// A computer or server Network lists.
+    NetworkComputer,
+    /// A shared folder on a server.
+    NetworkShare,
+    /// A share mapped as a drive, connected.
+    NetworkDrive,
+    /// A share mapped as a drive, not connected.
+    NetworkDriveDisconnected,
+    /// A fixed drive, Local Disk among them.
     Drive,
-    /// The drive the system runs from (Local Disk).
-    SystemDrive,
+    /// A removable drive: a USB stick, an SD card, an external disk.
+    RemovableDrive,
+    /// An optical drive: a CD, DVD or Blu-ray disc.
+    OpticalDrive,
     /// The Recycle Bin with nothing in it.
     RecycleBinEmpty,
     /// The Recycle Bin with items in it.
     RecycleBinFull,
-    /// A ZIP archive, shown as a folder.
+    /// A ZIP archive, shown as a folder, and the other archives the app
+    /// opens (7z, TAR and its compressed forms).
     ZipFolder,
     /// A text file.
     TextFile,
-    /// A file of a type without an icon of its own.
+    /// A picture.
+    ImageFile,
+    /// Music or other audio.
+    AudioFile,
+    /// A video.
+    VideoFile,
+    /// A program.
+    Executable,
+    /// A script: shell, batch or `PowerShell`.
+    Script,
+    /// A shortcut: a `.desktop` launcher or a Windows `.lnk`.
+    Shortcut,
+    /// A file of a type without an icon of its own in these files: PDFs,
+    /// office documents, spreadsheets, code and unknown files, as Windows
+    /// shows a file no installed app claims.
     GenericFile,
+    /// The Settings page.
+    Settings,
+}
+
+/// Where a role's group number comes from.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Provenance {
+    /// Read from Windows 11's registry (a `DefaultIcon` value) or the
+    /// owner's check of the icon in a Windows 11 virtual machine.
+    Verified,
+    /// The closest picture on the icon sheet, not confirmed in Windows.
+    BestMatch,
 }
 
 impl IconRole {
     /// Every role, in the order of [`IconRole`].
-    pub const ALL: [IconRole; 17] = [
+    pub const ALL: [IconRole; 30] = [
         IconRole::Folder,
         IconRole::Desktop,
         IconRole::Downloads,
@@ -85,36 +124,66 @@ impl IconRole {
         IconRole::Home,
         IconRole::Gallery,
         IconRole::ThisPc,
+        IconRole::Network,
+        IconRole::NetworkComputer,
+        IconRole::NetworkShare,
+        IconRole::NetworkDrive,
+        IconRole::NetworkDriveDisconnected,
         IconRole::Drive,
-        IconRole::SystemDrive,
+        IconRole::RemovableDrive,
+        IconRole::OpticalDrive,
         IconRole::RecycleBinEmpty,
         IconRole::RecycleBinFull,
         IconRole::ZipFolder,
         IconRole::TextFile,
+        IconRole::ImageFile,
+        IconRole::AudioFile,
+        IconRole::VideoFile,
+        IconRole::Executable,
+        IconRole::Script,
+        IconRole::Shortcut,
         IconRole::GenericFile,
+        IconRole::Settings,
     ];
 
-    /// The file and icon group that draw this role.
-    pub const fn source(self) -> (IconLibrary, u16) {
+    /// The file and icon group that draw this role, and where the number
+    /// comes from. Several roles may share a group. The special folders
+    /// are the flat tiles their `HKCR\CLSID\{known folder}\DefaultIcon`
+    /// values name on Windows 11 build 26200, not the yellow folders with
+    /// an overlay (1001 to 1005) older Windows used.
+    pub const fn source(self) -> (IconLibrary, u16, Provenance) {
         use IconLibrary::{Imageres, Shell32};
+        use Provenance::{BestMatch, Verified};
         match self {
-            IconRole::Folder => (Imageres, 3),
-            IconRole::Desktop => (Imageres, 183),
-            IconRole::Downloads => (Imageres, 184),
-            IconRole::Documents => (Imageres, 1002),
-            IconRole::Pictures => (Imageres, 1003),
-            IconRole::Music => (Imageres, 1004),
-            IconRole::Videos => (Imageres, 1005),
-            IconRole::Home => (Shell32, 51380),
-            IconRole::Gallery => (Shell32, 51586),
-            IconRole::ThisPc => (Imageres, 109),
-            IconRole::Drive => (Imageres, 32),
-            IconRole::SystemDrive => (Imageres, 36),
-            IconRole::RecycleBinEmpty => (Imageres, 55),
-            IconRole::RecycleBinFull => (Imageres, 54),
-            IconRole::ZipFolder => (Imageres, 175),
-            IconRole::TextFile => (Imageres, 102),
-            IconRole::GenericFile => (Imageres, 2),
+            IconRole::Folder => (Imageres, 3, Verified),
+            IconRole::Desktop => (Imageres, 183, Verified),
+            IconRole::Downloads => (Imageres, 184, Verified),
+            IconRole::Documents => (Imageres, 112, Verified),
+            IconRole::Pictures => (Imageres, 113, Verified),
+            IconRole::Music => (Imageres, 108, Verified),
+            IconRole::Videos => (Imageres, 189, Verified),
+            IconRole::Home => (Shell32, 51380, Verified),
+            IconRole::Gallery => (Shell32, 51586, Verified),
+            IconRole::ThisPc => (Imageres, 109, Verified),
+            IconRole::Network => (Imageres, 25, Verified),
+            IconRole::NetworkComputer => (Imageres, 104, BestMatch),
+            IconRole::NetworkShare => (Imageres, 28, BestMatch),
+            IconRole::NetworkDrive => (Imageres, 33, BestMatch),
+            IconRole::NetworkDriveDisconnected => (Imageres, 31, BestMatch),
+            IconRole::Drive => (Imageres, 32, Verified),
+            IconRole::RemovableDrive => (Imageres, 30, BestMatch),
+            IconRole::OpticalDrive => (Imageres, 56, BestMatch),
+            IconRole::RecycleBinEmpty => (Imageres, 55, Verified),
+            IconRole::RecycleBinFull => (Imageres, 54, Verified),
+            IconRole::ZipFolder => (Imageres, 175, Verified),
+            IconRole::TextFile => (Imageres, 102, Verified),
+            IconRole::ImageFile => (Imageres, 72, BestMatch),
+            IconRole::AudioFile => (Imageres, 125, BestMatch),
+            IconRole::VideoFile => (Imageres, 127, BestMatch),
+            IconRole::Executable | IconRole::Shortcut => (Imageres, 15, BestMatch),
+            IconRole::Script => (Imageres, 68, BestMatch),
+            IconRole::GenericFile => (Imageres, 2, Verified),
+            IconRole::Settings => (Shell32, 16826, BestMatch),
         }
     }
 
@@ -131,13 +200,26 @@ impl IconRole {
             IconRole::Home => "home",
             IconRole::Gallery => "gallery",
             IconRole::ThisPc => "this-pc",
+            IconRole::Network => "network",
+            IconRole::NetworkComputer => "network-computer",
+            IconRole::NetworkShare => "network-share",
+            IconRole::NetworkDrive => "network-drive",
+            IconRole::NetworkDriveDisconnected => "network-drive-disconnected",
             IconRole::Drive => "drive",
-            IconRole::SystemDrive => "system-drive",
+            IconRole::RemovableDrive => "removable-drive",
+            IconRole::OpticalDrive => "optical-drive",
             IconRole::RecycleBinEmpty => "recycle-bin-empty",
             IconRole::RecycleBinFull => "recycle-bin-full",
             IconRole::ZipFolder => "zip-folder",
             IconRole::TextFile => "text-file",
+            IconRole::ImageFile => "image-file",
+            IconRole::AudioFile => "audio-file",
+            IconRole::VideoFile => "video-file",
+            IconRole::Executable => "executable",
+            IconRole::Script => "script",
+            IconRole::Shortcut => "shortcut",
             IconRole::GenericFile => "generic-file",
+            IconRole::Settings => "settings",
         }
     }
 

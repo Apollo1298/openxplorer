@@ -44,7 +44,6 @@ use crate::locations::Page;
 use crate::places::Places;
 use crate::text_size::TextSize;
 use crate::volumes::{MountControls, VolumeKind, VolumeRow, VolumeState};
-use ox_core::windows_icons::IconRole;
 
 use super::context_menu::{MENU_KEY, SHIFT_F10_KEY};
 use super::gestures;
@@ -289,16 +288,10 @@ fn drive_tile(row: &VolumeRow, cell: CellSize) -> Tile {
         VolumeState::Mountable { id } => id,
     };
     // The drive's picture from the user's Windows icon files, when they
-    // chose some (LOOK-029); Local Disk is the system drive.
-    let role = if key == "file:///" {
-        IconRole::SystemDrive
-    } else {
-        IconRole::Drive
-    };
-    let icon = if row.kind == VolumeKind::Drive {
-        icons::user_icons::role_image(role, glyph, TILES_ICON)
-    } else {
-        icons::image(glyph, TILES_ICON)
+    // chose some (LOOK-029): a fixed, removable or optical drive.
+    let icon = match icons::user_icons::role_of(row.art()) {
+        Some(role) => icons::user_icons::role_image(role, glyph, TILES_ICON),
+        None => icons::image(glyph, TILES_ICON),
     };
     let (child, lines) = tile_frame(&icon, &row.label, key, cell);
     if row.kind == VolumeKind::Device {

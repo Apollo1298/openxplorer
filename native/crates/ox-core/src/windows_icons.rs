@@ -28,4 +28,4 @@ mod tests;
 pub use cache::{cache_folder, load_icons, CachedImage, LoadedIcons, MAX_FILES};
 pub use pe::{IconFile, IconFileError, IconImage};
 pub use picture::{decode, encode_png, Decoded, Rgba};
-pub use roles::{IconLibrary, IconRole};
+pub use roles::{IconLibrary, IconRole, Provenance};

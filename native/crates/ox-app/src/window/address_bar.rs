@@ -34,6 +34,7 @@ use gtk::{gdk, gio, glib};
 use ox_core::location::Crumb;
 
 use crate::icons::{self, Icon};
+use ox_core::windows_icons::IconRole;
 
 use super::crumb_menus;
 use super::gestures;
@@ -305,9 +306,17 @@ impl AddressBar {
 
     /// Shows the location's crumbs, address text and icon. Text the user
     /// is typing is left alone.
-    pub(super) fn show_location(&self, crumbs: &[CrumbButton], address: &str, icon: Icon) {
+    pub(super) fn show_location(
+        &self,
+        crumbs: &[CrumbButton],
+        address: &str,
+        icon: Icon,
+        role: Option<IconRole>,
+    ) {
         let imp = self.imp();
-        icons::set_icon(&imp.icon, icon, ICON_SIZE);
+        // The location's picture from the user's Windows icon files, when
+        // they chose some (LOOK-029), else the app's glyph.
+        icons::user_icons::show_icon(&imp.icon, role, icon, ICON_SIZE);
         self.set_tooltip_text(Some(&ox_core::i18n::format_message(
             "{address} · Click blank space or press Ctrl+L to edit",
             &[("address", address)],
@@ -391,6 +400,12 @@ impl AddressBar {
         let focused = entry.has_focus() || entry.focus_child().is_some();
         let length = i32::try_from(entry.text().chars().count()).unwrap_or(i32::MAX);
         self.mode() == AddressMode::Entry && focused && entry.selection_bounds() == Some((0, length))
+    }
+
+    /// The location's icon, for tests.
+    #[cfg(test)]
+    pub(super) fn location_icon(&self) -> gtk::Image {
+        self.imp().icon.get()
     }
 
     /// The editable address, for tests.
