@@ -1,16 +1,46 @@
 STATUS: DONE
-HEAD: user-icon-files 42950b6ac3f6e85a05a770a7605f612d571b3ad6
-QUESTION: none
-NOTE: Opt-in Settings > Appearance > Icons row "Icons from Windows icon files" (off by default) plus "Windows icon files" (Choose files... / Clear). Only paths are stored (useIconFiles, iconFiles). ox_core::windows_icons reads RT_GROUP_ICON/RT_ICON from the chosen PE files with bounds-checked preads and caps, decodes PNG and 1/4/8/24/32-bit bitmap entries, and caches PNGs only in ~/.cache/winspace/windows-icons. imageres.dll(.mun) and shell32.dll(.mun) are matched by file name; 17 roles map to the group IDs from the brief. ArtImage asks one function (user_icons::texture_for) before drawing its own icon; This PC's drive tiles use user_icons::role_image. Best size per place and scale (smallest image >= device pixels). Missing, unreadable or broken files fall back to the built-in icon. No crate added (flate2 and crc32fast were already dependencies), so cargo-sources.json is unchanged. No Microsoft file or icon anywhere: tests and the chat captures use synthetic PE files with test patterns built in the test. LOOK-029 added to parity (done). .pot regenerated; no .po touched. Upstream main was still 05831ab6 before pushing (no icon-override work from upstream issue 357 to build on yet).
+HEAD: user-icon-files e8bf4f44 (fixes after the deb 43 test: 30f345fb roles, e8bf4f44 test and help-text fixes)
+QUESTION: Please confirm the BEST MATCH group numbers below against the icon sheet or the registry in the VM; each is one line in native/crates/ox-core/src/windows_icons/roles.rs (IconRole::source), and the cache rereads the files automatically when the table changes.
+NOTE: Round 2 from the deb 43 test. (1) The special folders now use the flat Windows 11 tiles everywhere they appear: nav pane, Home's Quick access tiles (the tile's small glyph steps aside), folder lists (new Art::StandardFolder for a listed folder at a standard folder's location) and the address bar (it now takes the same role as the tab). (2) Local Disk and every fixed drive use the plain drive 32; the system-drive role and group 36 are gone. Removable and optical drives get their own roles (eject/stop = removable, a /dev/sr device = optical). (3) Many more roles: Network, network computers, shares, mapped drives (connected and not), file kinds, Settings tab. A disconnected share keeps OpenXplorer's red cross. With the setting off nothing looks different: the new file kinds (PDF, archive, executable, script, shortcut) and the new Art values draw the same built-in icons as before. Command-bar and Details-pane glyphs are untouched (they come from a font in Windows). No .po touched; only synthetic PEs in tests and captures.
+
+ROLE TABLE (file, group, provenance)
+VERIFIED  Folder ............................ imageres 3
+VERIFIED  Desktop ........................... imageres 183 (per the VM note: its line scrolled off; 183 is the blue desktop tile on the sheet)
+VERIFIED  Downloads ......................... imageres 184
+VERIFIED  Documents ......................... imageres 112
+VERIFIED  Pictures .......................... imageres 113
+VERIFIED  Music ............................. imageres 108
+VERIFIED  Videos ............................ imageres 189
+VERIFIED  Home .............................. shell32 51380
+VERIFIED  Gallery ........................... shell32 51586
+VERIFIED  This PC ........................... imageres 109
+VERIFIED  Network (nav item and page) ....... imageres 25
+VERIFIED  Fixed drive, Local Disk included .. imageres 32
+VERIFIED  Recycle Bin empty / full .......... imageres 55 / 54 (nav pane row, tab, address bar)
+VERIFIED  ZIP folder ........................ imageres 175
+VERIFIED  Text file ......................... imageres 102
+VERIFIED  Generic / unknown file ............ imageres 2 (also PDFs, office documents, spreadsheets, code: Windows shows the blank page when no installed app claims them; PDF's own icon in Windows is Edge's, not in these files)
+BEST MATCH Network computer / server ........ imageres 104 (UNVERIFIED, as asked)
+BEST MATCH Network share .................... imageres 28
+BEST MATCH Mapped drive, connected .......... imageres 33
+BEST MATCH Mapped drive, disconnected ....... imageres 31
+BEST MATCH Removable / USB drive ............ imageres 30
+BEST MATCH Optical drive .................... imageres 56
+BEST MATCH Archives other than ZIP (7z, tar.*, rar) imageres 175 (the ZIP folder group; Windows 11 shows the compressed folder for the archives it opens)
+BEST MATCH Picture file ..................... imageres 72 (jpegfile DefaultIcon on Windows 10, from memory)
+BEST MATCH Audio file ....................... imageres 125 (guess)
+BEST MATCH Video file ....................... imageres 127 (guess)
+BEST MATCH Program (.exe, AppImage, ELF) .... imageres 15
+BEST MATCH Script (.sh, .bat, .cmd, .ps1) ... imageres 68 (batfile DefaultIcon on Windows 10, from memory)
+BEST MATCH Shortcut (.desktop, .lnk) ........ imageres 15 (Windows draws a .lnk as its target's icon; the program icon stands in)
+BEST MATCH Settings tab (gear) .............. shell32 16826
 
 PASS python3 native/parity/check.py
-PASS native/tools/check.py stages run with Rust 1.92.0: parity and driver unit tests, i18n check, drawn-icon guard, rustfmt, clippy -D warnings, doctests
-PASS ox-core windows_icons tests (12) and settings tests (2): parser bounds, every truncation, 3,000 seeded mutations, header bytes at extremes, caps, name matching, role table, cache reuse and pruning, fallback
-PASS ox-app user_icons tests (5) and Settings page test icons_from_windows_icon_files_are_off_until_chosen; whole settings_page suite 169/169 with OX_PYTHON_APP set
-PASS ox_app lib 2565 others passed in the full run before the settings-test update; the 21 failures there were 7 Settings tests counting the new rows (fixed in 42950b6a, rerun green) and root or Python-environment failures
-NOTE check.py itself cannot finish green in this container: it runs as root, so the app refuses to start (display_scale, launch) and permission tests are bypassed. Those executables and tests passed when rerun as user nobody under the same isolation. Two Python-fixture tests (python_fixture_matches_desktop_core_py, fuse_export_paths_match_native_opening_py) fail here because the container's Python 3.13 cannot import the system gi module and its ipaddress answers differently; unrelated to this change.
-PASS display_scale (2 tests, real run as nobody, 6.2 s)
-PASS public-data audit: no issues
-PASS chat-only captures (not committed): synthetic icon files, 1x and 2x, navigation pane, Details list, Settings rows ("17 of 17 icons come from the chosen files")
-NOT RUN GTK file dialog itself (portal); the test saves the chosen paths as the dialog's answer would
-NOT RUN real Windows imageres.dll.mun / shell32.dll.mun: by design no Microsoft file is in this environment
+PASS check.py stages with Rust 1.92.0: parity and driver unit tests, i18n check, rustfmt, clippy -D warnings, doctests
+PASS ox_core lib 1306/1307 under check.py isolation; the one failure (an_fstab_that_cannot_be_read_refuses) passes as user nobody
+PASS ox_app lib 2576/2591 in a full isolated run as root before e8bf4f44; of the 15 failures, 13 are root-bypassed permission or root-refused tests that pass as user nobody, my new window test (needed to accept a full Recycle Bin) and the settings no-match search (my help text matched "no such setting"), both fixed in e8bf4f44; after the fix settings_page::, icons::, windows_icon_files and search_history pass 180/180 as root
+PASS every other test executable, as root or (display_scale, integration_file_chooser, launch, ops_delete_plan) as user nobody
+NOTE location_fixture_drift and network_python's fuse_export test fail in this container only: its Python 3.13 cannot import the system gi module and its ipaddress answers differently; unrelated to icons
+PASS new tests: every_role_has_its_windows_group (table with provenance, 1002-1005 and 36 gone), every_role_has_the_art_that_shows_it, other_art_keeps_the_app_icons, windows_file_kinds_are_told_apart, windows_file_kinds_keep_the_built_in_icons, each_drive_shows_its_medium, every_place_of_a_window_takes_the_files_pictures (nav pane Network and Recycle Bin, Documents in a list, address bar, Music's Quick access tile with its glyph hidden, all back when turned off)
+PASS chat-only 1x captures with synthetic PEs whose tiles carry their group number (home folder, file kinds, Home page, This PC, Settings)
+NOT RUN real Windows files (none may be here); GTK's file dialog; network computers/shares and removable/optical drives on screen (no network or such media here; covered by the mapping tests)
