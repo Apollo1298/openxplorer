@@ -466,13 +466,24 @@ fn tile_rule(icon_size: IconSize, text_size: TextSize) -> String {
     format!("gridview.files.{class} > child {{ min-width: {width}px; min-height: {height}px; }}")
 }
 
+/// Pixels from one Small icons column to the next at 100%, as Windows 11
+/// spaces them (measured at 1920x1080, 100% scale).
+const SMALL_ICONS_COLUMN: f64 = 310.0;
+
+/// Pixels of a Small icons item outside its content box: 2 pixels of
+/// padding on each side (`folder-views.css`).
+const SMALL_ICONS_CHROME: i32 = 2 + 2;
+
 /// Small icons' items at `text_size`: as tall as List's
-/// ([`compact_rule`]), as Windows 11 lays Small icons out as List with
-/// narrower columns, and no wider than their icon and name.
+/// ([`compact_rule`]), as Windows 11 lays Small icons out as List, and
+/// wide enough that the columns are [`SMALL_ICONS_COLUMN`] pixels apart,
+/// growing with the text.
 fn small_icons_rule(text_size: TextSize) -> String {
     let height = compact_row(text_size) - 1;
+    let scale = text_size::metrics(text_size).scale;
+    let width = text_size::ceil_pixels(SMALL_ICONS_COLUMN * scale) - SMALL_ICONS_CHROME;
     let class = IconSize::SMALL.css_class();
-    format!("gridview.files.{class} > child {{ min-width: 0px; min-height: {height}px; }}")
+    format!("gridview.files.{class} > child {{ min-width: {width}px; min-height: {height}px; }}")
 }
 
 /// The height of the List layout's items at `text_size`
@@ -606,7 +617,9 @@ mod tests {
         assert!(css.contains("columnview.files > listview > row { min-height: 30px; }"));
         assert!(css.contains("gridview.files.icons-large > child { min-width: 96px; min-height: 144px; }"));
         assert!(css.contains("gridview.files.icons-56 > child { min-width: 56px; min-height: 104px; }"));
-        assert!(css.contains("gridview.files.icons-small > child { min-width: 0px; min-height: 25px; }"));
+        assert!(css.contains("gridview.files.icons-small > child { min-width: 306px; min-height: 25px; }"));
+        // Small icons' columns, 310 pixels apart at 100%, grow with the text.
+        assert!(css_at(200).contains("gridview.files.icons-small > child { min-width: 616px;"));
         assert!(
             css.contains("gridview.files.tiles > child > .item-cell:not(.group-slot) { min-height: 53px; }")
         );

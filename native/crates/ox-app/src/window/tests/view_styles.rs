@@ -944,13 +944,17 @@ fn the_compact_view_places_items_down_columns() {
 
 /// Small icons (Ctrl+Shift+4) are Windows 11's: a 16-pixel icon left of
 /// each name, in rows that fill a column top to bottom and then flow into
-/// the next column, which scrolls sideways as List does; the columns are
-/// narrower than List's, with a narrow gap between them.
+/// the next column, which scrolls sideways as List does. The columns are
+/// about 310 pixels apart at 100%, as measured in Windows 11 at 1920x1080,
+/// with a narrow gap between them: "Budget 2026 (2)" fits whole, and only
+/// a name wider than the column is cut.
 ///
 /// parity: VIEW-005, VIEW-008
 #[gtk::test]
 fn small_icons_put_the_icon_left_of_each_name_down_columns() {
     let fixture = Fixture::with_files(150);
+    fixture.write("Budget 2026 (2).txt");
+    fixture.write("Annual harbor survey with every appendix and the long correspondence.txt");
     let test = TestWindow::open(&fixture.uri());
     let pane = test.window.folder_pane();
     let view = pane.view_widget();
@@ -968,7 +972,6 @@ fn small_icons_put_the_icon_left_of_each_name_down_columns() {
         let next_column = cell(rows).compute_bounds(&view).expect("bounds");
         next_column.x() - first.x()
     };
-    let list = column_pitch(&test, "compact");
     let small = column_pitch(&test, "small");
     let first = cell(0);
     let bounds = first.compute_bounds(&view).expect("bounds");
@@ -993,9 +996,14 @@ fn small_icons_put_the_icon_left_of_each_name_down_columns() {
         "the icon and name share a line"
     );
     assert!(
-        small < list && small > 100.0,
-        "Small icons' columns ({small}) are narrower than List's ({list})"
+        (305.0..=315.0).contains(&small),
+        "Small icons' columns are about 310 pixels apart: {small}"
     );
+    assert!(first.name().starts_with("Annual"));
+    assert!(first.name_is_elided(), "a name wider than the column is cut");
+    let budget = cell(1);
+    assert_eq!(budget.name(), "Budget 2026 (2)");
+    assert!(!budget.name_is_elided(), "Budget 2026 (2) fits whole");
     let gap = small - bounds.width();
     assert!((0.0..=6.0).contains(&gap), "a narrow gap between columns: {gap}");
     let layout = pane.icon_view();
