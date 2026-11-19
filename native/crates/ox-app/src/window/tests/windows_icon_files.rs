@@ -111,11 +111,20 @@ fn every_place_of_a_window_takes_the_files_pictures() {
         Art::TintedGlyph(Icon::Organization, Tint::Network),
         "the navigation pane's Network",
     );
-    let bin = art_image(
-        &test.window,
-        Art::Glyph(Icon::Delete),
-        "the navigation pane's Recycle Bin",
-    );
+    // Empty, or full when earlier tests in the process left items in it.
+    let is_bin = |image: &ArtImage| {
+        matches!(
+            image.art(),
+            Some(Art::Glyph(Icon::Delete) | Art::TintedGlyph(Icon::Delete, _))
+        )
+    };
+    wait_until("the navigation pane's Recycle Bin", || {
+        descendants::<ArtImage>(&test.window).iter().any(is_bin)
+    });
+    let bin = descendants::<ArtImage>(&test.window)
+        .into_iter()
+        .find(is_bin)
+        .expect("found above");
     let documents = art_image(
         &test.window,
         Art::StandardFolder(KnownFolder::Documents),
