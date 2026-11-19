@@ -1,9 +1,9 @@
 STATUS: DONE
-HEAD: user-icon-files e8bf4f44 (fixes after the deb 43 test: 30f345fb roles, e8bf4f44 test and help-text fixes)
-QUESTION: Please confirm the BEST MATCH group numbers below against the icon sheet or the registry in the VM; each is one line in native/crates/ox-core/src/windows_icons/roles.rs (IconRole::source), and the cache rereads the files automatically when the table changes.
+HEAD: user-icon-files b42c943b (after the deb 43 test: 30f345fb roles, e8bf4f44 test and help-text fixes, b42c943b file icons per the sheet check)
+QUESTION: none open; the sheet check confirmed or corrected the BEST MATCH rows (network computer 104 and the Settings gear still wait for the VM registry check); each is one line in native/crates/ox-core/src/windows_icons/roles.rs (IconRole::source), and the cache rereads the files automatically when the table changes.
 NOTE: Round 2 from the deb 43 test. (1) The special folders now use the flat Windows 11 tiles everywhere they appear: nav pane, Home's Quick access tiles (the tile's small glyph steps aside), folder lists (new Art::StandardFolder for a listed folder at a standard folder's location) and the address bar (it now takes the same role as the tab). (2) Local Disk and every fixed drive use the plain drive 32; the system-drive role and group 36 are gone. Removable and optical drives get their own roles (eject/stop = removable, a /dev/sr device = optical). (3) Many more roles: Network, network computers, shares, mapped drives (connected and not), file kinds, Settings tab. A disconnected share keeps OpenXplorer's red cross. With the setting off nothing looks different: the new file kinds (PDF, archive, executable, script, shortcut) and the new Art values draw the same built-in icons as before. Command-bar and Details-pane glyphs are untouched (they come from a font in Windows). No .po touched; only synthetic PEs in tests and captures.
 
-ROLE TABLE (file, group, provenance)
+ROLE TABLE (file, group, provenance; SHEET = checked on the imageres sheet from the user's file, still marked BestMatch in code until the VM registry check)
 VERIFIED  Folder ............................ imageres 3
 VERIFIED  Desktop ........................... imageres 183 (per the VM note: its line scrolled off; 183 is the blue desktop tile on the sheet)
 VERIFIED  Downloads ......................... imageres 184
@@ -21,20 +21,21 @@ VERIFIED  ZIP folder ........................ imageres 175
 VERIFIED  Text file ......................... imageres 102
 VERIFIED  Generic / unknown file ............ imageres 2 (also PDFs, office documents, spreadsheets, code: Windows shows the blank page when no installed app claims them; PDF's own icon in Windows is Edge's, not in these files)
 BEST MATCH Network computer / server ........ imageres 104 (UNVERIFIED, as asked)
-BEST MATCH Network share .................... imageres 28
-BEST MATCH Mapped drive, connected .......... imageres 33
-BEST MATCH Mapped drive, disconnected ....... imageres 31
-BEST MATCH Removable / USB drive ............ imageres 30
-BEST MATCH Optical drive .................... imageres 56
-BEST MATCH Archives other than ZIP (7z, tar.*, rar) imageres 175 (the ZIP folder group; Windows 11 shows the compressed folder for the archives it opens)
-BEST MATCH Picture file ..................... imageres 72 (jpegfile DefaultIcon on Windows 10, from memory)
-BEST MATCH Audio file ....................... imageres 125 (guess)
-BEST MATCH Video file ....................... imageres 127 (guess)
-BEST MATCH Program (.exe, AppImage, ELF) .... imageres 15
-BEST MATCH Script (.sh, .bat, .cmd, .ps1) ... imageres 68 (batfile DefaultIcon on Windows 10, from memory)
+SHEET     Network share .................... imageres 28
+SHEET     Mapped drive, connected .......... imageres 33
+SHEET     Mapped drive, disconnected ....... imageres 31
+SHEET     Removable / USB drive ............ imageres 30
+SHEET     Optical drive .................... imageres 56
+SHEET     Archives other than ZIP (7z, tar.*, rar) imageres 175
+SHEET     Picture file ..................... imageres 132 (document with a picture; was 72, a picture tile)
+SHEET     Audio file ....................... imageres 131 (document with a music note; was 125, a font file)
+SHEET     Video file ....................... imageres 133 (document with film; was 127)
+SHEET     Program (.exe, AppImage, ELF) .... imageres 15
+SHEET     Script (.sh, .bat, .cmd, .ps1) ... imageres 68
 BEST MATCH Shortcut (.desktop, .lnk) ........ imageres 15 (Windows draws a .lnk as its target's icon; the program icon stands in)
-BEST MATCH Settings tab (gear) .............. shell32 16826
+BEST MATCH Settings tab (gear) .............. shell32 16826 (VM registry check pending)
 
+PASS b42c943b: ox-core windows_icons 12/12, ox-app icons:: and windows_icon_files 58/58, rustfmt, clippy 1.92 -D warnings
 PASS python3 native/parity/check.py
 PASS check.py stages with Rust 1.92.0: parity and driver unit tests, i18n check, rustfmt, clippy -D warnings, doctests
 PASS ox_core lib 1306/1307 under check.py isolation; the one failure (an_fstab_that_cannot_be_read_refuses) passes as user nobody
