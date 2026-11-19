@@ -1,0 +1,38 @@
+STATUS: DONE
+HEAD: test-combined-44 e2e32c2c (the deb was built from exactly this tree; cargo clean before the release build; guard on HEAD and a clean tree before and after)
+DEB: claude/test-combined-44-deb f11ea463
+  openxplorer_2.0.20+test44_all.deb (io.winspace.Development)
+  SHA256: 53593ef4095619874428466191c3778046cb5c58e88dc7d9ff1c6ba79c8274ef
+BASE: upstream main a77936a7 (2.0.20 plus #365); upstream main is still a77936a7 (checked when pushing: a77936a7).
+
+MERGED HEADS, in this order (each the branch tip):
+  1 review4-bugs     04fa7ff92b91fdcb1a1f8db7eca49c0db19c5b44 -> 7bd2be14 (clean; 16 commits on 05831ab6)
+  2 review4-diffs    7241d18a8f5173c986a80c95a676f93c7b3860ae -> 5722f783 (2 commits on 05831ab6)
+  3 user-icon-files  575caaec19e0ca9143c791774518edb77c3e7e2a -> e2e32c2c (clean; on a77936a7; contains the owner's open PR #366, feat/file-icons b80e9b0a = 5cfe748c + b80e9b0a, which equals upstream feat/file-icons)
+
+CONFLICT AND RESOLUTION:
+- 2 review4-diffs / native/crates/ox-app/src/window/status_bar.rs: only the module doc comment conflicted; the code merged by itself. Kept both: review4-bugs' size with a no-break space before the unit ("1 item selected  19.0\u{a0}KB", its selection_text tests use \u{a0}) and review4-diffs' divider after the selection ("with a divider after it, as Windows ends it"; its selection_end_divider template child in resources/ui/status-bar.ui, set_visible when something is selected, and shows_trailing_divider for tests). Resulting comment: 'selection ("1 item selected  19.0\u{a0}KB", the size only when every selected item is a file) with a divider after it, as Windows ends it, the type-to-select hint, then at the right'. Both sides' status-bar tests pass.
+No other conflict and no glue. .pot, markdown.json and docs were already current (i18n check, sync-docs --check pass without regenerating).
+
+ZH_CN: native/po/zh_CN.po in the merge is byte-identical to main a77936a7's (cmp).
+
+WINDOWS ICON DATA: none in the deb.
+- 382 files, all listed in test-combined-44-files.txt on this branch (mode, size, path); none named .dll, .mun, .ico, .exe, .cur or .res.
+- No file starts with a PE "MZ" or ICO/CUR header (checked by content on every file); file(1) reports no MS Windows / PE32 / icon resource type; no RT_GROUP_ICON data in the binary.
+- None of the merged branches adds a .dll/.mun/.ico/.exe/.cur/.res/.png/.svg file to the repository.
+- "imageres" / "shell32" occur only in /opt/openxplorer/bin/openxplorer: the Settings rows' search keywords and help text ("...imageres.dll.mun and shell32.dll.mun from a Windows installation...", "windows icons icon files ... imageres shell32 dll mun exe ...") and the file-name matching in ox_core::windows_icons::roles ("imageres", "shell32."). No other file mentions them.
+
+CHECKS on e2e32c2c:
+- native/tools/check.py: inventories, parity, i18n and tool tests pass; it then stops at clippy on duration_suboptimal_units in ox-core files no branch touches (same on main). I ran its remaining steps with that lint (and map_unwrap_or, decimal_bitwise_operands) allowed: no drawn icons, rustfmt clean, clippy clean, every test binary plus doctests with OX_PYTHON_APP set.
+- parity/check.py, i18n check, sync-docs --check pass; cargo-sources.json matches a fresh run; the deb has rust-crates/sevenz-rust2-0.20.2.
+- Tests: 4929 passed, 23 failed: the same 23 as deb 43, all of which fail on main a77936a7 (rerun there by name for deb 43; environment: root, sandbox, Python fixtures, display scale). No branch-only, merge-only or flaky failure.
+
+SMOKE RUN (installed deb, Xvfb): the installed /opt/openxplorer/bin/openxplorer as a non-root user (oxcap) with a throwaway HOME under /var/tmp (no real user data), its own D-Bus session (dbus-run-session) and display (xvfb-run, 1440x1000), through the snapshot hook: Downloads holding 20 generated files (10 mp3, 2 s sine tones tagged "Fictional Track NN" / "Demo Band"; 10 mp4, 2 s ffmpeg test pattern with AAC sound), Details view, scene "select=clip-01.mp4; action=details-pane; wait=1500" then 19 x "key=Down; wait=700", so the Details pane loaded each of the 20 files in turn. Result: 3 runs, each exited 0 and saved its picture; no crash, panic, abort or SIGSEGV in the logs (only GVFS/D-Bus environment warnings). In the final picture (test-combined-44-smoke.png on this branch) track-10.mp3 is selected and the Details pane shows its player and media details (Length 00:00:02, Contributing artists Demo Band, Bit rate 35kbps, Title Fictional Track 10), and the status bar reads "20 items | 1 item selected 8.62 KB |" with review4-diffs' trailing divider. The known in-process media crash did not occur in these runs (not proof it is gone).
+
+UNIQUE STRINGS IN THE BUILT BINARY (/opt/openxplorer/bin/openxplorer, grep -caF; none in main a77936a7's sources):
+  user-icon-files: "Icons from Windows icon files" = 1 (and "load_icons" = 1, ox_core::windows_icons)
+  review4-bugs:    "Items View" = 1
+  review4-diffs:   "(this PC)" = 1 (the Computer row; "Add to Favorites" is not new, it is already in main)
+  #366 (feat/file-icons, inside user-icon-files): "File name endings" = 1 (main has the words only in a code comment in ox-core integration/disk_tools.rs, which does not reach the binary)
+POLKIT: record /var/lib/openxplorer/install-updates-without-password = "off" before install -> /etc/polkit-1/rules.d empty after install, record still "off". Purge left neither.
+IDENTITY: 29 new commits: 27 (branches and merges) by addition-official <239187859+addition-official@users.noreply.github.com>, and the 2 commits of the owner's open PR #366, 5cfe748c and b80e9b0a, by AKolenda <akole779@mtroyal.ca> (merged as part of user-icon-files, as asked; not in main yet). No trailers, no other author, committer or personal name; the added lines contain no email address. The deb commit is addition-official. In the deb, AKolenda appears only in the upstream repository and update-check URLs; the other addresses are the same third-party set as before.
