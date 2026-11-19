@@ -86,7 +86,7 @@ pub(crate) struct MountControls {
     /// dialog (DEV-012).
     pub can_format: bool,
     /// Not a command: the medium is an optical disc (a `/dev/sr` device),
-    /// which a Windows icon file draws as an optical drive (LOOK-029).
+    /// which a Windows icon file draws as an optical drive (LOOK-030).
     pub is_optical: bool,
 }
 
@@ -178,7 +178,7 @@ impl VolumeRow {
     /// The icon of the row's drive or device, in the navigation pane and on
     /// This PC: a phone for a device; for a drive, the drive glyph, which a
     /// Windows icon file draws as a removable or optical drive when the
-    /// mount can be ejected or stopped (LOOK-029).
+    /// mount can be ejected or stopped (LOOK-030).
     pub(crate) fn art(&self) -> Art {
         if self.kind == VolumeKind::Device {
             return Art::Glyph(Icon::Phone);
@@ -361,7 +361,7 @@ mod tests {
     /// can be ejected or stopped is a removable disk, and one on a
     /// `/dev/sr` device an optical disc; a device is a phone.
     ///
-    /// parity: LOOK-029
+    /// parity: LOOK-030
     #[test]
     fn each_drive_shows_its_medium() {
         let fixed = row_with(VolumeKind::Drive, MountControls::FIXED);

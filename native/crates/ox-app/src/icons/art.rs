@@ -19,6 +19,7 @@
 use ox_core::entry::{Entry, EntryKind};
 use ox_core::places::{KnownFolder, NetworkKind, NetworkLocation};
 
+use super::file_icons;
 use super::file_type::{is_zip, FileType};
 use super::tint::Tint;
 use super::Icon;
@@ -36,14 +37,17 @@ pub(crate) enum Art {
     Folder,
     /// A standard folder listed as an item (in a folder's list or as a
     /// Quick access tile on Home): the yellow folder, which a Windows icon
-    /// file can draw as the folder's own tile (LOOK-029).
+    /// file can draw as the folder's own tile (LOOK-030).
     StandardFolder(KnownFolder),
     /// A drive whose medium can be taken out: the drive glyph, which a
     /// Windows icon file can draw as a removable or optical drive
-    /// (LOOK-029).
+    /// (LOOK-030).
     RemovableDrive(Medium),
     /// A ZIP archive: the folder with the zip badge in its corner.
     ZipFolder,
+    /// The document with the zip badge in its corner, which File icons
+    /// offers so an archive need not look like a folder (LOOK-029).
+    ZipDocument,
     /// A file, in the colour icon of its type.
     File(FileType),
     /// A network location on the green network bar.
@@ -130,8 +134,15 @@ impl Art {
     /// Network lists one) or a share in a server listing on the bar, a
     /// folder, a ZIP archive as a folder with the zip badge, else the
     /// colour icon of the file's type. A folder whose name ends in `.zip`
-    /// stays a plain folder.
+    /// stays a plain folder. An icon chosen in File icons takes the place
+    /// of the folder, the ZIP or the type's icon (LOOK-029).
     pub(crate) fn for_entry(entry: &Entry) -> Self {
+        file_icons::art_for(&entry.name, Self::usual_for_entry(entry))
+    }
+
+    /// The art of a listed item as [`Art::for_entry`] draws it when no
+    /// icon is chosen in File icons.
+    pub(crate) fn usual_for_entry(entry: &Entry) -> Self {
         if entry.is_dir && entry.is_virtual {
             return if entry.kind == EntryKind::Shortcut {
                 Art::SERVER
@@ -141,7 +152,7 @@ impl Art {
         }
         if entry.is_dir {
             // A standard folder keeps the yellow folder; a Windows icon
-            // file can draw it as the folder's own tile (LOOK-029).
+            // file can draw it as the folder's own tile (LOOK-030).
             return super::user_icons::standard_folder_at(&entry.uri)
                 .map_or(Art::Folder, Art::StandardFolder);
         }
@@ -154,12 +165,14 @@ impl Art {
 
     /// The art of a file known only by its name, such as a member of a ZIP
     /// archive: a ZIP as the folder with the zip badge, else the colour
-    /// icon of the file's type.
+    /// icon of the file's type, or the icon chosen for it in File icons.
     pub(crate) fn for_file_name(name: &str) -> Self {
-        if is_zip(name, None) {
-            return Art::ZipFolder;
-        }
-        Art::File(FileType::of(name, None))
+        let usual = if is_zip(name, None) {
+            Art::ZipFolder
+        } else {
+            Art::File(FileType::of(name, None))
+        };
+        file_icons::art_for(name, usual)
     }
 
     /// The art of a network location called `label`: a server, or a share
@@ -282,7 +295,7 @@ mod tests {
         assert_eq!(Art::for_entry(&file("ls")), Art::for_entry(&file("cargo")));
         assert_eq!(Art::for_entry(&file("ls")), Art::File(FileType::Document));
         // A PDF is a kind of its own for Windows icon files, drawn as the
-        // document (LOOK-029).
+        // document (LOOK-030).
         assert_eq!(Art::for_entry(&file("Report.PDF")), Art::File(FileType::Pdf));
         assert_eq!(FileType::Pdf.icon(20), FileType::Document.icon(20));
         assert_eq!(Art::for_entry(&file("Notes.txt")), Art::File(FileType::Text));

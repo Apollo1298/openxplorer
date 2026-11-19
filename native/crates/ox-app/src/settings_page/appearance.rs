@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 //! Appearance: the theme, the text size and font, the compact view, the
 //! navigation pane's arrows, the app's extra navigation pane rows and tab
-//! menu items, the right-click menu, the pane widths, and icons from
-//! Windows icon files the user chooses (LOOK-029).
+//! menu items, the right-click menu, the pane widths and the icons of
+//! kinds of item ([`super::file_icons`], LOOK-029), including icons from
+//! Windows icon files the user chooses (LOOK-030).
 //!
 //! Ports the "Appearance & layout" section of `renderSettingsPage`,
 //! `textSizeControls` and `menuPreferenceControls` in
@@ -193,8 +194,8 @@ pub(super) fn build(page: &SettingsPage) -> SettingsSection {
     let category = Category::Appearance;
     let appearance = SettingsSection::new(category.title(), category.lead(), PageKind::Category);
     appearance.append_group(&theme_group(page));
+    appearance.append_group(&super::file_icons::group(page));
     appearance.append_group(&layout_group(page));
-    appearance.append_group(&icon_files_group(page));
     appearance
 }
 
@@ -353,11 +354,12 @@ fn theme_preview() -> gtk::Box {
     preview
 }
 
-/// "Icons": icons from Windows icon files the user chooses, off until
-/// turned on (LOOK-029). The first row's switch turns them on and says how
-/// many of the icons the files gave; the second chooses the files.
-fn icon_files_group(page: &SettingsPage) -> SettingsGroup {
-    let group = SettingsGroup::new(&ox_core::i18n::gettext("Icons"));
+/// The rows of icons from Windows icon files the user chooses, off until
+/// turned on (LOOK-030), which close the File icons group as one more
+/// source of the same icons: a choice above wins over them. The first
+/// row's switch turns them on and says how many of the icons the files
+/// gave; the second chooses the files.
+pub(super) fn icon_files_rows(page: &SettingsPage) -> [SettingRow; 2] {
     let use_files = SettingRow::new(ICON_FILES);
     let switch = page.preference_switch(PreferenceBinding {
         read: |preferences| preferences.use_icon_files,
@@ -381,9 +383,7 @@ fn icon_files_group(page: &SettingsPage) -> SettingsGroup {
         use_files,
         move |preferences| use_files.set_description(&icon_files_status(preferences, user_icons::status()))
     ));
-    group.add_row(&use_files);
-    group.add_row(&chosen_icon_files_row(page));
-    group
+    [use_files, chosen_icon_files_row(page)]
 }
 
 /// What the switch's row says: whether the icons are on, being read, or

@@ -288,7 +288,7 @@ fn drive_tile(row: &VolumeRow, cell: CellSize) -> Tile {
         VolumeState::Mountable { id } => id,
     };
     // The drive's picture from the user's Windows icon files, when they
-    // chose some (LOOK-029): a fixed, removable or optical drive.
+    // chose some (LOOK-030): a fixed, removable or optical drive.
     let icon = match icons::user_icons::role_of(row.art()) {
         Some(role) => icons::user_icons::role_image(role, glyph, TILES_ICON),
         None => icons::image(glyph, TILES_ICON),

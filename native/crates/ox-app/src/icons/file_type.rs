@@ -27,7 +27,7 @@ pub(crate) enum FileType {
     /// Source code, HTML and JSON.
     Code,
     /// PDFs, drawn as the document. A kind of its own so a Windows icon
-    /// file can draw it (LOOK-029); likewise the kinds below.
+    /// file can draw it (LOOK-030); likewise the kinds below.
     Pdf,
     /// Archives other than ZIP (7z, TAR and its compressed forms, RAR),
     /// drawn as the document.
@@ -289,7 +289,7 @@ mod tests {
     /// other than ZIP, programs, scripts and shortcuts, by extension or
     /// content type.
     ///
-    /// parity: LOOK-029
+    /// parity: LOOK-030
     #[test]
     fn windows_file_kinds_are_told_apart() {
         let cases = [
@@ -313,7 +313,7 @@ mod tests {
     /// The new kinds keep the app's own icon: the document, or code for
     /// scripts, at every design.
     ///
-    /// parity: LOOK-029
+    /// parity: LOOK-030
     #[test]
     fn windows_file_kinds_keep_the_built_in_icons() {
         for size in [16, 21, 32, 48, 96] {

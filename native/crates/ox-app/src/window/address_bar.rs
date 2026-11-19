@@ -315,7 +315,7 @@ impl AddressBar {
     ) {
         let imp = self.imp();
         // The location's picture from the user's Windows icon files, when
-        // they chose some (LOOK-029), else the app's glyph.
+        // they chose some (LOOK-030), else the app's glyph.
         icons::user_icons::show_icon(&imp.icon, role, icon, ICON_SIZE);
         self.set_tooltip_text(Some(&ox_core::i18n::format_message(
             "{address} · Click blank space or press Ctrl+L to edit",

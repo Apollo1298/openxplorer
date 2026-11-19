@@ -549,7 +549,7 @@ impl AppContext {
     }
 
     /// Draws the icons of the Windows icon files the user chose, when that
-    /// is on, now and whenever the settings change (LOOK-029).
+    /// is on, now and whenever the settings change (LOOK-030).
     fn follow_icon_files(&self) {
         crate::icons::user_icons::remember_standard_folders(&self.known_folders());
         crate::icons::user_icons::follow_preferences(&self.settings_data().preferences);

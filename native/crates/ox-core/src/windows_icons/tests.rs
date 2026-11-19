@@ -65,7 +65,7 @@ fn read_everything(bytes: Vec<u8>) {
     }
 }
 
-/// parity: LOOK-029
+/// parity: LOOK-030
 #[test]
 fn a_synthetic_file_gives_its_groups_and_images() {
     for wide in [false, true] {
@@ -82,7 +82,7 @@ fn a_synthetic_file_gives_its_groups_and_images() {
     }
 }
 
-/// parity: LOOK-029
+/// parity: LOOK-030
 #[test]
 fn bitmaps_and_pngs_decode_to_the_pattern_drawn() {
     let pattern = test_pattern(16, [200, 40, 90]);
@@ -103,7 +103,7 @@ fn bitmaps_and_pngs_decode_to_the_pattern_drawn() {
 /// A 32-bit bitmap without any alpha takes its transparency from the
 /// mask, as older icons do.
 ///
-/// parity: LOOK-029
+/// parity: LOOK-030
 #[test]
 fn a_bitmap_without_alpha_uses_its_mask() {
     let pattern = test_pattern(32, [10, 120, 220]);
@@ -115,7 +115,7 @@ fn a_bitmap_without_alpha_uses_its_mask() {
     assert_eq!(decode(&data), Ok(Decoded::Bitmap(pattern)));
 }
 
-/// parity: LOOK-029
+/// parity: LOOK-030
 #[test]
 fn damaged_or_unsupported_images_are_refused() {
     let pattern = test_pattern(16, [1, 2, 3]);
@@ -161,7 +161,7 @@ fn damaged_or_unsupported_images_are_refused() {
 /// Files that are not PE files, or whose headers point outside the file,
 /// give an error and no icons.
 ///
-/// parity: LOOK-029
+/// parity: LOOK-030
 #[test]
 fn files_that_are_not_icon_files_are_refused() {
     let good = SyntheticIconFile::with_groups(&[3]).build();
@@ -215,7 +215,7 @@ fn files_that_are_not_icon_files_are_refused() {
 /// A file cut at any length, or with any byte changed, never panics or
 /// reads out of bounds; at worst it gives no icons.
 ///
-/// parity: LOOK-029
+/// parity: LOOK-030
 #[test]
 fn truncated_and_mutated_files_never_panic() {
     let good = SyntheticIconFile::with_groups(&[3, 2, 102]).build();
@@ -244,7 +244,7 @@ fn truncated_and_mutated_files_never_panic() {
 /// A group that lists more images than the cap, or whose images point
 /// past the section, gives what it can and nothing else.
 ///
-/// parity: LOOK-029
+/// parity: LOOK-030
 #[test]
 fn groups_are_capped_and_missing_images_left_out() {
     let image = |id: u16| SyntheticImage {
@@ -271,7 +271,7 @@ fn groups_are_capped_and_missing_images_left_out() {
     );
 }
 
-/// parity: LOOK-029
+/// parity: LOOK-030
 #[test]
 fn files_are_recognized_by_name_with_or_without_mun() {
     let cases = [
@@ -294,7 +294,7 @@ fn files_are_recognized_by_name_with_or_without_mun() {
     }
 }
 
-/// parity: LOOK-029
+/// parity: LOOK-030
 #[test]
 fn every_role_has_its_windows_group() {
     use IconLibrary::{Imageres, Shell32};
@@ -351,7 +351,7 @@ fn every_role_has_its_windows_group() {
 /// role and edge, and the best image for a size is the smallest at least
 /// that large.
 ///
-/// parity: LOOK-029
+/// parity: LOOK-030
 #[test]
 fn chosen_files_draw_every_role_from_the_cache() {
     let folder = temporary_folder();
@@ -388,7 +388,7 @@ fn chosen_files_draw_every_role_from_the_cache() {
 /// the roles to the app's own; a stub without images gives way to the
 /// next file of the same name.
 ///
-/// parity: LOOK-029
+/// parity: LOOK-030
 #[test]
 fn files_that_give_nothing_leave_the_built_in_icons() {
     let folder = temporary_folder();
@@ -427,7 +427,7 @@ fn files_that_give_nothing_leave_the_built_in_icons() {
 /// A changed file is read afresh, a broken cache folder is made again,
 /// and folders of files no longer chosen are removed.
 ///
-/// parity: LOOK-029
+/// parity: LOOK-030
 #[test]
 fn the_cache_follows_the_chosen_files() {
     let folder = temporary_folder();

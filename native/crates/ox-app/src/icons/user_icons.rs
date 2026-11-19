@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-//! Icons from the Windows icon files the user chose (LOOK-029).
+//! Icons from the Windows icon files the user chose (LOOK-030).
 //!
 //! Off by default. Once "Icons from Windows icon files" is on in Settings
 //! and files are chosen, [`follow_preferences`] has them read off the main
@@ -127,7 +127,8 @@ pub(crate) fn role_of(art: Art) -> Option<IconRole> {
         Art::Glyph(Icon::Settings) => IconRole::Settings,
         Art::TintedGlyph(_, Tint::KnownFolder(folder)) => known_folder_role(folder)?,
         Art::Network(network) => network_role(network)?,
-        Art::Glyph(_) | Art::TintedGlyph(..) => return None,
+        // File icons' document with a zipper has no Windows picture.
+        Art::ZipDocument | Art::Glyph(_) | Art::TintedGlyph(..) => return None,
     };
     Some(role)
 }
@@ -379,6 +380,9 @@ pub(crate) fn standard_folder_at(uri: &str) -> Option<KnownFolder> {
 
 /// Redraws every image after a change, and tells the status followers.
 fn redraw_all() {
+    // The same icons' other source, File icons (LOOK-029), counts the
+    // change too, so folder views that follow its generation draw again.
+    super::file_icons::count_new_generation();
     let (art_images, role_images, status) = STATE.with_borrow(|state| {
         let art_images: Vec<ArtImage> = state
             .art_images

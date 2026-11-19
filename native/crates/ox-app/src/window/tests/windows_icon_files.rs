@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-//! Icons from Windows icon files in a window (LOOK-029): every place a
+//! Icons from Windows icon files in a window (LOOK-030): every place a
 //! standard folder, Network or the Recycle Bin appears takes the file's
 //! picture. The files are synthetic, built in the test, so the pictures
 //! are test patterns, never Windows icons.
@@ -83,7 +83,7 @@ fn art_image(window: &impl IsA<gtk::Widget>, art: Art, what: &str) -> ArtImage {
 /// Home's Quick access tiles all show the files' pictures; turned off,
 /// the app's own icons come back.
 ///
-/// parity: LOOK-029
+/// parity: LOOK-030
 #[gtk::test]
 fn every_place_of_a_window_takes_the_files_pictures() {
     let home = TestHome::new();

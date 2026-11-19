@@ -12,6 +12,7 @@ use serde::Serialize;
 use serde_json::Value;
 
 use super::choices::{ContextMenu, StripPosition, Theme, View, ZipOpening};
+use super::file_icons::{canonical_file_icons, read_file_icons, FileIcons};
 use super::pane_options::DetailsPaneOptions;
 use super::tree_options::FolderTreeOptions;
 use super::view_options::ViewOptions;
@@ -435,7 +436,7 @@ pub struct Preferences {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub gallery_folders: Vec<String>,
     /// Draw folder, drive and place icons from the Windows icon files in
-    /// [`Self::icon_files`] (LOOK-029). Off by default; stored only when on.
+    /// [`Self::icon_files`] (LOOK-030). Off by default; stored only when on.
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub use_icon_files: bool,
     /// The Windows icon files the user chose (`.dll`, `.mun` or `.exe`),
@@ -443,6 +444,11 @@ pub struct Preferences {
     /// never the icons. Stored only when there is one.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub icon_files: Vec<String>,
+    /// The icon each kind of item shows, where the user chose one
+    /// (LOOK-029); see [`super::file_icons`]. Stored only when there is
+    /// one.
+    #[serde(skip_serializing_if = "FileIcons::is_empty")]
+    pub file_icons: FileIcons,
     /// A start without locations reopens the tabs of the last window
     /// closed (Dolphin's `RememberOpenedTabs`, Explorer's "Restore
     /// previous folder windows at logon"); off, as in Explorer.
@@ -667,6 +673,7 @@ impl Default for Preferences {
             gallery_folders: Vec::new(),
             use_icon_files: false,
             icon_files: Vec::new(),
+            file_icons: FileIcons::new(),
             restore_session: false,
             startup_folder: None,
             begin_in_split_view: false,
@@ -798,6 +805,9 @@ impl Preferences {
         replace_if_some(&mut self.use_icon_files, update.use_icon_files);
         if let Some(files) = &update.icon_files {
             self.icon_files = canonical_icon_files(files);
+        }
+        if let Some(icons) = &update.file_icons {
+            self.file_icons = canonical_file_icons(icons);
         }
     }
 
@@ -1101,6 +1111,9 @@ pub struct PreferencesUpdate {
     /// Replaces the chosen Windows icon files; see
     /// [`Preferences::icon_files`].
     pub icon_files: Option<Vec<String>>,
+    /// Replaces the chosen file icons; kinds and icons the app does not
+    /// know are dropped.
+    pub file_icons: Option<FileIcons>,
     /// Reopen the last window's tabs on a start without locations.
     pub restore_session: Option<bool>,
     /// Where new windows open; empty for Home. A location the location
@@ -1233,6 +1246,7 @@ impl PreferencesUpdate {
             gallery_folders: values.get("galleryFolders").and_then(read_keys),
             use_icon_files: flag("useIconFiles"),
             icon_files: values.get("iconFiles").and_then(read_keys),
+            file_icons: values.get("fileIcons").and_then(read_file_icons),
             restore_session: flag("restoreSession"),
             startup_folder: text("startupFolder").map(str::to_owned),
             begin_in_split_view: flag("beginInSplitView"),
@@ -1466,9 +1480,9 @@ mod tests {
     }
 
     /// Icons from Windows icon files are off and no file is chosen by
-    /// default, and neither is stored until the user chooses (LOOK-029).
+    /// default, and neither is stored until the user chooses (LOOK-030).
     ///
-    /// parity: LOOK-029
+    /// parity: LOOK-030
     #[test]
     fn icon_files_are_off_by_default_and_stored_only_when_chosen() {
         let preferences = Preferences::default();
@@ -1499,7 +1513,7 @@ mod tests {
     /// Only absolute paths of `.dll`, `.mun` and `.exe` files are kept,
     /// each once and at most 16, from a hand-edited file.
     ///
-    /// parity: LOOK-029
+    /// parity: LOOK-030
     #[test]
     fn icon_files_keep_only_absolute_icon_file_paths() {
         let update = PreferencesUpdate::from_json(&json!({

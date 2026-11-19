@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 //! Icons read at run time from Windows icon files the user chooses
-//! (LOOK-029).
+//! (LOOK-030).
 //!
 //! `OpenXplorer` ships no Windows artwork. When the user turns on "Icons from
 //! Windows icon files" in Settings and picks files they already have, such

@@ -22,6 +22,7 @@ struct Reset;
 impl Drop for Reset {
     fn drop(&mut self) {
         follow_preferences(&Preferences::default());
+        crate::icons::file_icons::follow(&ox_core::settings::FileIcons::new());
     }
 }
 
@@ -73,7 +74,7 @@ fn network(place: NetworkPlace, connection: Connection) -> Art {
 /// drives by their medium; the network's places; the file kinds; and the
 /// Settings tab.
 ///
-/// parity: LOOK-029
+/// parity: LOOK-030
 #[test]
 fn every_role_has_the_art_that_shows_it() {
     use Connection::{Connected, Disconnected};
@@ -173,7 +174,7 @@ fn every_role_has_the_art_that_shows_it() {
 /// A disconnected share keeps the app's red cross, and the glyphs no
 /// Windows icon file draws keep the app's own.
 ///
-/// parity: LOOK-029
+/// parity: LOOK-030
 #[test]
 fn other_art_keeps_the_app_icons() {
     use Connection::Disconnected;
@@ -193,7 +194,7 @@ fn other_art_keeps_the_app_icons() {
 /// Off by default: no texture for any role, and an image shows the app's
 /// own icon.
 ///
-/// parity: LOOK-029
+/// parity: LOOK-030
 #[gtk::test]
 fn the_icons_are_off_by_default() {
     let _reset = Reset;
@@ -214,7 +215,7 @@ fn the_icons_are_off_by_default() {
 /// place and scale, images already shown follow, and turning it off brings
 /// the app's own icons back.
 ///
-/// parity: LOOK-029
+/// parity: LOOK-030
 #[gtk::test]
 fn chosen_files_draw_their_roles_at_the_best_size() {
     let _reset = Reset;
@@ -281,7 +282,7 @@ fn chosen_files_draw_their_roles_at_the_best_size() {
 /// every image keeps the app's own icon; nothing is written beside them,
 /// only in the user's cache folder.
 ///
-/// parity: LOOK-029
+/// parity: LOOK-030
 #[gtk::test]
 fn files_that_give_nothing_keep_the_app_icons() {
     let _reset = Reset;
@@ -313,7 +314,7 @@ fn files_that_give_nothing_keep_the_app_icons() {
 
 /// A plain role image, such as a drive's tile, follows the choice too.
 ///
-/// parity: LOOK-029
+/// parity: LOOK-030
 #[gtk::test]
 fn a_role_image_shows_the_file_icon_or_its_glyph() {
     let _reset = Reset;
@@ -332,4 +333,76 @@ fn a_role_image_shows_the_file_icon_or_its_glyph() {
 
     follow_preferences(&Preferences::default());
     assert_eq!(tile.icon_name().as_deref(), Some(Icon::HardDrive.name()));
+}
+
+/// File icons' kinds (LOOK-029) still cover the art Windows icon files
+/// added: a standard folder is a folder, PDFs, archives, programs and
+/// shortcuts are documents, and scripts are code.
+///
+/// parity: LOOK-030
+#[test]
+fn file_icons_kinds_cover_the_windows_art() {
+    use crate::icons::file_icons::kind_of;
+    assert_eq!(
+        kind_of(Art::StandardFolder(KnownFolder::Documents)),
+        Some("folder")
+    );
+    for kind in [
+        FileType::Pdf,
+        FileType::Archive,
+        FileType::Executable,
+        FileType::Shortcut,
+    ] {
+        assert_eq!(kind_of(Art::File(kind)), Some("document"), "{kind:?}");
+    }
+    assert_eq!(kind_of(Art::File(FileType::Script)), Some("code"));
+}
+
+/// The order of the icon sources: a choice made in File icons first, then
+/// the Windows icon files, then the app's own. A choice of a picture the
+/// files lack keeps the app's; a choice of another kind's picture is drawn
+/// as the files draw that kind. Reading the files or turning them off
+/// counts a new File icons generation, so folder views draw again.
+///
+/// parity: LOOK-030, LOOK-029
+#[gtk::test]
+fn a_choice_in_file_icons_comes_before_the_windows_files() {
+    use crate::icons::file_icons;
+
+    let _reset = Reset;
+    let folder = tempfile::tempdir().expect("a temporary folder");
+    let files = write_both_libraries(folder.path());
+    let before = file_icons::generation();
+    follow_preferences(&chosen(&files));
+    wait_until_read();
+    assert_ne!(file_icons::generation(), before, "reading counts a generation");
+
+    let zip = Art::for_file_name("Course notes.zip");
+    assert_eq!(zip, Art::ZipFolder);
+    assert!(
+        ArtImage::new(zip, 48).shows_user_icon(),
+        "no choice: the file's ZIP"
+    );
+
+    let mut icons = ox_core::settings::FileIcons::new();
+    icons.insert("zip".into(), "zip-document".into());
+    icons.insert(".iso".into(), "zip-folder".into());
+    file_icons::follow(&icons);
+    let chosen_zip = Art::for_file_name("Course notes.zip");
+    assert_eq!(chosen_zip, Art::ZipDocument);
+    let image = ArtImage::new(chosen_zip, 48);
+    assert!(
+        !image.shows_user_icon(),
+        "the chosen picture, which the files lack"
+    );
+    let disc = Art::for_file_name("Installer.iso");
+    assert_eq!(disc, Art::ZipFolder, "the ending's choice");
+    assert!(
+        ArtImage::new(disc, 48).shows_user_icon(),
+        "drawn as the files draw a ZIP"
+    );
+
+    let read = file_icons::generation();
+    follow_preferences(&Preferences::default());
+    assert_ne!(file_icons::generation(), read, "turning off counts a generation");
 }

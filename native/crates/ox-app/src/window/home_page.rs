@@ -364,7 +364,7 @@ fn folder_tile(place: &Place, locations: &LocationContext, compact: bool) -> Ite
         )
     } else {
         // A standard folder is its own tile when Windows icon files draw
-        // it (LOOK-029); its glyph then steps aside.
+        // it (LOOK-030); its glyph then steps aside.
         let art = place.known_folder.map_or(Art::Folder, Art::StandardFolder);
         ArtImage::new(art, TILE_ICON)
     };

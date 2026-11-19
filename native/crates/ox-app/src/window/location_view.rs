@@ -470,7 +470,7 @@ impl BrowserWindow {
         }
         let address = locations.display_location(uri);
         let icon = step_icon(uri, &locations.home_uri(), is_search);
-        // The same place as the tab shows, for Windows icon files (LOOK-029).
+        // The same place as the tab shows, for Windows icon files (LOOK-030).
         let role = (!is_search)
             .then(|| {
                 tab_icon(

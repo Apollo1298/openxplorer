@@ -541,6 +541,18 @@ fn escape_leaves_the_search_and_shows_every_row_again() {
             "Text size",
             "Use the desktop font",
             "Language",
+            "Folder icon",
+            "ZIP archive icon",
+            "Document icon",
+            "Text file icon",
+            "Spreadsheet icon",
+            "Picture icon",
+            "Video icon",
+            "Music icon",
+            "Code icon",
+            "File name endings",
+            "Icons from Windows icon files",
+            "Windows icon files",
             "Compact view",
             "Hide expand arrows in the sidebar",
             "Show more items in the navigation pane",
@@ -548,9 +560,7 @@ fn escape_leaves_the_search_and_shows_every_row_again() {
             "Right-click menu",
             "Buttons in the right-click menu",
             "Shift+F10 opens the classic menu",
-            "Sidebar and column widths",
-            "Icons from Windows icon files",
-            "Windows icon files"
+            "Sidebar and column widths"
         ]
     );
 }
@@ -625,7 +635,7 @@ fn every_setting_of_the_python_page_has_a_row() {
 /// Rows that work but disable their button while there is nothing for it
 /// to do, as Restore previous with no handler recorded (INT-030), or the
 /// Super+E switch outside KDE Plasma (INT-033), or Clear while no Windows
-/// icon file is chosen (LOOK-029).
+/// icon file is chosen (LOOK-030).
 const ROWS_FOLLOWING_THEIR_STATE: [&str; 5] = [
     "Windows icon files",
     "Restore the previous file handlers",
@@ -1444,7 +1454,7 @@ fn the_dragging_help_says_alt_creates_shortcuts() {
 /// synthetic, built in the test; the file dialog itself is GTK's and is
 /// not driven, so the chosen paths are saved as its answer would be.
 ///
-/// parity: LOOK-029
+/// parity: LOOK-030
 #[gtk::test]
 fn icons_from_windows_icon_files_are_off_until_chosen() {
     use ox_core::windows_icons::synthetic::SyntheticIconFile;
@@ -1459,6 +1469,20 @@ fn icons_from_windows_icon_files_are_off_until_chosen() {
     assert_eq!(row.shown_description(), "Off: OpenXplorer's own icons");
     let files_row = settings.row("Windows icon files");
     assert_eq!(files_row.shown_description(), "No files chosen");
+    // Both close the File icons group (LOOK-029), one more source of the
+    // same icons.
+    let file_icons = settings
+        .page
+        .category_section(Category::Appearance)
+        .groups()
+        .into_iter()
+        .find(|group| group.heading_text().trim() == "File icons")
+        .expect("Appearance has File icons");
+    let titles: Vec<&str> = file_icons.rows().iter().map(|row| row.text().title).collect();
+    assert_eq!(
+        titles[titles.len() - 2..],
+        ["Icons from Windows icon files", "Windows icon files"]
+    );
     let clear = files_row
         .controls()
         .into_iter()

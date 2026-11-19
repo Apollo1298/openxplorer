@@ -14,7 +14,7 @@
 //! every icon, an `ArtImage` is hidden from assistive technology (see
 //! [`crate::icons`]).
 //!
-//! When the user chose Windows icon files (LOOK-029), an art they draw is
+//! When the user chose Windows icon files (LOOK-030), an art they draw is
 //! one picture of theirs instead, and the image is drawn again when the
 //! files are read or turned off, or its scale changes
 //! ([`super::user_icons`]).
