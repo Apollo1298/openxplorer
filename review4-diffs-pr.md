@@ -10,7 +10,7 @@ Model: claude-opus-5-5
 
 Five differences from Windows 11 File Explorer (build 26200, VM check of 2026-11-18, overnight review 4) are fixed. Each was written test-first and checked with real xdotool input in a private Xvfb session.
 
-- **Small icons (Ctrl+Shift+4).** Each 16 px icon now sits left of its name. Items fill a column top to bottom and then flow into the next column, which scrolls sideways, as List does. The columns are narrower than List's (names cut at 20 characters instead of 28) and 4 px apart. Before, Small icons was a grid of tiles with a tiny icon above each name and wide gaps. Up and Down move along the column. In the grid they jumped a whole column, so that path now leaves Small icons to GTK's own keys, as List does.
+- **Small icons (Ctrl+Shift+4).** Each 16 px icon now sits left of its name. Items fill a column top to bottom and then flow into the next column, which scrolls sideways, as List does. The columns are 310 px apart at 100%, as measured in the Windows 11 VM at 1920x1080, and grow with the text size. Each name fills its column, so "Budget 2026 (2)" fits whole, and only a name wider than the column ends in "...". Before, Small icons was a grid of tiles with a tiny icon above each name and wide gaps. Up and Down move along the column. In the grid they jumped a whole column, so that path now leaves Small icons to GTK's own keys, as List does.
 - **File right-click menu.**
   - **Add to Favorites** now shows on every file's menu, compact and classic, after Open with, as in Windows 11. It changes to **Remove from Favorites** once the file is a favorite. Before, it showed only while "Open Quick access on Home" was on, which is off by default, so the review never saw it. Favorites are saved whatever Home shows, and Home's Favorites list shows them once Quick access is on.
   - **Edit in \<default text editor\>** now shows for text files, with the editor's own icon, in its own group after Properties and before Show more options, as Windows shows "Edit in Notepad". In the classic menu it comes right after Open. Before, the only editor rows were "Open in" Visual Studio Code, Code Insiders and VSCodium (`EDITOR_DESKTOP_IDS`). With none of them installed, a .txt whose default app is LibreOffice Writer had no row. The editor is now the default app for the file's type or for `text/plain` when that app is a text editor (`TextEditor` in its desktop file's Categories). Otherwise it is the first text editor registered for `text/plain`. Writer has no `TextEditor` category, so the .txt offers the text editor (Mousepad in the test session). The Visual Studio Code rows stay. An editor that is both is listed once.
@@ -26,7 +26,7 @@ Left out as asked: Share, Share with, the "Remove Properties and Personal Inform
 
 | Case | Before (2.0.20) | After | Windows 11 (VM) |
 |---|---|---|---|
-| Small icons | Grid, icon above name, wide gaps | Icon left of name, columns filled top to bottom, 4 px gaps | Icon left of name, columns, narrow gaps |
+| Small icons | Grid, icon above name, wide gaps | Icon left of name, columns filled top to bottom, 310 px apart | Icon left of name, columns about 310 px apart at 100% |
 | Right-click a .txt (default app LibreOffice Writer) | No Add to Favorites (option off), no Edit in row | Open, Open with >, Add to Favorites, Compress to >, Copy as path, Properties, divider, Edit in Mousepad, divider, Show more options | Same, with Notepad, plus Share and Share with |
 | Opens with | "LibreOffice Writer" | Writer's icon, then "LibreOffice Writer" | App icon and name |
 | Modified | "Wednesday, November 18, 2026, 8:36:06" with "PM" on the next line | One line | One line |
@@ -61,6 +61,7 @@ Checks run in this container. Tests run as root here, and the Rust 1.92 toolchai
 - `python3 native/tools/i18n.py check`, the parity and tools unit tests (31 and 124), the drawn-icon guard, `cargo fmt --check` and `cargo clippy --workspace --all-targets -D warnings`: passed. These are check.py's own steps, run through check.py.
 - `python3 native/tools/check.py`: stops at its first failing test executable, `display_scale`. That executable fails the same way on unchanged main: a launched app refuses to run as root.
 - So every test executable was also run under check.py's isolation, continuing past failures, on this branch and on unchanged main 05831ab6. ox-app: 2575 passed and 12 failed on this branch, vs 2568 passed and 12 failed on main. ox-core lib: 1292 passed and 1 failed on both. Every other executable passed, except 8 failures in 6 of them, the same on both. The failures on both sides are the same tests: permission and root cases (read-only folders, no Trash, administrator prompts, the root launch refusal) and `location_fixture_drift` / `network_python` against the Python app sources. No test fails only on this branch. Doctests pass.
+- After the column-width change (7241d18a): rustfmt, Clippy, `parity/check.py`, the i18n check and the ox-app fonts, grid, view styles, selection and views suites. The views suite's one failure is a root-permission test that fails on main too. The full comparison above was run before that change, on 6b138b71.
 - Real input (xdotool) under a private Xvfb display (1366x768, 1x) with openbox and xcompmgr, as the unprivileged `nobody` user with a throwaway HOME and fictional files, LibreOffice Writer as the .txt default, the 12-hour clock, light and dark themes:
   - Ctrl+Shift+4 showed the icons left of the names down columns. Down moved from "Budget 2026" to "data", Right to the next column.
   - Right-click showed Add to Favorites and Edit in Mousepad. A click on Add to Favorites turned it into Remove from Favorites. A click on Edit in Mousepad started `mousepad` on the file.
@@ -70,5 +71,4 @@ Checks run in this container. Tests run as root here, and the Rust 1.92 toolchai
 ## Not tested
 
 - Wayland, 2x scale and Compact view (X11 1x only).
-- The exact pixel width of Windows' Small icons columns was not measured in the VM. 20 characters was chosen to be narrower than List's 28.
 - Orca speaking. The new icons are presentation-only, and rows keep their names.
