@@ -31,9 +31,8 @@ NATIVE = REPOSITORY / 'native'
 PACKAGING_DATA = NATIVE / 'packaging' / 'data'
 CARGO_MANIFEST = NATIVE / 'Cargo.toml'
 
-# The launcher icon is the Fluent Emoji file folder the app shows for
-# folders, byte for byte (crates/ox-app/resources/icons/SOURCES.md): the
-# owner's rule is that every icon is an unmodified Fluent file.
+# The launcher icon is the same folder artwork the app shows for folders
+# (crates/ox-app/resources/icons/SOURCES.md).
 APP_ICON = NATIVE / 'crates/ox-app/resources/icons/hicolor/scalable/places/ox-file-folder-flat.svg'
 
 # The D-Bus activation file; build_service_file fills in its placeholders.

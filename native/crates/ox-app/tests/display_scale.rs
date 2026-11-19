@@ -122,20 +122,24 @@ fn folder_artwork(edge: i32) -> (Vec<u8>, usize) {
     (pixels, stride)
 }
 
-/// The top-left corner of the folder's yellow in `pixels`, searched from
+/// Whether a pixel is the mint-green folder body (`#50C16F`).
+fn is_folder_green([blue, green, red, _]: [u8; 4]) -> bool {
+    (60..110).contains(&red) && green > 160 && (80..140).contains(&blue) && green > red && green > blue
+}
+
+/// The top-left corner of the folder's mint green in `pixels`, searched from
 /// (`left`, `top`) over `width` by `height` pixels.
-fn yellow_corner(pixels: &(Vec<u8>, usize), (left, top, width, height): (i32, i32, i32, i32)) -> (i32, i32) {
-    let is_yellow = |[blue, green, red, _]: [u8; 4]| red > 240 && (200..230).contains(&green) && blue < 90;
+fn folder_corner(pixels: &(Vec<u8>, usize), (left, top, width, height): (i32, i32, i32, i32)) -> (i32, i32) {
     let mut corner: Option<(i32, i32)> = None;
     for y in top..top + height {
         for x in left..left + width {
-            if is_yellow(pixel_at(pixels, x, y)) {
+            if is_folder_green(pixel_at(pixels, x, y)) {
                 let (min_x, min_y) = corner.unwrap_or((x, y));
                 corner = Some((min_x.min(x), min_y.min(y)));
             }
         }
     }
-    corner.expect("the folder's yellow is in the area")
+    corner.expect("the folder's mint green is in the area")
 }
 
 /// Whether two pixels are the same colour.
@@ -199,9 +203,9 @@ fn twice_the_scale_draws_the_bars_on_whole_device_pixels() {
 fn folder_artwork_is_drawn_from_its_vector_at_twice_the_scale(double: &(Vec<u8>, usize)) {
     let edge = 2 * ROW_ICON;
     let artwork = folder_artwork(edge);
-    let (artwork_x, artwork_y) = yellow_corner(&artwork, (0, 0, edge, edge));
+    let (artwork_x, artwork_y) = folder_corner(&artwork, (0, 0, edge, edge));
     let rows = (2 * ROWS_LEFT, 2 * ROWS_TOP, 2 * 120, 2 * 40);
-    let (shown_x, shown_y) = yellow_corner(double, rows);
+    let (shown_x, shown_y) = folder_corner(double, rows);
     let (left, top) = (shown_x - artwork_x, shown_y - artwork_y);
     for y in 0..edge {
         for x in 0..edge {
@@ -215,19 +219,18 @@ fn folder_artwork_is_drawn_from_its_vector_at_twice_the_scale(double: &(Vec<u8>,
     }
 }
 
-/// The tops of the folders' yellow down the file list, one per row, in
-/// device pixels: where each run of rows holding yellow starts.
+/// The tops of the folders' mint green down the file list, one per row, in
+/// device pixels: where each run of rows holding that green starts.
 fn folder_row_tops(pixels: &(Vec<u8>, usize), scale: i32) -> Vec<i32> {
-    let is_yellow = |[blue, green, red, _]: [u8; 4]| red > 240 && (200..230).contains(&green) && blue < 90;
     let (left, right) = (scale * ROWS_LEFT, scale * (ROWS_LEFT + 120));
     let mut tops = Vec::new();
     let mut in_row = false;
     for y in scale * 140..scale * (HEIGHT - 60) {
-        let yellow = (left..right).any(|x| is_yellow(pixel_at(pixels, x, y)));
-        if yellow && !in_row {
+        let green = (left..right).any(|x| is_folder_green(pixel_at(pixels, x, y)));
+        if green && !in_row {
             tops.push(y);
         }
-        in_row = yellow;
+        in_row = green;
     }
     tops
 }

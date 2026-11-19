@@ -40,6 +40,11 @@ GTK can recolour them, and the blue kept through its icon palette. As
 CONTRIBUTING.md asks for Fluent icons only, they await the owner's
 acceptance.
 
+`places/ox-file-folder-flat.svg` vendors Linux Mint's Mint-Y
+`places/128@2x/folder.png` (256×256, GPL-3+) as an SVG `<image>` wrapper so
+it keeps the existing icon name and gresource slot; it replaces the Fluent
+Emoji yellow file folder.
+
 The files use the `hicolor/scalable/<context>/` layout of a GTK icon theme and
 are compiled into the application as a GResource (`icons.gresource.xml`, built
 by `build.rs`). Every name starts with `ox-`, so no desktop icon theme can
@@ -177,7 +182,7 @@ it.
 | `places/ox-arrow-download-20-symbolic.svg` | Fluent UI System Icons 1.1.343 | `icons/arrow_download_20_regular.svg` | cc965b2de3fca74d76e48d93fb2a2c68756e1fab748bb06de904a8e17ca4e5c2 |
 | `places/ox-desktop-20-symbolic.svg` | Fluent UI System Icons 1.1.343 | `icons/desktop_20_regular.svg` | 941d16c07f8f5468d0e2461710b7806affd20e6604f9be15374548370bcdd9e1 |
 | `places/ox-document-20-symbolic.svg` | Fluent UI System Icons 1.1.343 | `icons/document_20_regular.svg` | 5f5416510d8a774d427a05e8102dd878aa7317478644480a57a9ab50a1104650 |
-| `places/ox-file-folder-flat.svg` | Fluent Emoji 1ffb34c | `assets/File folder/Flat/file_folder_flat.svg` | 870727aa9758f76359181c035456aba47e87d622a619a0ee80fb60b40070fbd1 |
+| `places/ox-file-folder-flat.svg` | Mint-Y icons (mint-y-icons) | `places/128@2x/folder.png` | 39702badbecbb592e2f4331165c6ec358a78f4554a64950ea37188b51af094aa |
 | `places/ox-folder-20-symbolic.svg` | Fluent UI System Icons 1.1.343 | `icons/folder_20_regular.svg` | d144cc84fe8997e44aede97843ba009454b5302e9d9827e01c6540e8eef4aaa8 |
 | `places/ox-home-20-symbolic.svg` | Fluent UI System Icons 1.1.343 | `icons/home_20_regular.svg` | dac78c102bf3fbd572d213673fc45c4cee38208fd80d42a12fc34ae94016b069 |
 | `places/ox-image-20-symbolic.svg` | Fluent UI System Icons 1.1.343 | `icons/image_20_regular.svg` | 0e57f2cad97fe254f56e0997f877e1bb902efc9e2fc9b14f2091d1ce7301226c |
