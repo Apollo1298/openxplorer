@@ -98,7 +98,7 @@ At the crash there were 869 threads, among them 124 `GtkGstPlay`, 124 `typefind:
 
 ### 3. One more crash is a possible security issue
 
-It was reported to the owner directly and is not described here.
+It is described only in the review session's chat, as the brief asked. Nothing was posted on GitHub (no advisory, issue or comment) and nothing was emailed.
 
 ### Not reproduced: the user's decodebin3 crash on renaming a playing file
 
